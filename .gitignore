@@ -1,0 +1,54 @@
+
+# Python related files
+
+*.dat
+*.egg
+*.egg-info
+*.pyc
+.eggs
+TAGS
+build
+
+# Test related files
+
+*.log
+.coverage
+.coverage.*
+.testrepository/*
+.tox
+.venv
+cover
+flake8_results.html
+functionaltests/.testrepository/
+functionaltests/tempest.log
+htmlcov/
+venv
+
+# Files created by releasenotes build
+releasenotes/build
+
+# Editors
+
+*.sublime-workspace
+*.swp
+
+# Misc
+
+*.DS_Store
+*.idea
+*.ipynb
+*.orig
+*.sqlite
+*.sqlite3
+/.ipynb_checkpoints/*
+/bind9
+/dnsmasq
+AUTHORS
+ChangeLog
+contrib/vagrant/.vagrant/
+designate/versioninfo
+dist
+doc/build/*
+doc/source/api/*
+etc/designate/*.conf
+var/*
