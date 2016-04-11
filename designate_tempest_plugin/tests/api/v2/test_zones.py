@@ -75,6 +75,50 @@ class ZonesTest(BaseZonesTest):
 
         waiters.wait_for_zone_404(self.client, zone['id'])
 
+    @test.attr(type='smoke')
+    @test.idempotent_id('5bfa3cfe-5bc8-443b-bf48-cfba44cbb247')
+    def test_list_zones(self):
+        LOG.info('Create a zone')
+        _, zone = self.client.create_zone()
+        self.addCleanup(self.client.delete_zone, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual('CREATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        waiters.wait_for_zone_status(
+            self.client, zone['id'], 'ACTIVE')
+
+        LOG.info('List zones')
+        _, body = self.client.list_zones()
+
+        self.assertTrue(len(body['zones']) > 0)
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')
+    def test_update_zone(self):
+        LOG.info('Create a zone')
+        _, zone = self.client.create_zone()
+        self.addCleanup(self.client.delete_zone, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual('CREATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        waiters.wait_for_zone_status(
+            self.client, zone['id'], 'ACTIVE')
+
+        LOG.info('Update the zone')
+        resp, body = self.client.update_zone(zone['id'])
+
+        self.assertEqual('UPDATE', body['action'])
+        self.assertEqual('PENDING', body['status'])
+
+        waiters.wait_for_zone_status(
+            self.client, body['id'], 'ACTIVE')
+
+        self.assertEqual(202, resp.status)
+
 
 class ZonesAdminTest(BaseZonesTest):
     credentials = ['primary', 'admin']
@@ -98,3 +142,69 @@ class ZonesAdminTest(BaseZonesTest):
 
         LOG.info('Ensure the fetched response matches the created zone')
         self._assertExpected(zone, body)
+
+
+class ZoneOwnershipTest(BaseZonesTest):
+
+    @classmethod
+    def setup_clients(cls):
+        super(ZoneOwnershipTest, cls).setup_clients()
+
+        cls.client = cls.os.zones_client
+        cls.alt_client = cls.os_alt.zones_client
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('5d28580a-a012-4b57-b211-e077b1a01340')
+    def test_no_create_duplicate_domain(self):
+        LOG.info('Create a zone as a default user')
+        _, zone = self.client.create_zone()
+        self.addCleanup(self.client.delete_zone, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual('CREATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        waiters.wait_for_zone_status(
+            self.client, zone['id'], 'ACTIVE')
+
+        LOG.info('Create a zone as an alt user with existing domain')
+        self.assertRaises(lib_exc.Conflict,
+            self.alt_client.create_zone, name=zone['name'])
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('a48776fd-b1aa-4a25-9f09-d1d34cfbb175')
+    def test_no_create_subdomain_by_alt_user(self):
+        LOG.info('Create a zone as a default user')
+        _, zone = self.client.create_zone()
+        self.addCleanup(self.client.delete_zone, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual('CREATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        waiters.wait_for_zone_status(
+            self.client, zone['id'], 'ACTIVE')
+
+        LOG.info('Create a zone as an alt user with  existing subdomain')
+        self.assertRaises(lib_exc.Forbidden,
+            self.alt_client.create_zone, name='sub.' + zone['name'])
+        self.assertRaises(lib_exc.Forbidden,
+            self.alt_client.create_zone, name='sub.sub.' + zone['name'])
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('f1723d48-c082-43cd-94bf-ebeb5b8c9458')
+    def test_no_create_superdomain_by_alt_user(self):
+        LOG.info('Create a zone as a default user')
+        _, zone = self.client.create_zone(name='a.b.' + "example.com.")
+        self.addCleanup(self.client.delete_zone, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual('CREATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        waiters.wait_for_zone_status(
+            self.client, zone['id'], 'ACTIVE')
+
+        LOG.info('Create a zone as an alt user with existing superdomain')
+        self.assertRaises(lib_exc.Forbidden,
+            self.alt_client.create_zone, name='example.com.')

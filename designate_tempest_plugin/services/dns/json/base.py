@@ -91,6 +91,7 @@ class DnsClientBase(rest_client.RestClient):
 
     def _show_request(self, resource, uuid, params=None):
         """Gets a specific object of the specified type.
+        :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: Unique identifier of the object in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
@@ -99,6 +100,40 @@ class DnsClientBase(rest_client.RestClient):
         uri = self._get_uri(resource, uuid=uuid, params=params)
 
         resp, body = self.get(uri)
+
+        self.expected_success(200, resp['status'])
+
+        return resp, self.deserialize(body)
+
+    def _list_request(self, resource, params=None):
+        """Gets a list of specific objects.
+        :param resource: The name of the REST resource, e.g., 'zones'.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :returns: Serialized object as a dictionary.
+        """
+        uri = self._get_uri(resource, params=params)
+
+        resp, body = self.get(uri)
+
+        self.expected_success(200, resp['status'])
+
+        return resp, self.deserialize(body)
+
+    def _update_request(self, resource, uuid, object_dict, params=None):
+        """Update a specified object.
+        :param resource: The name of the REST resource, e.g., 'zones'
+        :param uuid: Unique identifier of the object in UUID format.
+        :param object_dict: A Python dict that represents an object of the
+                             specified type.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :returns: Serialized object as a dictionary.
+        """
+        body = self.serialize(object_dict)
+        uri = self._get_uri(resource, uuid=uuid, params=params)
+
+        resp, body = self.patch(uri, body=body)
 
         self.expected_success(200, resp['status'])
 

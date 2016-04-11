@@ -64,6 +64,15 @@ class ZonesClient(base.DnsClientV2Base):
         return self._show_request('zones', uuid, params=params)
 
     @base.handle_errors
+    def list_zones(self, params=None):
+        """Gets a list of zones.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :return: Serialized zones as a list.
+        """
+        return self._list_request('zones', params=params)
+
+    @base.handle_errors
     def delete_zone(self, uuid, params=None):
         """Deletes a zone having the specified UUID.
         :param uuid: The unique identifier of the zone.
@@ -72,3 +81,32 @@ class ZonesClient(base.DnsClientV2Base):
         :return: A tuple with the server response and the response body.
         """
         return self._delete_request('zones', uuid, params=params)
+
+    @base.handle_errors
+    def update_zone(self, uuid, email=None, ttl=None,
+                    description=None, wait_until=False, params=None):
+        """Update a zone with the specified parameters.
+        :param uuid: The unique identifier of the zone.
+        :param email: The email for the zone.
+            Default: Random Value
+        :param ttl: The ttl for the zone.
+            Default: Random Value
+        :param description: A description of the zone.
+            Default: Random Value
+        :param wait_until: Block until the zone reaches the desiered status
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :return: A tuple with the server response and the updated zone.
+        """
+        zone = {
+            'email': email or dns_data_utils.rand_email(),
+            'ttl': ttl or dns_data_utils.rand_ttl(),
+            'description': description or data_utils.rand_name('test-zone'),
+        }
+
+        resp, body = self._update_request('zones', uuid, zone, params=params)
+
+        if wait_until:
+            waiters.wait_for_zone_status(self, body['id'], wait_until)
+
+        return resp, body

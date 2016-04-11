@@ -28,4 +28,4 @@ class BaseDnsTest(test.BaseTestCase):
     # rest the actual roles.
     # NOTE(kiall) primary will result in a manager @ cls.os, alt will have
     # cls.os_alt, and admin will have cls.os_adm.
-    credentials = ['primary']
+    credentials = ['primary', 'alt', 'admin']
