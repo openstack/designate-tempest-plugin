@@ -58,3 +58,25 @@ class ZonesTest(base.BaseDnsTest):
         self.assertEqual('PENDING', zone['status'])
 
         waiters.wait_for_zone_404(self.client, zone['id'])
+
+    @test.attr(type='slow')
+    @test.idempotent_id('c9838adf-14dc-4097-9130-e5cea3727abb')
+    def test_delete_zone_pending_create(self):
+        LOG.info('Create a zone')
+        _, zone = self.client.create_zone()
+        self.addCleanup(self.client.delete_zone, zone['id'],
+                        ignore_errors=lib_exc.NotFound)
+
+        # NOTE(kiall): This is certainly a little racey, it's entirely
+        #              possible the zone will become active before we delete
+        #              it. Worst case, that means we get an unexpected pass.
+        #              Theres not a huge amount we can do, given this is
+        #              black-box testing.
+        LOG.info('Delete the zone while it is still pending')
+        _, zone = self.client.delete_zone(zone['id'])
+
+        LOG.info('Ensure we respond with DELETE+PENDING')
+        self.assertEqual('DELETE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        waiters.wait_for_zone_404(self.client, zone['id'])
