@@ -17,7 +17,7 @@ from designate_tempest_plugin import clients
 
 
 class BaseDnsTest(test.BaseTestCase):
-    """Base class for DNS API v2 tests."""
+    """Base class for DNS tests."""
 
     # Use the Designate Client Manager
     client_manager = clients.Manager
@@ -28,4 +28,6 @@ class BaseDnsTest(test.BaseTestCase):
     # rest the actual roles.
     # NOTE(kiall) primary will result in a manager @ cls.os, alt will have
     # cls.os_alt, and admin will have cls.os_adm.
-    credentials = ['primary', 'alt', 'admin']
+    # NOTE(kiall) We should default to only primary, and request additional
+    # credentials in the tests that require them.
+    credentials = ['primary']
