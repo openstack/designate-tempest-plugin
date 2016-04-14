@@ -11,6 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import six
 from tempest import test
 
 from designate_tempest_plugin import clients
@@ -31,3 +32,9 @@ class BaseDnsTest(test.BaseTestCase):
     # NOTE(kiall) We should default to only primary, and request additional
     # credentials in the tests that require them.
     credentials = ['primary']
+
+    def assertExpected(self, expected, actual, excluded_keys):
+        for key, value in six.iteritems(expected):
+            if key not in excluded_keys:
+                self.assertIn(key, actual)
+                self.assertEqual(value, actual[key], key)

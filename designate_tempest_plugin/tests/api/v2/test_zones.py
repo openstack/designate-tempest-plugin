@@ -11,7 +11,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import six
 from oslo_log import log as logging
 from tempest import test
 from tempest.lib import exceptions as lib_exc
@@ -22,12 +21,8 @@ LOG = logging.getLogger(__name__)
 
 
 class BaseZonesTest(base.BaseDnsTest):
-    def _assertExpected(self, expected, actual):
-        for key, value in six.iteritems(expected):
-            if key not in ('created_at', 'updated_at', 'version', 'links',
-                           'status', 'action'):
-                self.assertIn(key, actual)
-                self.assertEqual(value, actual[key], key)
+    excluded_keys = ['created_at', 'updated_at', 'version', 'links',
+                    'status', 'action']
 
 
 class ZonesTest(BaseZonesTest):
@@ -52,7 +47,7 @@ class ZonesTest(BaseZonesTest):
         _, body = self.client.show_zone(zone['id'])
 
         LOG.info('Ensure the fetched response matches the created zone')
-        self._assertExpected(zone, body)
+        self.assertExpected(zone, body, self.excluded_keys)
 
     @test.attr(type='smoke')
     @test.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
@@ -127,7 +122,7 @@ class ZonesAdminTest(BaseZonesTest):
             zone['id'], params={'all_projects': True})
 
         LOG.info('Ensure the fetched response matches the created zone')
-        self._assertExpected(zone, body)
+        self.assertExpected(zone, body, self.excluded_keys)
 
 
 class ZoneOwnershipTest(BaseZonesTest):
