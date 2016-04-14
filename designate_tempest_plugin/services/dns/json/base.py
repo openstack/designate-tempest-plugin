@@ -53,7 +53,7 @@ class DnsClientBase(rest_client.RestClient):
     def deserialize(self, object_str):
         return json.loads(object_str)
 
-    def _get_uri(self, resource_name, uuid=None, params=None):
+    def get_uri(self, resource_name, uuid=None, params=None):
         """Get URI for a specific resource or object.
         :param resource_name: The name of the REST resource, e.g., 'zones'.
         :param uuid: The unique identifier of an object in UUID format.
@@ -82,7 +82,7 @@ class DnsClientBase(rest_client.RestClient):
                  object.
         """
         body = self.serialize(object_dict)
-        uri = self._get_uri(resource, params=params)
+        uri = self.get_uri(resource, params=params)
 
         resp, body = self.post(uri, body=body)
         self.expected_success([201, 202], resp['status'])
@@ -97,7 +97,7 @@ class DnsClientBase(rest_client.RestClient):
                        include in the request URI.
         :returns: Serialized object as a dictionary.
         """
-        uri = self._get_uri(resource, uuid=uuid, params=params)
+        uri = self.get_uri(resource, uuid=uuid, params=params)
 
         resp, body = self.get(uri)
 
@@ -112,7 +112,7 @@ class DnsClientBase(rest_client.RestClient):
                        include in the request URI.
         :returns: Serialized object as a dictionary.
         """
-        uri = self._get_uri(resource, params=params)
+        uri = self.get_uri(resource, params=params)
 
         resp, body = self.get(uri)
 
@@ -131,7 +131,7 @@ class DnsClientBase(rest_client.RestClient):
         :returns: Serialized object as a dictionary.
         """
         body = self.serialize(object_dict)
-        uri = self._get_uri(resource, uuid=uuid, params=params)
+        uri = self.get_uri(resource, uuid=uuid, params=params)
 
         resp, body = self.patch(uri, body=body)
 
@@ -147,7 +147,7 @@ class DnsClientBase(rest_client.RestClient):
                        include in the request URI.
         :returns: A tuple with the server response and the response body.
         """
-        uri = self._get_uri(resource, uuid=uuid, params=params)
+        uri = self.get_uri(resource, uuid=uuid, params=params)
 
         resp, body = self.delete(uri)
         self.expected_success([202, 204], resp['status'])
