@@ -14,7 +14,9 @@
 from oslo_log import log as logging
 from tempest import test
 from tempest.lib import exceptions as lib_exc
+from tempest.lib.common.utils import data_utils
 
+from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 
 LOG = logging.getLogger(__name__)
@@ -43,7 +45,14 @@ class ZonesTest(BaseZonesTest):
         self.assertEqual('CREATE', zone['action'])
         self.assertEqual('PENDING', zone['status'])
 
-        LOG.info('Re-Fetch the zone')
+    @test.attr(type='smoke')
+    @test.idempotent_id('02ca5d6a-86ce-4f02-9d94-9e5db55c3055')
+    def test_show_zone(self):
+        LOG.info('Create a zone')
+        _, zone = self.client.create_zone()
+        self.addCleanup(self.client.delete_zone, zone['id'])
+
+        LOG.info('Fetch the zone')
         _, body = self.client.show_zone(zone['id'])
 
         LOG.info('Ensure the fetched response matches the created zone')
@@ -71,10 +80,6 @@ class ZonesTest(BaseZonesTest):
         _, zone = self.client.create_zone()
         self.addCleanup(self.client.delete_zone, zone['id'])
 
-        LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
-
         LOG.info('List zones')
         _, body = self.client.list_zones()
 
@@ -89,16 +94,27 @@ class ZonesTest(BaseZonesTest):
         _, zone = self.client.create_zone()
         self.addCleanup(self.client.delete_zone, zone['id'])
 
-        LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
+        # Generate a random description
+        description = data_utils.rand_name()
 
         LOG.info('Update the zone')
-        resp, body = self.client.update_zone(zone['id'])
+        _, zone = self.client.update_zone(
+            zone['id'], description=description)
 
-        self.assertEqual(202, resp.status)
-        self.assertEqual('UPDATE', body['action'])
-        self.assertEqual('PENDING', body['status'])
+        LOG.info('Ensure we respond with UPDATE+PENDING')
+        self.assertEqual('UPDATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        LOG.info('Ensure we respond with updated values')
+        self.assertEqual(description, zone['description'])
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
+    def test_list_zones_dot_json_fails(self):
+        uri = self.client.get_uri('zones.json')
+
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.get(uri))
 
 
 class ZonesAdminTest(BaseZonesTest):
@@ -142,9 +158,9 @@ class ZoneOwnershipTest(BaseZonesTest):
         _, zone = self.client.create_zone()
         self.addCleanup(self.client.delete_zone, zone['id'])
 
-        LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
+        LOG.info('Create a zone as an default with existing domain')
+        self.assertRaises(lib_exc.Conflict,
+            self.client.create_zone, name=zone['name'])
 
         LOG.info('Create a zone as an alt user with existing domain')
         self.assertRaises(lib_exc.Conflict,
@@ -157,11 +173,7 @@ class ZoneOwnershipTest(BaseZonesTest):
         _, zone = self.client.create_zone()
         self.addCleanup(self.client.delete_zone, zone['id'])
 
-        LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
-
-        LOG.info('Create a zone as an alt user with  existing subdomain')
+        LOG.info('Create a zone as an alt user with existing subdomain')
         self.assertRaises(lib_exc.Forbidden,
             self.alt_client.create_zone, name='sub.' + zone['name'])
         self.assertRaises(lib_exc.Forbidden,
@@ -170,14 +182,12 @@ class ZoneOwnershipTest(BaseZonesTest):
     @test.attr(type='smoke')
     @test.idempotent_id('f1723d48-c082-43cd-94bf-ebeb5b8c9458')
     def test_no_create_superdomain_by_alt_user(self):
-        LOG.info('Create a zone as a default user')
-        _, zone = self.client.create_zone(name='a.b.' + "example.com.")
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        zone_name = dns_data_utils.rand_zone_name()
 
-        LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
+        LOG.info('Create a zone as a default user')
+        _, zone = self.client.create_zone(name='a.b.' + zone_name)
+        self.addCleanup(self.client.delete_zone, zone['id'])
 
         LOG.info('Create a zone as an alt user with existing superdomain')
         self.assertRaises(lib_exc.Forbidden,
-            self.alt_client.create_zone, name='example.com.')
+            self.alt_client.create_zone, name=zone_name)

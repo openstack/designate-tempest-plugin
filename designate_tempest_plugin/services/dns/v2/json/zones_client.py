@@ -48,6 +48,9 @@ class ZonesClient(base.DnsClientV2Base):
 
         resp, body = self._create_request('zones', zone, params=params)
 
+        # Create Zone should Return a HTTP 202
+        self.expected_success(202, resp['status'])
+
         if wait_until:
             waiters.wait_for_zone_status(self, body['id'], wait_until)
 
@@ -80,7 +83,12 @@ class ZonesClient(base.DnsClientV2Base):
                        include in the request URI.
         :return: A tuple with the server response and the response body.
         """
-        return self._delete_request('zones', uuid, params=params)
+        resp, body = self._delete_request('zones', uuid, params=params)
+
+        # Delete Zone should Return a HTTP 202
+        self.expected_success(202, resp['status'])
+
+        return resp, body
 
     @base.handle_errors
     def update_zone(self, uuid, email=None, ttl=None,
@@ -105,6 +113,9 @@ class ZonesClient(base.DnsClientV2Base):
         }
 
         resp, body = self._update_request('zones', uuid, zone, params=params)
+
+        # Update Zone should Return a HTTP 202
+        self.expected_success(202, resp['status'])
 
         if wait_until:
             waiters.wait_for_zone_status(self, body['id'], wait_until)
