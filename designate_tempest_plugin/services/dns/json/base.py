@@ -53,6 +53,19 @@ class DnsClientBase(rest_client.RestClient):
     def deserialize(self, object_str):
         return json.loads(object_str)
 
+    def expected_success(self, expected_code, read_code):
+        # the base class method does not check correctly if read_code is not
+        # an int. warn about this and cast to int to avoid silent errors.
+        if not isinstance(read_code, int):
+            message = ("expected_success(%(expected_code)r, %(read_code)r) "
+                       "received not-int read_code %(read_code)r" %
+                       {'expected_code': expected_code,
+                        'read_code': read_code})
+            LOG.warn(message)
+        return super(DnsClientBase, self).expected_success(
+            expected_code=expected_code, read_code=int(read_code),
+        )
+
     def get_uri(self, resource_name, uuid=None, params=None):
         """Get URI for a specific resource or object.
         :param resource_name: The name of the REST resource, e.g., 'zones'.
@@ -85,7 +98,7 @@ class DnsClientBase(rest_client.RestClient):
         uri = self.get_uri(resource, params=params)
 
         resp, body = self.post(uri, body=body)
-        self.expected_success([201, 202], resp['status'])
+        self.expected_success([201, 202], resp.status)
 
         return resp, self.deserialize(body)
 
@@ -101,7 +114,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.get(uri)
 
-        self.expected_success(200, resp['status'])
+        self.expected_success(200, resp.status)
 
         return resp, self.deserialize(body)
 
@@ -116,7 +129,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.get(uri)
 
-        self.expected_success(200, resp['status'])
+        self.expected_success(200, resp.status)
 
         return resp, self.deserialize(body)
 
@@ -135,7 +148,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.patch(uri, body=body)
 
-        self.expected_success(200, resp['status'])
+        self.expected_success(202, resp.status)
 
         return resp, self.deserialize(body)
 
@@ -150,5 +163,5 @@ class DnsClientBase(rest_client.RestClient):
         uri = self.get_uri(resource, uuid=uuid, params=params)
 
         resp, body = self.delete(uri)
-        self.expected_success([202, 204], resp['status'])
+        self.expected_success([202, 204], resp.status)
         return resp, self.deserialize(body)
