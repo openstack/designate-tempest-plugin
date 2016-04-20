@@ -84,20 +84,28 @@ class DnsClientBase(rest_client.RestClient):
                                   uuid=uuid,
                                   params=params)
 
-    def _create_request(self, resource, object_dict, params=None):
+    def _create_request(self, resource, object_dict, params=None,
+                        headers=None, extra_headers=False):
         """Create an object of the specified type.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param object_dict: A Python dict that represents an object of the
                             specified type.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
+        :param extra_headers (bool): Boolean value than indicates if the
+                                     headers returned by the get_headers()
+                                     method are to be used but additional
+                                     headers are needed in the request
+                                     pass them in as a dict.
         :returns: A tuple with the server response and the deserialized created
                  object.
         """
         body = self.serialize(object_dict)
         uri = self.get_uri(resource, params=params)
 
-        resp, body = self.post(uri, body=body)
+        resp, body = self.post(uri, body=body, headers=headers,
+                               extra_headers=extra_headers)
         self.expected_success([201, 202], resp.status)
 
         return resp, self.deserialize(body)
@@ -119,7 +127,7 @@ class DnsClientBase(rest_client.RestClient):
         return resp, self.deserialize(body)
 
     def _list_request(self, resource, params=None):
-        """Gets a list of specific objects.
+        """Gets a list of objects.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
@@ -134,7 +142,7 @@ class DnsClientBase(rest_client.RestClient):
         return resp, self.deserialize(body)
 
     def _update_request(self, resource, uuid, object_dict, params=None):
-        """Update a specified object.
+        """Updates the specified object.
         :param resource: The name of the REST resource, e.g., 'zones'
         :param uuid: Unique identifier of the object in UUID format.
         :param object_dict: A Python dict that represents an object of the
@@ -153,7 +161,7 @@ class DnsClientBase(rest_client.RestClient):
         return resp, self.deserialize(body)
 
     def _delete_request(self, resource, uuid, params=None):
-        """Delete specified object.
+        """Deletes the specified object.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: The unique identifier of an object in UUID format.
         :param params: A Python dict that represents the query paramaters to
@@ -164,4 +172,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.delete(uri)
         self.expected_success([202, 204], resp.status)
-        return resp, self.deserialize(body)
+        if resp.status == 202:
+            body = self.deserialize(body)
+
+        return resp, body

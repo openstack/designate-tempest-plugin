@@ -16,7 +16,8 @@ from tempest import config
 
 from designate_tempest_plugin.services.dns.v2.json.zones_client import \
     ZonesClient
-
+from designate_tempest_plugin.services.dns.v2.json.zone_imports_client import \
+    ZoneImportsClient
 
 CONF = config.CONF
 
@@ -35,3 +36,5 @@ class Manager(clients.Manager):
         params.update(self.default_params)
 
         self.zones_client = ZonesClient(self.auth_provider, **params)
+        self.zone_imports_client = ZoneImportsClient(self.auth_provider,
+                                                     **params)

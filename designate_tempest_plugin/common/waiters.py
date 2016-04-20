@@ -81,3 +81,36 @@ def wait_for_zone_status(client, zone_id, status):
                 message = '(%s) %s' % (caller, message)
 
             raise lib_exc.TimeoutException(message)
+
+
+def wait_for_zone_import_status(client, zone_import_id, status):
+    """Waits for an imported zone to reach the given status."""
+    LOG.info('Waiting for zone import %s to reach %s', zone_import_id, status)
+
+    _, zone_import = client.show_zone_import(zone_import_id)
+    start = int(time.time())
+
+    while zone_import['status'] != status:
+        time.sleep(client.build_interval)
+        _, zone_import = client.show_zone_import(zone_import_id)
+        status_curr = zone_import['status']
+        if status_curr == status:
+            LOG.info('Zone import %s reached %s', zone_import_id, status)
+            return
+
+        if int(time.time()) - start >= client.build_timeout:
+            message = ('Zone import %(zone_import_id)s failed to reach '
+                       'status=%(status)s within the required time '
+                       '(%(timeout)s s). Current '
+                       'status: %(status_curr)s' %
+                       {'zone_import_id': zone_import_id,
+                        'status': status,
+                        'status_curr': status_curr,
+                        'timeout': client.build_timeout})
+
+            caller = misc_utils.find_test_caller()
+
+            if caller:
+                message = '(%s) %s' % (caller, message)
+
+            raise lib_exc.TimeoutException(message)
