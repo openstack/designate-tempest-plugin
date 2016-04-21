@@ -14,6 +14,12 @@
 from tempest import clients
 from tempest import config
 
+from designate_tempest_plugin.services.dns.v1.json.domains_client import \
+    DomainsClient
+from designate_tempest_plugin.services.dns.v1.json.records_client import \
+    RecordsClient
+from designate_tempest_plugin.services.dns.v1.json.servers_client import \
+    ServersClient
 from designate_tempest_plugin.services.dns.v2.json.zones_client import \
     ZonesClient
 from designate_tempest_plugin.services.dns.v2.json.zone_imports_client import \
@@ -34,9 +40,27 @@ from designate_tempest_plugin.services.dns.v2.json.tld_client import \
 CONF = config.CONF
 
 
-class Manager(clients.Manager):
+class ManagerV1(clients.Manager):
     def __init__(self, credentials=None, service=None):
-        super(Manager, self).__init__(credentials, service)
+        super(ManagerV1, self).__init__(credentials, service)
+
+        params = {
+            'service': CONF.dns.catalog_type,
+            'region': CONF.identity.region,
+            'endpoint_type': CONF.dns.endpoint_type,
+            'build_interval': CONF.dns.build_interval,
+            'build_timeout': CONF.dns.build_timeout
+        }
+        params.update(self.default_params)
+
+        self.domains_client = DomainsClient(self.auth_provider, **params)
+        self.records_client = RecordsClient(self.auth_provider, **params)
+        self.servers_client = ServersClient(self.auth_provider, **params)
+
+
+class ManagerV2(clients.Manager):
+    def __init__(self, credentials=None, service=None):
+        super(ManagerV2, self).__init__(credentials, service)
 
         params = {
             'service': CONF.dns.catalog_type,

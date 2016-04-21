@@ -23,7 +23,7 @@ from designate_tempest_plugin.tests import base
 LOG = logging.getLogger(__name__)
 
 
-class BasePoolTest(base.BaseDnsTest):
+class BasePoolTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'links', 'ns_records']
 
     def _assertExpectedNSRecords(self, expected, actual, expected_key):

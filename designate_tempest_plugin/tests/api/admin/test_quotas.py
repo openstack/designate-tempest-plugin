@@ -20,7 +20,7 @@ from designate_tempest_plugin import data_utils as dns_data_utils
 LOG = logging.getLogger(__name__)
 
 
-class BaseQuotasTest(base.BaseDnsTest):
+class BaseQuotasTest(base.BaseDnsAdminTest):
     # see: https://bugs.launchpad.net/designate/+bug/1573141
     excluded_keys = ['api_expected_size']
 

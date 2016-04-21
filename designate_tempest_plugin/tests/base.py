@@ -13,15 +13,16 @@
 # under the License.
 import six
 from tempest import test
+from tempest import config
 
 from designate_tempest_plugin import clients
 
 
+CONF = config.CONF
+
+
 class BaseDnsTest(test.BaseTestCase):
     """Base class for DNS tests."""
-
-    # Use the Designate Client Manager
-    client_manager = clients.Manager
 
     # NOTE(andreaf) credentials holds a list of the credentials to be allocated
     # at class setup time. Credential types can be 'primary', 'alt', 'admin' or
@@ -33,8 +34,64 @@ class BaseDnsTest(test.BaseTestCase):
     # credentials in the tests that require them.
     credentials = ['primary']
 
+    @classmethod
+    def skip_checks(cls):
+        super(BaseDnsTest, cls).skip_checks()
+
+        if not CONF.service_available.designate:
+            skip_msg = ("%s skipped as designate is not available"
+                        % cls.__name__)
+            raise cls.skipException(skip_msg)
+
     def assertExpected(self, expected, actual, excluded_keys):
         for key, value in six.iteritems(expected):
             if key not in excluded_keys:
                 self.assertIn(key, actual)
                 self.assertEqual(value, actual[key], key)
+
+
+class BaseDnsV1Test(BaseDnsTest):
+    """Base class for DNS V1 API tests."""
+
+    # Use the Designate V1 Client Manager
+    client_manager = clients.ManagerV1
+
+    @classmethod
+    def skip_checks(cls):
+        super(BaseDnsV1Test, cls).skip_checks()
+
+        if not CONF.dns_feature_enabled.api_v1:
+            skip_msg = ("%s skipped as designate v1 API is not available"
+                        % cls.__name__)
+            raise cls.skipException(skip_msg)
+
+
+class BaseDnsV2Test(BaseDnsTest):
+    """Base class for DNS V2 API tests."""
+
+    # Use the Designate V2 Client Manager
+    client_manager = clients.ManagerV2
+
+    @classmethod
+    def skip_checks(cls):
+        super(BaseDnsV2Test, cls).skip_checks()
+
+        if not CONF.dns_feature_enabled.api_v2:
+            skip_msg = ("%s skipped as designate v2 API is not available"
+                        % cls.__name__)
+            raise cls.skipException(skip_msg)
+
+
+class BaseDnsAdminTest(BaseDnsTest):
+    """Base class for DNS Admin API tests."""
+
+    # Use the Designate V2 Client Manager
+    client_manager = clients.ManagerV2
+
+    @classmethod
+    def skip_checks(cls):
+        super(BaseDnsAdminTest, cls).skip_checks()
+        if not CONF.dns_feature_enabled.api_admin:
+            skip_msg = ("%s skipped as designate admin API is not available"
+                        % cls.__name__)
+            raise cls.skipException(skip_msg)

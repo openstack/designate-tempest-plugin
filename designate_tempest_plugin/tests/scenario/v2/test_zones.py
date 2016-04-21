@@ -21,7 +21,7 @@ from designate_tempest_plugin.common import waiters
 LOG = logging.getLogger(__name__)
 
 
-class ZonesTest(base.BaseDnsTest):
+class ZonesTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()

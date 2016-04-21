@@ -49,6 +49,13 @@ class DnsClientBase(rest_client.RestClient):
 
     uri_prefix = ''
 
+    CREATE_STATUS_CODES = []
+    SHOW_STATUS_CODES = []
+    LIST_STATUS_CODES = []
+    PUT_STATUS_CODES = []
+    UPDATE_STATUS_CODES = []
+    DELETE_STATUS_CODES = []
+
     def serialize(self, object_dict):
         return json.dumps(object_dict)
 
@@ -114,7 +121,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.post(uri, body=body, headers=headers,
                                extra_headers=extra_headers)
-        self.expected_success([201, 202], resp.status)
+        self.expected_success(self.CREATE_STATUS_CODES, resp.status)
 
         return resp, self.deserialize(resp, body)
 
@@ -130,7 +137,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.get(uri, headers=headers)
 
-        self.expected_success(200, resp.status)
+        self.expected_success(self.SHOW_STATUS_CODES, resp.status)
 
         return resp, self.deserialize(resp, body)
 
@@ -145,7 +152,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.get(uri)
 
-        self.expected_success(200, resp.status)
+        self.expected_success(self.LIST_STATUS_CODES, resp.status)
 
         return resp, self.deserialize(resp, body)
 
@@ -163,7 +170,7 @@ class DnsClientBase(rest_client.RestClient):
         uri = self.get_uri(resource, uuid=uuid, params=params)
         resp, body = self.put(uri, body=body)
 
-        self.expected_success([200, 202], resp.status)
+        self.expected_success(self.PUT_STATUS_CODES, resp.status)
 
         return resp, self.deserialize(resp, body)
 
@@ -182,7 +189,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.patch(uri, body=body)
 
-        self.expected_success([200, 202], resp.status)
+        self.expected_success(self.UPDATE_STATUS_CODES, resp.status)
 
         return resp, self.deserialize(resp, body)
 
@@ -197,7 +204,7 @@ class DnsClientBase(rest_client.RestClient):
         uri = self.get_uri(resource, uuid=uuid, params=params)
 
         resp, body = self.delete(uri)
-        self.expected_success([202, 204], resp.status)
+        self.expected_success(self.DELETE_STATUS_CODES, resp.status)
         if resp.status == 202:
             body = self.deserialize(resp, body)
 

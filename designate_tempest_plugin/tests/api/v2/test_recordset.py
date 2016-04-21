@@ -21,7 +21,7 @@ from designate_tempest_plugin import data_utils
 LOG = logging.getLogger(__name__)
 
 
-class BaseRecordsetsTest(base.BaseDnsTest):
+class BaseRecordsetsTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                      'type']
 

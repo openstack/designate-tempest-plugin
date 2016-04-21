@@ -16,13 +16,13 @@ from designate_tempest_plugin.services.dns.json import base
 handle_errors = base.handle_errors
 
 
-class DnsClientV2Base(base.DnsClientBase):
-    """Base API V2 Tempest REST client for Designate API"""
-    uri_prefix = 'v2'
+class DnsClientV1Base(base.DnsClientBase):
+    """Base API V1 Tempest REST client for Designate API"""
+    uri_prefix = 'v1'
 
-    CREATE_STATUS_CODES = [201, 202]
+    CREATE_STATUS_CODES = [200]
     SHOW_STATUS_CODES = [200]
     LIST_STATUS_CODES = [200]
-    PUT_STATUS_CODES = [200, 202]
-    UPDATE_STATUS_CODES = [200, 202]
-    DELETE_STATUS_CODES = [202, 204]
+    PUT_STATUS_CODES = [200]
+    UPDATE_STATUS_CODES = []
+    DELETE_STATUS_CODES = [200]

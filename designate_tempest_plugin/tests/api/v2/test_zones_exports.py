@@ -21,7 +21,7 @@ from designate_tempest_plugin.tests import base
 LOG = logging.getLogger(__name__)
 
 
-class BaseZoneExportsTest(base.BaseDnsTest):
+class BaseZoneExportsTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                      'status', 'location']
 
