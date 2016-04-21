@@ -156,7 +156,7 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.patch(uri, body=body)
 
-        self.expected_success(202, resp.status)
+        self.expected_success([200, 202], resp.status)
 
         return resp, self.deserialize(body)
 
