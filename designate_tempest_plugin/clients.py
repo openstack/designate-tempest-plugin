@@ -20,6 +20,8 @@ from designate_tempest_plugin.services.dns.v2.json.zone_imports_client import \
     ZoneImportsClient
 from designate_tempest_plugin.services.dns.v2.json.blacklists_client import \
     BlacklistsClient
+from designate_tempest_plugin.services.dns.admin.json.quotas_client import \
+    QuotasClient
 
 CONF = config.CONF
 
@@ -41,3 +43,4 @@ class Manager(clients.Manager):
         self.zone_imports_client = ZoneImportsClient(self.auth_provider,
                                                      **params)
         self.blacklists_client = BlacklistsClient(self.auth_provider, **params)
+        self.quotas_client = QuotasClient(self.auth_provider, **params)

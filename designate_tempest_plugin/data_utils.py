@@ -11,8 +11,10 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-
+from oslo_log import log as logging
 from tempest.lib.common.utils import data_utils
+
+LOG = logging.getLogger(__name__)
 
 
 def rand_zone_name(name='', prefix=None, suffix='.com.'):
@@ -57,3 +59,24 @@ def rand_zonefile_data(name=None, ttl=None):
         ttl = str(rand_ttl(1200, 8400))
 
     return zone_base.replace('&', name).replace('#', ttl)
+
+
+def rand_quotas(zones=None, zone_records=None, zone_recordsets=None,
+                recordset_records=None, api_export_size=None):
+    LOG.warn("Leaving `api_export_size` out of quota data due to: "
+             "https://bugs.launchpad.net/designate/+bug/1573141")
+    return {
+        'quota': {
+            'zones':
+                zones or data_utils.rand_int_id(100, 999999),
+            'zone_records':
+                zone_records or data_utils.rand_int_id(100, 999999),
+            'zone_recordsets':
+                zone_recordsets or data_utils.rand_int_id(100, 999999),
+            'recordset_records':
+                recordset_records or data_utils.rand_int_id(100, 999999),
+            # https://bugs.launchpad.net/designate/+bug/1573141
+            # 'api_export_size':
+            #     api_export_size or data_utils.rand_int_id(100, 999999),
+        }
+    }

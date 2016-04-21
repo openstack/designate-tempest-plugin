@@ -14,13 +14,13 @@ build
 *.log
 .coverage
 .coverage.*
-.testrepository/*
+/.testrepository/*
 .tox
 .venv
 cover
 flake8_results.html
-functionaltests/.testrepository/
-functionaltests/tempest.log
+tempest.log
+tempest.conf
 htmlcov/
 venv
 
