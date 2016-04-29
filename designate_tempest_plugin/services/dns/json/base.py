@@ -16,8 +16,10 @@ import functools
 from oslo_log import log as logging
 from oslo_serialization import jsonutils as json
 from tempest.lib.common import rest_client
+from tempest.lib import exceptions as lib_exc
 from six.moves.urllib import parse as urllib
 
+from designate_tempest_plugin.common.models import ZoneFile
 
 LOG = logging.getLogger(__name__)
 
@@ -50,8 +52,13 @@ class DnsClientBase(rest_client.RestClient):
     def serialize(self, object_dict):
         return json.dumps(object_dict)
 
-    def deserialize(self, object_str):
-        return json.loads(object_str)
+    def deserialize(self, resp, object_str):
+        if 'application/json' in resp['content-type']:
+            return json.loads(object_str)
+        elif 'text/dns' in resp['content-type']:
+            return ZoneFile.from_text(object_str)
+        else:
+            raise lib_exc.InvalidContentType()
 
     def expected_success(self, expected_code, read_code):
         # the base class method does not check correctly if read_code is not
@@ -84,7 +91,7 @@ class DnsClientBase(rest_client.RestClient):
                                   uuid=uuid,
                                   params=params)
 
-    def _create_request(self, resource, object_dict, params=None,
+    def _create_request(self, resource, object_dict=None, params=None,
                         headers=None, extra_headers=False):
         """Create an object of the specified type.
         :param resource: The name of the REST resource, e.g., 'zones'.
@@ -108,9 +115,9 @@ class DnsClientBase(rest_client.RestClient):
                                extra_headers=extra_headers)
         self.expected_success([201, 202], resp.status)
 
-        return resp, self.deserialize(body)
+        return resp, self.deserialize(resp, body)
 
-    def _show_request(self, resource, uuid, params=None):
+    def _show_request(self, resource, uuid, headers=None, params=None):
         """Gets a specific object of the specified type.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: Unique identifier of the object in UUID format.
@@ -120,11 +127,11 @@ class DnsClientBase(rest_client.RestClient):
         """
         uri = self.get_uri(resource, uuid=uuid, params=params)
 
-        resp, body = self.get(uri)
+        resp, body = self.get(uri, headers=headers)
 
         self.expected_success(200, resp.status)
 
-        return resp, self.deserialize(body)
+        return resp, self.deserialize(resp, body)
 
     def _list_request(self, resource, params=None):
         """Gets a list of objects.
@@ -139,7 +146,7 @@ class DnsClientBase(rest_client.RestClient):
 
         self.expected_success(200, resp.status)
 
-        return resp, self.deserialize(body)
+        return resp, self.deserialize(resp, body)
 
     def _update_request(self, resource, uuid, object_dict, params=None):
         """Updates the specified object.
@@ -158,7 +165,7 @@ class DnsClientBase(rest_client.RestClient):
 
         self.expected_success([200, 202], resp.status)
 
-        return resp, self.deserialize(body)
+        return resp, self.deserialize(resp, body)
 
     def _delete_request(self, resource, uuid, params=None):
         """Deletes the specified object.
@@ -173,6 +180,6 @@ class DnsClientBase(rest_client.RestClient):
         resp, body = self.delete(uri)
         self.expected_success([202, 204], resp.status)
         if resp.status == 202:
-            body = self.deserialize(body)
+            body = self.deserialize(resp, body)
 
         return resp, body
