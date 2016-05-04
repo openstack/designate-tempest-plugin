@@ -196,3 +196,13 @@ def wildcard_ns_recordset(zone_name):
     name = "*.{0}".format(zone_name)
     records = ["ns.example.com."]
     return rand_recordset_data('NS', zone_name, name, records)
+
+
+def rand_ns_records():
+    ns_zone = rand_zone_name()
+    records = []
+    for i in range(0, 2):
+        records.append("ns%s.%s" % (i, ns_zone))
+    ns_records = [{"hostname": x, "priority": random.randint(1, 999)}
+                  for x in records]
+    return ns_records

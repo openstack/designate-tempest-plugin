@@ -26,6 +26,8 @@ from designate_tempest_plugin.services.dns.v2.json.zone_exports_client import \
     ZoneExportsClient
 from designate_tempest_plugin.services.dns.v2.json.recordset_client import \
     RecordsetClient
+from designate_tempest_plugin.services.dns.v2.json.pool_client import \
+    PoolClient
 
 CONF = config.CONF
 
@@ -52,3 +54,5 @@ class Manager(clients.Manager):
                                                      **params)
         self.recordset_client = RecordsetClient(self.auth_provider,
                                                 **params)
+        self.pool_client = PoolClient(self.auth_provider,
+                                      **params)
