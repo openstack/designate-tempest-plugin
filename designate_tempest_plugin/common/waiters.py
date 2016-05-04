@@ -114,3 +114,37 @@ def wait_for_zone_import_status(client, zone_import_id, status):
                 message = '(%s) %s' % (caller, message)
 
             raise lib_exc.TimeoutException(message)
+
+
+def wait_for_recordset_status(client, recordset_id, status):
+    """Waits for a recordset to reach the given status."""
+    LOG.info('Waiting for recordset %s to reach %s',
+             recordset_id, status)
+
+    _, recordset = client.show_recordset(recordset_id)
+    start = int(time.time())
+
+    while recordset['status'] != status:
+        time.sleep(client.build_interval)
+        _, recordset = client.show_recordset(recordset_id)
+        status_curr = recordset['status']
+        if status_curr == status:
+            LOG.info('Recordset %s reached %s', recordset_id, status)
+            return
+
+        if int(time.time()) - start >= client.build_timeout:
+            message = ('Recordset %(recordset_id)s failed to reach '
+                       'status=%(status) within the required time '
+                       '(%(timeout)s s). Current '
+                       'status: %(status_curr)s' %
+                       {'recordset_id': recordset_id,
+                        'status': status,
+                        'status_curr': status_curr,
+                        'timeout': client.build_timeout})
+
+            caller = misc_utils.find_test_caller()
+
+            if caller:
+                message = '(%s) %s' % (caller, message)
+
+            raise lib_exc.TimeoutException(message)

@@ -148,8 +148,26 @@ class DnsClientBase(rest_client.RestClient):
 
         return resp, self.deserialize(resp, body)
 
+    def _put_request(self, resource, uuid, object_dict, params=None):
+        """Updates the specified object using PUT request.
+        :param resource: The name of the REST resource, e.g., 'zones'.
+        :param uuid: Unique identifier of the object in UUID format.
+        :param object_dict: A Python dict that represents an object of the
+                            specified type
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :returns: Serialized object as a dictionary.
+        """
+        body = self.serialize(object_dict)
+        uri = self.get_uri(resource, uuid=uuid, params=params)
+        resp, body = self.put(uri, body=body)
+
+        self.expected_success([200, 202], resp.status)
+
+        return resp, self.deserialize(resp, body)
+
     def _update_request(self, resource, uuid, object_dict, params=None):
-        """Updates the specified object.
+        """Updates the specified object using PATCH request.
         :param resource: The name of the REST resource, e.g., 'zones'
         :param uuid: Unique identifier of the object in UUID format.
         :param object_dict: A Python dict that represents an object of the
