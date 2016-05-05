@@ -28,6 +28,8 @@ from designate_tempest_plugin.services.dns.v2.json.recordset_client import \
     RecordsetClient
 from designate_tempest_plugin.services.dns.v2.json.pool_client import \
     PoolClient
+from designate_tempest_plugin.services.dns.v2.json.tld_client import \
+    TldClient
 
 CONF = config.CONF
 
@@ -56,3 +58,5 @@ class Manager(clients.Manager):
                                                 **params)
         self.pool_client = PoolClient(self.auth_provider,
                                       **params)
+        self.tld_client = TldClient(self.auth_provider,
+                                    **params)

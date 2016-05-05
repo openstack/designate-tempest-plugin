@@ -206,3 +206,10 @@ def rand_ns_records():
     ns_records = [{"hostname": x, "priority": random.randint(1, 999)}
                   for x in records]
     return ns_records
+
+
+def rand_tld():
+    data = {
+        "name": rand_zone_name(prefix='tld', suffix='')
+    }
+    return data
