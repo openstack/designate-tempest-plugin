@@ -15,9 +15,11 @@ import random
 
 import netaddr
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib.common.utils import data_utils
 
 LOG = logging.getLogger(__name__)
+CONF = config.CONF
 
 
 def rand_ip():
@@ -58,6 +60,7 @@ def rand_ttl(start=1, end=86400):
     :return: a random ttl e.g. 165
     :rtype: string
     """
+    start = max(start, CONF.dns.min_ttl)
     return data_utils.rand_int_id(start, end)
 
 
@@ -71,9 +74,9 @@ def rand_zonefile_data(name=None, ttl=None):
     if name is None:
         name = rand_zone_name()
     if ttl is None:
-        ttl = str(rand_ttl(1200, 8400))
+        ttl = rand_ttl()
 
-    return zone_base.replace('&', name).replace('#', ttl)
+    return zone_base.replace('&', name).replace('#', str(ttl))
 
 
 def rand_quotas(zones=None, zone_records=None, zone_recordsets=None,
@@ -109,11 +112,11 @@ def rand_zone_data(name=None, email=None, ttl=None, description=None):
     if description is None:
         description = rand_zone_name(prefix='Description ', suffix='')
     if ttl is None:
-        ttl = random.randint(1200, 8400),
+        ttl = rand_ttl()
     return {
         'name': name,
         'email': email,
-        'ttl': random.randint(1200, 8400),
+        'ttl': ttl,
         'description': description}
 
 
@@ -128,7 +131,7 @@ def rand_recordset_data(record_type, zone_name, name=None, records=None,
     if records is None:
         records = [rand_ip()]
     if ttl is None:
-        ttl = random.randint(1200, 8400)
+        ttl = rand_ttl()
     return {
         'type': record_type,
         'name': name,
