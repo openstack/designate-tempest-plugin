@@ -60,7 +60,8 @@ class DnsClientBase(rest_client.RestClient):
         else:
             raise lib_exc.InvalidContentType()
 
-    def expected_success(self, expected_code, read_code):
+    @classmethod
+    def expected_success(cls, expected_code, read_code):
         # the base class method does not check correctly if read_code is not
         # an int. warn about this and cast to int to avoid silent errors.
         if not isinstance(read_code, int):
@@ -69,7 +70,7 @@ class DnsClientBase(rest_client.RestClient):
                        {'expected_code': expected_code,
                         'read_code': read_code})
             LOG.warn(message)
-        return super(DnsClientBase, self).expected_success(
+        return super(DnsClientBase, cls).expected_success(
             expected_code=expected_code, read_code=int(read_code),
         )
 
