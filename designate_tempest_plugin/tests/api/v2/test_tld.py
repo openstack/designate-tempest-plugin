@@ -69,7 +69,7 @@ class TldAdminTest(BaseTldTest):
         _, body = self.admin_client.show_tld(tld['id'])
 
         LOG.info('Ensure the fetched response matches the created tld')
-        # self.assertExpected(tld, body, self.excluded_keys)
+        self.assertExpected(tld, body, self.excluded_keys)
 
     @test.attr(type='smoke')
     @test.idempotent_id('26708cb8-7126-48a7-9424-1c225e56e609')
