@@ -19,3 +19,10 @@ handle_errors = base.handle_errors
 class DnsClientAdminBase(base.DnsClientBase):
     """Base Admin API Tempest REST client for Designate API"""
     uri_prefix = 'admin'
+
+    CREATE_STATUS_CODES = [201, 202]
+    SHOW_STATUS_CODES = [200]
+    LIST_STATUS_CODES = [200]
+    PUT_STATUS_CODES = [200, 202]
+    UPDATE_STATUS_CODES = [200, 202]
+    DELETE_STATUS_CODES = [202, 204]

@@ -13,6 +13,15 @@
 # under the License.
 from oslo_config import cfg
 
+service_available_group = cfg.OptGroup(name="service_available",
+                                       title="Available OpenStack Services")
+
+ServiceAvailableGroup = [
+    cfg.BoolOpt("designate",
+                default=True,
+                help="Whether or not designate is expected to be available."),
+]
+
 dns_group = cfg.OptGroup(name='dns',
                          title='DNS service options')
 
@@ -35,4 +44,22 @@ DnsGroup = [
                default=1,
                help="The minimum value to respect when generating ttls"),
 
+]
+
+dns_feature_group = cfg.OptGroup(name='dns_feature_enabled',
+                                 title='Enabled Designate Features')
+
+DnsFeatureGroup = [
+    cfg.BoolOpt('api_v1',
+                default=True,
+                help="Is the v1 dns API enabled."),
+    cfg.BoolOpt('api_v2',
+                default=True,
+                help="Is the v2 dns API enabled."),
+    cfg.BoolOpt('api_admin',
+                default=True,
+                help="Is the admin dns API enabled."),
+    cfg.BoolOpt('api_v1_servers',
+                default=False,
+                help="Is the v1 dns servers API enabled."),
 ]

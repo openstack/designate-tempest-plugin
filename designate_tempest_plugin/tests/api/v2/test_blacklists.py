@@ -22,7 +22,7 @@ from designate_tempest_plugin.tests import base
 LOG = logging.getLogger(__name__)
 
 
-class BaseBlacklistsTest(base.BaseDnsTest):
+class BaseBlacklistsTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'links']
 
 
