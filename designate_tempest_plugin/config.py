@@ -68,4 +68,7 @@ DnsFeatureGroup = [
     cfg.BoolOpt('api_v1_servers',
                 default=False,
                 help="Is the v1 dns servers API enabled."),
+    cfg.BoolOpt('api_v2_root_recordsets',
+                default=False,
+                help="Is the v2 root recordsets API enabled."),
 ]

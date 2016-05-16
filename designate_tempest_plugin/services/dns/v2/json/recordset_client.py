@@ -87,6 +87,16 @@ class RecordsetClient(base.DnsClientV2Base):
             'zones/{0}/recordsets'.format(uuid), params=params)
 
     @base.handle_errors
+    def list_zones_recordsets(self, params=None):
+        """List recordsets across all zones.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :return: Serialized recordset as a list.
+        """
+        return self._list_request(
+            'recordsets', params=params)
+
+    @base.handle_errors
     def update_recordset(self, zone_uuid, recordset_uuid,
                          recordset_model, params=None):
         """Update the recordset related to the specified zone.
