@@ -36,6 +36,8 @@ from designate_tempest_plugin.services.dns.v2.json.pool_client import \
     PoolClient
 from designate_tempest_plugin.services.dns.v2.json.tld_client import \
     TldClient
+from designate_tempest_plugin.services.dns.query.query_client import \
+    QueryClient
 
 CONF = config.CONF
 
@@ -84,3 +86,9 @@ class ManagerV2(clients.Manager):
                                       **params)
         self.tld_client = TldClient(self.auth_provider,
                                     **params)
+        self.query_client = QueryClient(
+            nameservers=CONF.dns.nameservers,
+            query_timeout=CONF.dns.query_timeout,
+            build_interval=CONF.dns.build_interval,
+            build_timeout=CONF.dns.build_timeout,
+        )

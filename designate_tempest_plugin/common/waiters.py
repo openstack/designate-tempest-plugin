@@ -148,3 +148,48 @@ def wait_for_recordset_status(client, recordset_id, status):
                 message = '(%s) %s' % (caller, message)
 
             raise lib_exc.TimeoutException(message)
+
+
+def wait_for_query(client, name, rdatatype, found=True):
+    """Query nameservers until the record of the given name and type is found.
+
+    :param client: A QueryClient
+    :param name: The record name for which to query
+    :param rdatatype: The record type for which to query
+    :param found: If True, wait until the record is found. Else, wait until the
+        record disappears.
+    """
+    state = "found" if found else "removed"
+    LOG.info("Waiting for record %s of type %s to be %s on nameservers %s",
+             name, rdatatype, state, client.nameservers)
+    start = int(time.time())
+
+    while True:
+        time.sleep(client.build_interval)
+
+        responses = client.query(name, rdatatype)
+        if found:
+            all_answers_good = all(r.answer for r in responses)
+        else:
+            all_answers_good = all(not r.answer for r in responses)
+
+        if not client.nameservers or all_answers_good:
+            LOG.info("Record %s of type %s was successfully %s on nameservers "
+                     "%s", name, rdatatype, state, client.nameservers)
+            return
+
+        if int(time.time()) - start >= client.build_timeout:
+            message = ('Record %(name)s of type %(rdatatype)s not %(state)s '
+                       'on nameservers %(nameservers)s within the required '
+                       'time (%(timeout)s s)' %
+                       {'name': name,
+                        'rdatatype': rdatatype,
+                        'state': state,
+                        'nameservers': client.nameservers,
+                        'timeout': client.build_timeout})
+
+            caller = misc_utils.find_test_caller()
+            if caller:
+                message = "(%s) %s" % (caller, message)
+
+            raise lib_exc.TimeoutException(message)

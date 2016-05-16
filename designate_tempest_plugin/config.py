@@ -43,6 +43,12 @@ DnsGroup = [
     cfg.IntOpt('min_ttl',
                default=1,
                help="The minimum value to respect when generating ttls"),
+    cfg.ListOpt('nameservers',
+                default=[],
+                help="The nameservers to check for change going live"),
+    cfg.IntOpt('query_timeout',
+               default=1,
+               help="The timeout on a single dns query to a nameserver"),
 
 ]
 
