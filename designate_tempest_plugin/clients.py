@@ -38,6 +38,8 @@ from designate_tempest_plugin.services.dns.v2.json.tld_client import \
     TldClient
 from designate_tempest_plugin.services.dns.query.query_client import \
     QueryClient
+from designate_tempest_plugin.services.dns.v2.json.transfer_request_client \
+    import TransferRequestClient
 
 CONF = config.CONF
 
@@ -92,3 +94,5 @@ class ManagerV2(clients.Manager):
             build_interval=CONF.dns.build_interval,
             build_timeout=CONF.dns.build_timeout,
         )
+        self.transfer_request_client = TransferRequestClient(
+                                           self.auth_provider, **params)
