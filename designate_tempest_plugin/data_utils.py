@@ -216,3 +216,20 @@ def rand_tld():
         "name": rand_zone_name(prefix='tld', suffix='')
     }
     return data
+
+
+def rand_transfer_request_data(description=None, target_project_id=None):
+    """Generate random transfer request data, with optional overrides
+
+    :return: A TransferRequest data
+    """
+
+    data = {}
+
+    if description is None:
+        data['description'] = data_utils.rand_name(prefix='Description ')
+
+    if target_project_id:
+        data['target_project_id'] = target_project_id
+
+    return data
