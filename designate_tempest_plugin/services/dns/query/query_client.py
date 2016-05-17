@@ -40,7 +40,7 @@ class SingleQueryClient(object):
     """A client which queries a single nameserver"""
 
     def __init__(self, nameserver, query_timeout):
-        self.nameserver = Nameserver(nameserver)
+        self.nameserver = Nameserver.from_str(nameserver)
         self.query_timeout = query_timeout
 
     def query(self, name, rdatatype):
