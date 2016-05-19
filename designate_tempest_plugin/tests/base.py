@@ -21,6 +21,38 @@ from designate_tempest_plugin import clients
 CONF = config.CONF
 
 
+class AssertRaisesDns(object):
+    def __init__(self, test_class, exc, type_, code):
+        self.test_class = test_class
+        self.exc = exc
+        self.type_ = type_
+        self.code = code
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            try:
+                exc_name = self.exc.__name__
+            except AttributeError:
+                exc_name = str(self.exc)
+            raise self.failureException(
+                "{0} not raised".format(exc_name))
+
+        if issubclass(exc_type, self.exc):
+            self.test_class.assertEqual(
+                self.code, exc_value.resp_body['code'])
+
+            self.test_class.assertEqual(
+                    self.type_, exc_value.resp_body['type'])
+
+            return True
+
+        # Unexpected exceptions will be reraised
+        return False
+
+
 class BaseDnsTest(test.BaseTestCase):
     """Base class for DNS tests."""
 
@@ -48,6 +80,22 @@ class BaseDnsTest(test.BaseTestCase):
             if key not in excluded_keys:
                 self.assertIn(key, actual)
                 self.assertEqual(value, actual[key], key)
+
+    def assertRaisesDns(self, exc, type_, code, callable_=None, *args,
+                        **kwargs):
+        """
+        Checks the response that a api call with a exception contains the
+        expected data
+
+        Usable as both a ordinary function, and a context manager
+        """
+        context = AssertRaisesDns(self, exc, type_, code)
+
+        if callable_ is None:
+            return context
+
+        with context:
+            callable_(*args, **kwargs)
 
 
 class BaseDnsV1Test(BaseDnsTest):
