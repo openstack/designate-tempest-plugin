@@ -15,6 +15,7 @@ from oslo_log import log as logging
 from tempest import config
 from tempest import test
 from tempest.lib import exceptions as lib_exc
+import ddt
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils
@@ -29,6 +30,7 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
                      'type']
 
 
+@ddt.ddt
 class RecordsetsTest(BaseRecordsetsTest):
     @classmethod
     def setup_clients(cls):
@@ -132,6 +134,40 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         self.assertEqual(record['name'], update['name'])
         self.assertNotEqual(record['records'], update['records'])
+
+
+@ddt.ddt
+class RecordsetsNegativeTest(BaseRecordsetsTest):
+    @classmethod
+    def setup_clients(cls):
+        super(RecordsetsNegativeTest, cls).setup_clients()
+
+        cls.client = cls.os.recordset_client
+        cls.zone_client = cls.os.zones_client
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
+    @ddt.file_data("recordset_data_invalid.json")
+    def test_create_recordset_invalid(self, name, type, records):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        if name is not None:
+            recordset_name = name + "." + zone['name']
+
+        else:
+            recordset_name = zone['name']
+
+        recordset_data = {
+            'name': recordset_name,
+            'type': type,
+            'records': records,
+        }
+
+        LOG.info('Attempt to create a invalid Recordset')
+        self.assertRaises(lib_exc.BadRequest,
+            lambda: self.client.create_recordset(zone['id'], recordset_data))
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):
