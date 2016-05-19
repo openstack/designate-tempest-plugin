@@ -56,6 +56,7 @@ class RecordsTest(base.BaseDnsV1Test):
         for record in cls.setup_records:
             cls.client.delete_record(cls.domain['id'], record['id'])
         cls.os.domains_client.delete_domain(cls.domain['id'])
+        super(RecordsTest, cls).tearDownClass()
 
     def _delete_record(self, domain_id, record_id):
         self.client.delete_record(domain_id, record_id)
