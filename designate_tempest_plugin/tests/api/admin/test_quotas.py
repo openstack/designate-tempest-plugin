@@ -13,6 +13,7 @@
 # under the License.
 from oslo_log import log as logging
 from tempest import test
+from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
@@ -36,7 +37,7 @@ class QuotasAdminTest(BaseQuotasTest):
         cls.admin_client = cls.os_adm.quotas_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('ed42f367-e5ba-40d7-a08d-366ad787d21c')
+    @decorators.idempotent_id('ed42f367-e5ba-40d7-a08d-366ad787d21c')
     def test_show_quotas(self):
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()
@@ -50,7 +51,7 @@ class QuotasAdminTest(BaseQuotasTest):
         self.assertExpected(quotas['quota'], body['quota'], self.excluded_keys)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('33e0affb-5d66-4216-881c-f101a779851a')
+    @decorators.idempotent_id('33e0affb-5d66-4216-881c-f101a779851a')
     def test_delete_quotas(self):
         LOG.info("Deleting quotas")
         _, body = self.admin_client.delete_quotas()
@@ -59,7 +60,7 @@ class QuotasAdminTest(BaseQuotasTest):
         self.assertEqual(body.strip(), "")
 
     @test.attr(type='smoke')
-    @test.idempotent_id('4f2b65b7-c4e1-489c-9047-755e42ba0985')
+    @decorators.idempotent_id('4f2b65b7-c4e1-489c-9047-755e42ba0985')
     def test_update_quotas(self):
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()

@@ -16,6 +16,7 @@ from operator import itemgetter
 
 from oslo_log import log as logging
 from tempest import test
+from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
@@ -42,7 +43,7 @@ class PoolAdminTest(BasePoolTest):
         cls.admin_client = cls.os_adm.pool_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('69257f7c-b3d5-4e1b-998e-0677ad12f125')
+    @decorators.idempotent_id('69257f7c-b3d5-4e1b-998e-0677ad12f125')
     def test_create_pool(self):
         pool_data = {
                       "name": "Example Pool",
@@ -60,7 +61,7 @@ class PoolAdminTest(BasePoolTest):
         self.assertExpected(pool_data, pool, self.excluded_keys)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('e80eb70a-8ee5-40eb-b06e-599597a8ab7e')
+    @decorators.idempotent_id('e80eb70a-8ee5-40eb-b06e-599597a8ab7e')
     def test_show_pool(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool()
@@ -75,7 +76,7 @@ class PoolAdminTest(BasePoolTest):
                                 expected_key="priority")
 
     @test.attr(type='smoke')
-    @test.idempotent_id('d8c4c377-5d88-452d-a4d2-c004d72e1abe')
+    @decorators.idempotent_id('d8c4c377-5d88-452d-a4d2-c004d72e1abe')
     def test_delete_pool(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool()
@@ -89,7 +90,7 @@ class PoolAdminTest(BasePoolTest):
            lambda: self.admin_client.show_pool(pool['id']))
 
     @test.attr(type='smoke')
-    @test.idempotent_id('77c85b40-83b2-4c17-9fbf-e6d516cfce90')
+    @decorators.idempotent_id('77c85b40-83b2-4c17-9fbf-e6d516cfce90')
     def test_list_pools(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool()
@@ -101,7 +102,7 @@ class PoolAdminTest(BasePoolTest):
         self.assertGreater(len(body['pools']), 0)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('fdcc84ce-af65-4af6-a5fc-6c50acbea0f0')
+    @decorators.idempotent_id('fdcc84ce-af65-4af6-a5fc-6c50acbea0f0')
     def test_update_pool(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool()
@@ -114,7 +115,7 @@ class PoolAdminTest(BasePoolTest):
         self.assertEqual("foo", patch_pool["name"])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('41ad6a84-00ce-4a04-9fd5-b7c15c31e2db')
+    @decorators.idempotent_id('41ad6a84-00ce-4a04-9fd5-b7c15c31e2db')
     def test_list_pools_dot_json_fails(self):
         uri = self.admin_client.get_uri('pools.json')
 

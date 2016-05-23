@@ -14,6 +14,7 @@
 
 from oslo_log import log as logging
 from tempest import test
+from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
@@ -33,7 +34,7 @@ class ZonesImportTest(BaseZonesImportTest):
         cls.client = cls.os.zone_imports_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('2e2d907d-0609-405b-9c96-3cb2b87e3dce')
+    @decorators.idempotent_id('2e2d907d-0609-405b-9c96-3cb2b87e3dce')
     def test_create_zone_import(self):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
@@ -43,7 +44,7 @@ class ZonesImportTest(BaseZonesImportTest):
         self.assertEqual('PENDING', zone_import['status'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('c8909558-0dc6-478a-9e91-eb97b52e59e0')
+    @decorators.idempotent_id('c8909558-0dc6-478a-9e91-eb97b52e59e0')
     def test_show_zone_import(self):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
@@ -56,7 +57,7 @@ class ZonesImportTest(BaseZonesImportTest):
         self.assertExpected(zone_import, body, self.excluded_keys)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('56a16e68-b241-4e41-bc5c-c40747fa68e3')
+    @decorators.idempotent_id('56a16e68-b241-4e41-bc5c-c40747fa68e3')
     def test_delete_zone_import(self):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
@@ -69,7 +70,7 @@ class ZonesImportTest(BaseZonesImportTest):
             lambda: self.client.show_zone_import(zone_import['id']))
 
     @test.attr(type='smoke')
-    @test.idempotent_id('9eab76af-1995-485f-a2ef-8290c1863aba')
+    @decorators.idempotent_id('9eab76af-1995-485f-a2ef-8290c1863aba')
     def test_list_zones_imports(self):
         LOG.info('Create a zone import')
         _, zone = self.client.create_zone_import()

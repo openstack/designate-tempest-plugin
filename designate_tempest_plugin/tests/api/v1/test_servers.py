@@ -18,6 +18,7 @@ from tempest.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 from tempest import config
+from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
 
@@ -69,7 +70,7 @@ class ServersAdminTest(base.BaseDnsV1Test):
                           self.client.get_server, server_id)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('0296fb0c-f400-4b52-9be4-a24f37646e3f')
+    @decorators.idempotent_id('0296fb0c-f400-4b52-9be4-a24f37646e3f')
     def test_list_servers(self):
         # Get a list of servers
         _, servers = self.client.list_servers()
@@ -79,7 +80,7 @@ class ServersAdminTest(base.BaseDnsV1Test):
                           six.moves.map(lambda x: x['id'], servers))
 
     @test.attr(type='smoke')
-    @test.idempotent_id('7d18fdfc-3959-4c3f-9855-0bf2f8c9ade2')
+    @decorators.idempotent_id('7d18fdfc-3959-4c3f-9855-0bf2f8c9ade2')
     def test_create_update_get_delete_server(self):
         # Create Dns Server
         s_name1 = data_utils.rand_name('dns-server') + '.com.'

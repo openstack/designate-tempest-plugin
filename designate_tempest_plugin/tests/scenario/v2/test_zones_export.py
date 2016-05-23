@@ -14,6 +14,7 @@
 
 from oslo_log import log as logging
 from tempest import test
+from tempest.lib import decorators
 
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin.tests.api.v2.test_zones_exports import \
@@ -32,7 +33,7 @@ class ZonesExportTest(BaseZoneExportsTest):
         cls.client = cls.os.zone_exports_client
 
     @test.attr(type='slow')
-    @test.idempotent_id('0484c3c4-df57-458e-a6e5-6eb63e0475e0')
+    @decorators.idempotent_id('0484c3c4-df57-458e-a6e5-6eb63e0475e0')
     def test_create_zone_export_and_show_exported_zonefile(self):
         LOG.info('Create a zone to be exported')
         _, zone = self.zones_client.create_zone()

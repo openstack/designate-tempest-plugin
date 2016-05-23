@@ -14,6 +14,7 @@
 from oslo_log import log as logging
 from tempest import config
 from tempest import test
+from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 import ddt
 
@@ -40,7 +41,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         cls.zone_client = cls.os.zones_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
+    @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
     def test_create_recordset(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
@@ -56,7 +57,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         self.assertEqual('PENDING', body['status'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('5964f730-5546-46e6-9105-5030e9c492b2')
+    @decorators.idempotent_id('5964f730-5546-46e6-9105-5030e9c492b2')
     def test_list_recordsets(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
@@ -74,7 +75,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         self.assertGreater(len(body), 0)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('84c13cb2-9020-4c1e-aeb0-c348d9a70caa')
+    @decorators.idempotent_id('84c13cb2-9020-4c1e-aeb0-c348d9a70caa')
     def test_show_recordsets(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
@@ -93,7 +94,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         self.assertExpected(body, record, self.excluded_keys)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('855399c1-8806-4ae5-aa31-cb8a6f35e218')
+    @decorators.idempotent_id('855399c1-8806-4ae5-aa31-cb8a6f35e218')
     def test_delete_recordset(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
@@ -113,7 +114,7 @@ class RecordsetsTest(BaseRecordsetsTest):
             lambda: self.client.show_recordset(zone['id'], record['id']))
 
     @test.attr(type='smoke')
-    @test.idempotent_id('8d41c85f-09f9-48be-a202-92d1bdf5c796')
+    @decorators.idempotent_id('8d41c85f-09f9-48be-a202-92d1bdf5c796')
     def test_update_recordset(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
@@ -146,7 +147,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         cls.zone_client = cls.os.zones_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
+    @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
     @ddt.file_data("recordset_data_invalid.json")
     def test_create_recordset_invalid(self, name, type, records):
         LOG.info('Create a zone')
@@ -189,7 +190,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
             raise cls.skipException(skip_msg)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('48a081b9-4474-4da0-9b1a-6359a80456ce')
+    @decorators.idempotent_id('48a081b9-4474-4da0-9b1a-6359a80456ce')
     def test_list_zones_recordsets(self):
         LOG.info('Create a zone')
         _, zone1 = self.zone_client.create_zone()
@@ -205,7 +206,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         self.assertGreater(len(body['recordsets']), 0)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('a8e41020-65be-453b-a8c1-2497d539c345')
+    @decorators.idempotent_id('a8e41020-65be-453b-a8c1-2497d539c345')
     def test_list_filter_zones_recordsets(self):
         LOG.info('Create a zone')
         _, zone1 = self.zone_client.create_zone()

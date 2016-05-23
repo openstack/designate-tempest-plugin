@@ -13,6 +13,7 @@
 # under the License.
 from oslo_log import log as logging
 from tempest import test
+from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils
 
@@ -35,7 +36,7 @@ class ZonesTest(BaseZonesTest):
         cls.client = cls.os.zones_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
+    @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
     def test_create_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
@@ -46,7 +47,7 @@ class ZonesTest(BaseZonesTest):
         self.assertEqual('PENDING', zone['status'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('02ca5d6a-86ce-4f02-9d94-9e5db55c3055')
+    @decorators.idempotent_id('02ca5d6a-86ce-4f02-9d94-9e5db55c3055')
     def test_show_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
@@ -59,7 +60,7 @@ class ZonesTest(BaseZonesTest):
         self.assertExpected(zone, body, self.excluded_keys)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
+    @decorators.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
     def test_delete_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
@@ -74,7 +75,7 @@ class ZonesTest(BaseZonesTest):
         self.assertEqual('PENDING', body['status'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('5bfa3cfe-5bc8-443b-bf48-cfba44cbb247')
+    @decorators.idempotent_id('5bfa3cfe-5bc8-443b-bf48-cfba44cbb247')
     def test_list_zones(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
@@ -88,7 +89,7 @@ class ZonesTest(BaseZonesTest):
         self.assertGreater(len(body['zones']), 0)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')
+    @decorators.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')
     def test_update_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
@@ -109,7 +110,7 @@ class ZonesTest(BaseZonesTest):
         self.assertEqual(description, zone['description'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
+    @decorators.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
     def test_list_zones_dot_json_fails(self):
         uri = self.client.get_uri('zones.json')
 
@@ -127,7 +128,7 @@ class ZonesAdminTest(BaseZonesTest):
         cls.client = cls.os.zones_client
         cls.admin_client = cls.os_adm.zones_client
 
-    @test.idempotent_id('6477f92d-70ba-46eb-bd6c-fc50c405e222')
+    @decorators.idempotent_id('6477f92d-70ba-46eb-bd6c-fc50c405e222')
     def test_get_other_tenant_zone(self):
         LOG.info('Create a zone as a user')
         _, zone = self.client.create_zone()
@@ -152,7 +153,7 @@ class ZoneOwnershipTest(BaseZonesTest):
         cls.alt_client = cls.os_alt.zones_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('5d28580a-a012-4b57-b211-e077b1a01340')
+    @decorators.idempotent_id('5d28580a-a012-4b57-b211-e077b1a01340')
     def test_no_create_duplicate_domain(self):
         LOG.info('Create a zone as a default user')
         _, zone = self.client.create_zone()
@@ -167,7 +168,7 @@ class ZoneOwnershipTest(BaseZonesTest):
             self.alt_client.create_zone, name=zone['name'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('a48776fd-b1aa-4a25-9f09-d1d34cfbb175')
+    @decorators.idempotent_id('a48776fd-b1aa-4a25-9f09-d1d34cfbb175')
     def test_no_create_subdomain_by_alt_user(self):
         LOG.info('Create a zone as a default user')
         _, zone = self.client.create_zone()
@@ -180,7 +181,7 @@ class ZoneOwnershipTest(BaseZonesTest):
             self.alt_client.create_zone, name='sub.sub.' + zone['name'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('f1723d48-c082-43cd-94bf-ebeb5b8c9458')
+    @decorators.idempotent_id('f1723d48-c082-43cd-94bf-ebeb5b8c9458')
     def test_no_create_superdomain_by_alt_user(self):
         zone_name = dns_data_utils.rand_zone_name()
 

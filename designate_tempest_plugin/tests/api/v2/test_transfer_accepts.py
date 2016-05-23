@@ -13,6 +13,7 @@
 #    under the License.
 from oslo_log import log as logging
 from tempest import test
+from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
 
@@ -34,7 +35,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         cls.client = cls.os.transfer_accept_client
 
     @test.attr(type='smoke')
-    @test.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
+    @decorators.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
     def test_create_transfer_accept(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
@@ -57,7 +58,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         self.assertEqual('COMPLETE', transfer_accept['status'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('37c6afbb-3ea3-4fd8-94ea-a426244f019a')
+    @decorators.idempotent_id('37c6afbb-3ea3-4fd8-94ea-a426244f019a')
     def test_show_transfer_accept(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()

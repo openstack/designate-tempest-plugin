@@ -17,6 +17,7 @@
 import six
 from tempest.common.utils import data_utils
 from tempest import test
+from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
 
@@ -65,7 +66,7 @@ class RecordsTest(base.BaseDnsV1Test):
         #                   self.client.get_record, domain_id, record_id)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('4c7bee47-68a4-4668-81f9-fa973ddfa1f1')
+    @decorators.idempotent_id('4c7bee47-68a4-4668-81f9-fa973ddfa1f1')
     def test_list_records_for_domain(self):
         # Get a list of records for a domain
         _, records = self.client.list_records(self.domain['id'])
@@ -75,7 +76,7 @@ class RecordsTest(base.BaseDnsV1Test):
                           six.moves.map(lambda x: x['id'], records))
 
     @test.attr(type='smoke')
-    @test.idempotent_id('1714fe3a-8a29-420e-a7dc-8209c7c174de')
+    @decorators.idempotent_id('1714fe3a-8a29-420e-a7dc-8209c7c174de')
     def test_create_update_get_delete_record(self):
         # Create Domain
         name = data_utils.rand_name('domain') + '.com.'
