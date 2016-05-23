@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_log import log as logging
+from tempest import config
 from tempest import test
 from tempest.lib import exceptions as lib_exc
 
@@ -19,6 +20,8 @@ from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils
 
 LOG = logging.getLogger(__name__)
+
+CONF = config.CONF
 
 
 class BaseRecordsetsTest(base.BaseDnsV2Test):
@@ -63,7 +66,10 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(zone['id'], recordset_data)
 
-        self.assertTrue(len(body) > 0)
+        LOG.info('List zone recordsets')
+        _, body = self.client.list_recordset(zone['id'])
+
+        self.assertGreater(len(body), 0)
 
     @test.attr(type='smoke')
     @test.idempotent_id('84c13cb2-9020-4c1e-aeb0-c348d9a70caa')
@@ -126,3 +132,70 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         self.assertEqual(record['name'], update['name'])
         self.assertNotEqual(record['records'], update['records'])
+
+
+class RootRecordsetsTests(BaseRecordsetsTest):
+
+    @classmethod
+    def setup_clients(cls):
+        super(RootRecordsetsTests, cls).setup_clients()
+
+        cls.client = cls.os.recordset_client
+        cls.zone_client = cls.os.zones_client
+
+    @classmethod
+    def skip_checks(cls):
+        super(RootRecordsetsTests, cls).skip_checks()
+
+        if not CONF.dns_feature_enabled.api_v2_root_recordsets:
+            skip_msg = ("%s skipped as designate V2 recordsets API is not "
+                        "available" % cls.__name__)
+            raise cls.skipException(skip_msg)
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('48a081b9-4474-4da0-9b1a-6359a80456ce')
+    def test_list_zones_recordsets(self):
+        LOG.info('Create a zone')
+        _, zone1 = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone1['id'])
+
+        LOG.info('Create another zone')
+        _, zone2 = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone2['id'])
+
+        LOG.info('List recordsets')
+        _, body = self.client.list_zones_recordsets()
+
+        self.assertGreater(len(body['recordsets']), 0)
+
+    @test.attr(type='smoke')
+    @test.idempotent_id('a8e41020-65be-453b-a8c1-2497d539c345')
+    def test_list_filter_zones_recordsets(self):
+        LOG.info('Create a zone')
+        _, zone1 = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone1['id'])
+
+        recordset_data = {
+            "name": zone1['name'],
+            "description": "This is an example record set.",
+            "type": "A",
+            "ttl": 3600,
+            "records": [
+                "10.1.0.2"
+            ]
+        }
+
+        LOG.info('Create a Recordset')
+        resp, zone1_recordset = self.client.create_recordset(zone1['id'],
+                                                             recordset_data)
+
+        LOG.info('Create another zone')
+        _, zone2 = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone2['id'])
+
+        LOG.info('List recordsets')
+        _, body = self.client.list_zones_recordsets(params={"data": "10.1.*"})
+
+        recordsets = body['recordsets']
+
+        self.assertEqual(zone1_recordset['id'], recordsets[0]['id'])
