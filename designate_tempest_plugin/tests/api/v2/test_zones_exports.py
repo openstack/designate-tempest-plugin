@@ -94,4 +94,4 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('List zones exports')
         _, body = self.client.list_zones_exports()
 
-        self.assertTrue(len(body['exports']) > 0)
+        self.assertGreater(len(body['exports']), 0)
