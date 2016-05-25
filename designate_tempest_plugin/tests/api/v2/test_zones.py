@@ -85,7 +85,7 @@ class ZonesTest(BaseZonesTest):
 
         # TODO(kiall): We really want to assert that out newly created zone is
         #              present in the response.
-        self.assertTrue(len(body['zones']) > 0)
+        self.assertGreater(len(body['zones']), 0)
 
     @test.attr(type='smoke')
     @test.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')

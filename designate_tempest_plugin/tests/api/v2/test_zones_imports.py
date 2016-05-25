@@ -77,4 +77,4 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('List zones imports')
         _, body = self.client.list_zone_imports()
 
-        self.assertTrue(len(body['imports']) > 0)
+        self.assertGreater(len(body['imports']), 0)
