@@ -35,8 +35,7 @@ class TldClient(base.DnsClientV2Base):
                                name="description")
         }
 
-        resp, body = self._create_request('tlds', object_dict=tld,
-                                          params=params)
+        resp, body = self._create_request('tlds', data=tld, params=params)
 
         # Create Tld should Return a HTTP 201
         self.expected_success(201, resp.status)

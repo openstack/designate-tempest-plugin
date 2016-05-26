@@ -37,8 +37,7 @@ class PoolClient(base.DnsClientV2Base):
                  "ns_records": ns_records or dns_data_utils.rand_ns_records()
         }
 
-        resp, body = self._create_request('pools', object_dict=pool,
-                                          params=params)
+        resp, body = self._create_request('pools', data=pool, params=params)
 
         # Create Pool should Return a HTTP 201
         self.expected_success(201, resp.status)

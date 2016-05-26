@@ -41,7 +41,7 @@ class TsigkeyClient(base.DnsClientV2Base):
                  "scope": scope or utils.rand_tsig_scope(),
                  "resource_id": resource_id}
 
-        resp, body = self._create_request('tsigkeys', object_dict=tsig,
+        resp, body = self._create_request('tsigkeys', data=tsig,
                                           params=params)
 
         self.expected_success(201, resp.status)

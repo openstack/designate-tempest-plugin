@@ -33,7 +33,7 @@ class RecordsetClient(base.DnsClientV2Base):
         """
         resp, body = self._create_request(
             "/zones/{0}/recordsets".format(zone_uuid), params=params,
-            object_dict=recordset_data)
+            data=recordset_data)
 
         # Create Recordset should Return a HTTP 202
         self.expected_success(202, resp.status)
@@ -109,7 +109,7 @@ class RecordsetClient(base.DnsClientV2Base):
         """
         resp, body = self._put_request(
             'zones/{0}/recordsets'.format(zone_uuid), recordset_uuid,
-            object_dict=recordset_model, params=params)
+            data=recordset_model, params=params)
 
         # Update Recordset should Return a HTTP 202
         self.expected_success(202, resp.status)

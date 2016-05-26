@@ -18,6 +18,7 @@ from oslo_serialization import jsonutils as json
 from tempest.lib.common import rest_client
 from tempest.lib import exceptions as lib_exc
 from six.moves.urllib import parse as urllib
+import six
 
 from designate_tempest_plugin.common.models import ZoneFile
 
@@ -56,8 +57,10 @@ class DnsClientBase(rest_client.RestClient):
     UPDATE_STATUS_CODES = []
     DELETE_STATUS_CODES = []
 
-    def serialize(self, object_dict):
-        return json.dumps(object_dict)
+    def serialize(self, data):
+        if isinstance(data, six.string_types):
+            return data
+        return json.dumps(data)
 
     def deserialize(self, resp, object_str):
         if 'application/json' in resp['content-type']:
@@ -99,12 +102,13 @@ class DnsClientBase(rest_client.RestClient):
                                   uuid=uuid,
                                   params=params)
 
-    def _create_request(self, resource, object_dict=None, params=None,
+    def _create_request(self, resource, data=None, params=None,
                         headers=None, extra_headers=False):
         """Create an object of the specified type.
         :param resource: The name of the REST resource, e.g., 'zones'.
-        :param object_dict: A Python dict that represents an object of the
-                            specified type.
+        :param data: A Python dict that represents an object of the
+                     specified type (to be serialized) or a plain string which
+                     is sent as-is.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
@@ -116,7 +120,7 @@ class DnsClientBase(rest_client.RestClient):
         :returns: A tuple with the server response and the deserialized created
                  object.
         """
-        body = self.serialize(object_dict)
+        body = self.serialize(data)
         uri = self.get_uri(resource, params=params)
 
         resp, body = self.post(uri, body=body, headers=headers,
@@ -156,17 +160,18 @@ class DnsClientBase(rest_client.RestClient):
 
         return resp, self.deserialize(resp, body)
 
-    def _put_request(self, resource, uuid, object_dict, params=None):
+    def _put_request(self, resource, uuid, data, params=None):
         """Updates the specified object using PUT request.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: Unique identifier of the object in UUID format.
-        :param object_dict: A Python dict that represents an object of the
-                            specified type
+        :param data: A Python dict that represents an object of the
+                     specified type (to be serialized) or a plain string which
+                     is sent as-is.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :returns: Serialized object as a dictionary.
         """
-        body = self.serialize(object_dict)
+        body = self.serialize(data)
         uri = self.get_uri(resource, uuid=uuid, params=params)
         resp, body = self.put(uri, body=body)
 
@@ -174,17 +179,18 @@ class DnsClientBase(rest_client.RestClient):
 
         return resp, self.deserialize(resp, body)
 
-    def _update_request(self, resource, uuid, object_dict, params=None):
+    def _update_request(self, resource, uuid, data, params=None):
         """Updates the specified object using PATCH request.
         :param resource: The name of the REST resource, e.g., 'zones'
         :param uuid: Unique identifier of the object in UUID format.
-        :param object_dict: A Python dict that represents an object of the
-                             specified type.
+        :param data: A Python dict that represents an object of the
+                     specified type (to be serialized) or a plain string which
+                     is sent as-is.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :returns: Serialized object as a dictionary.
         """
-        body = self.serialize(object_dict)
+        body = self.serialize(data)
         uri = self.get_uri(resource, uuid=uuid, params=params)
 
         resp, body = self.patch(uri, body=body)
