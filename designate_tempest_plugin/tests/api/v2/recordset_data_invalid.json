@@ -1,0 +1,12 @@
+{
+    "CNAME multiple": {
+        "name": "www",
+        "type": "CNAME",
+        "records": ["target1.example.org.", "target2.example.org."]
+    },
+    "CNAME at Apex": {
+        "name": null,
+        "type": "CNAME",
+        "records": ["target1.example.org."]
+    }
+}

@@ -1,0 +1,57 @@
+{
+    "A": {
+        "name": "www",
+        "type": "A",
+        "records": ["192.0.2.1", "192.0.2.2", "192.0.2.3"]
+    },
+    "AAAA": {
+        "name": "www",
+        "type": "AAAA",
+        "records": ["2001:db8::1", "2001:db8::1", "2001:db8::"]
+    },
+    "SRV TCP": {
+        "name": "_sip._tcp",
+        "type": "SRV",
+        "records": ["10 60 5060 server1.example.com.",
+                    "20 60 5060 server2.example.com.",
+                    "20 30 5060 server3.example.com."]
+    },
+    "SRV UDP": {
+        "name": "_sip._udp",
+        "type": "SRV",
+        "records": ["10 60 5060 server1.example.com.",
+                    "10 60 5060 server2.example.com.",
+                    "20 30 5060 server3.example.com."]
+    },
+    "CNAME": {
+        "name": "www",
+        "type": "CNAME",
+        "records": ["target.example.org."]
+    },
+    "MX at APEX": {
+        "name": null,
+        "type": "MX",
+        "records": ["10 mail.example.org."]
+    },
+    "MX at APEX multiple": {
+        "name": null,
+        "type": "MX",
+        "records": ["10 mail1.example.org.",
+                    "20 mail2.example.org."]
+    },
+    "MX under APEX": {
+        "name": "under",
+        "type": "MX",
+        "records": ["10 mail.example.org."]
+    },
+    "SSHFP": {
+        "name": "www",
+        "type": "SSHFP",
+        "records": ["2 1 123456789abcdef67890123456789abcdef67890"]
+    },
+    "TXT": {
+        "name": "www",
+        "type": "TXT",
+        "records": ["Any Old Text Goes Here"]
+    }
+}
