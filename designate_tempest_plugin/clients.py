@@ -42,6 +42,8 @@ from designate_tempest_plugin.services.dns.v2.json.transfer_request_client \
     import TransferRequestClient
 from designate_tempest_plugin.services.dns.v2.json.transfer_accepts_client \
     import TransferAcceptClient
+from designate_tempest_plugin.services.dns.v2.json.tsigkey_client \
+    import TsigkeyClient
 
 CONF = config.CONF
 
@@ -99,4 +101,6 @@ class ManagerV2(clients.Manager):
         self.transfer_request_client = TransferRequestClient(
                                            self.auth_provider, **params)
         self.transfer_accept_client = TransferAcceptClient(
+                                           self.auth_provider, **params)
+        self.tsigkey_client = TsigkeyClient(
                                            self.auth_provider, **params)
