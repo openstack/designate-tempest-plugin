@@ -116,6 +116,39 @@ def wait_for_zone_import_status(client, zone_import_id, status):
             raise lib_exc.TimeoutException(message)
 
 
+def wait_for_zone_export_status(client, zone_export_id, status):
+    """Waits for an exported zone to reach the given status."""
+    LOG.info('Waiting for zone export %s to reach %s', zone_export_id, status)
+
+    _, zone_export = client.show_zone_export(zone_export_id)
+    start = int(time.time())
+
+    while zone_export['status'] != status:
+        time.sleep(client.build_interval)
+        _, zone_export = client.show_zone_export(zone_export_id)
+        status_curr = zone_export['status']
+        if status_curr == status:
+            LOG.info('Zone export %s reached %s', zone_export_id, status)
+            return
+
+        if int(time.time()) - start >= client.build_timeout:
+            message = ('Zone export %(zone_export_id)s failed to reach '
+                       'status=%(status)s within the required time '
+                       '(%(timeout)s s). Current '
+                       'status: %(status_curr)s' %
+                       {'zone_export_id': zone_export_id,
+                        'status': status,
+                        'status_curr': status_curr,
+                        'timeout': client.build_timeout})
+
+            caller = misc_utils.find_test_caller()
+
+            if caller:
+                message = '(%s) %s' % (caller, message)
+
+            raise lib_exc.TimeoutException(message)
+
+
 def wait_for_recordset_status(client, recordset_id, status):
     """Waits for a recordset to reach the given status."""
     LOG.info('Waiting for recordset %s to reach %s',

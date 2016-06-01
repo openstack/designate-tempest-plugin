@@ -57,11 +57,10 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a zone export')
         resp, zone_export = self.client.create_zone_export(zone['id'])
 
-        LOG.info('Re-Fetch the zone export records')
-        _, body = self.client.show_zone_export_records(str(zone_export['id']))
+        LOG.info('Re-Fetch the zone export')
+        _, body = self.client.show_zone_export(zone_export['id'])
 
-        LOG.info('Ensure the fetched response matches the records of '
-                 'exported zone')
+        LOG.info('Ensure the fetched response matches the zone export')
         self.assertExpected(zone_export, body, self.excluded_keys)
 
     @test.attr(type='smoke')
@@ -75,23 +74,23 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a zone export')
         _, zone_export = self.client.create_zone_export(zone['id'])
 
-        LOG.info('Delete the exported zone')
+        LOG.info('Delete the zone export')
         _, body = self.client.delete_zone_export(zone_export['id'])
 
-        LOG.info('Ensure the exported zone has been successfully deleted')
+        LOG.info('Ensure the zone export has been successfully deleted')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.show_zone_export_records(zone_export['id']))
+            lambda: self.client.show_zone_export(zone_export['id']))
 
     @test.attr(type='smoke')
     @test.idempotent_id('476bfdfe-58c8-46e2-b376-8403c0fff440')
-    def test_list_zones_exports(self):
+    def test_list_zone_exports(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
         self.addCleanup(self.zone_client.delete_zone, zone['id'])
 
         _, export = self.client.create_zone_export(zone['id'])
 
-        LOG.info('List zones exports')
-        _, body = self.client.list_zones_exports()
+        LOG.info('List zone exports')
+        _, body = self.client.list_zone_exports()
 
         self.assertGreater(len(body['exports']), 0)
