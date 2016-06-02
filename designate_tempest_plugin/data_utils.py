@@ -233,3 +233,14 @@ def rand_transfer_request_data(description=None, target_project_id=None):
         data['target_project_id'] = target_project_id
 
     return data
+
+
+def rand_tsig_algorithm():
+    algorithm = ['hmac-md5', 'hmac-sha1', 'hmac-sha224', 'hmac-sha256',
+                 'hmac-sha384', 'hmac-sha512']
+    return random.choice(algorithm)
+
+
+def rand_tsig_scope():
+    scope = ["ZONE", "POOL"]
+    return random.choice(scope)
