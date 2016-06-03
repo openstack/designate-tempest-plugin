@@ -21,6 +21,7 @@ class ZoneExportsClient(base.DnsClientV2Base):
     @base.handle_errors
     def create_zone_export(self, uuid, params=None, wait_until=False):
         """Create a zone export.
+
         :param uuid: Unique identifier of the zone in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
@@ -42,9 +43,10 @@ class ZoneExportsClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def show_zone_export_records(self, uuid, params=None):
-        """Gets a specific exported zone.
-        :param uuid: Unique identifier of the exported zone in UUID format.
+    def show_zone_export(self, uuid, params=None):
+        """Get the zone export task
+
+        :param uuid: Unique identifier of the zone export task in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :return: Serialized exported zone as a dictionary.
@@ -53,9 +55,10 @@ class ZoneExportsClient(base.DnsClientV2Base):
              'zones/tasks/exports', uuid, params=params)
 
     @base.handle_errors
-    def show_zone_exported(self, uuid, params=None):
-        """Gets a specific exported zone.
-        :param uuid: Unique identifier of the exported zone in UUID format.
+    def show_exported_zonefile(self, uuid, params=None):
+        """Get the exported zone file
+
+        :param uuid: Unique identifier of the zone exprot task in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :return: Serialized exported zone as a dictionary.
@@ -63,12 +66,13 @@ class ZoneExportsClient(base.DnsClientV2Base):
         headers = {'Accept': 'text/dns'}
 
         return self._show_request(
-            'zones/tasks/exports/{0}/export'.format(uuid),
+            'zones/tasks/exports/{0}/export'.format(uuid), uuid='',
             headers=headers, params=params)
 
     @base.handle_errors
-    def list_zones_exports(self, params=None):
-        """Gets all the exported zones
+    def list_zone_exports(self, params=None):
+        """List zone export tasks
+
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :return: Serialized exported zone as a list.
@@ -78,7 +82,8 @@ class ZoneExportsClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def delete_zone_export(self, uuid, params=None):
-        """Deletes an exported zone having the specified UUID.
+        """Deletes the zone export task with the specified UUID.
+
         :param uuid: The unique identifier of the exported zone.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
