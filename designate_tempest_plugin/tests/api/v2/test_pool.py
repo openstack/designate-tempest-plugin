@@ -18,6 +18,7 @@ from oslo_log import log as logging
 from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+from tempest.lib.common.utils import data_utils
 
 from designate_tempest_plugin.tests import base
 
@@ -121,3 +122,84 @@ class PoolAdminTest(BasePoolTest):
 
         self.assertRaises(lib_exc.NotFound,
             lambda: self.admin_client.get(uri))
+
+
+class TestPoolNotFoundAdmin(BasePoolTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestPoolNotFoundAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.pool_client
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('56281b2f-dd5a-4376-8c32-aba771062fa5')
+    def test_show_pool_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.show_pool,
+                              data_utils.rand_uuid())
+        self.assertPool404(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('10fba3c2-9972-479c-ace1-8f7eac7c159f')
+    def test_update_pool_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.update_pool,
+                              data_utils.rand_uuid())
+        self.assertPool404(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('96132295-896b-4de3-8f86-cc2ee513fdad')
+    def test_delete_pool_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.delete_pool,
+                              data_utils.rand_uuid())
+        self.assertPool404(e.resp, e.resp_body)
+
+    def assertPool404(self, resp, resp_body):
+        self.assertEqual(404, resp.status)
+        self.assertEqual(404, resp_body['code'])
+        self.assertEqual("pool_not_found", resp_body['type'])
+        self.assertEqual("Could not find Pool", resp_body['message'])
+
+
+class TestPoolInvalidIdAdmin(BasePoolTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestPoolInvalidIdAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.pool_client
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('081d0188-42a7-4953-af0e-b022960715e2')
+    def test_show_pool_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.show_pool,
+                              'foo')
+        self.assertPoolInvalidId(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('f4ab4f5a-d7f0-4758-b232-8338f02d7c5c')
+    def test_update_pool_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.update_pool,
+                              'foo')
+        self.assertPoolInvalidId(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('bf5ad3be-2e79-439d-b247-902fe198143b')
+    def test_delete_pool_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.delete_pool,
+                              'foo')
+        self.assertPoolInvalidId(e.resp, e.resp_body)
+
+    def assertPoolInvalidId(self, resp, resp_body):
+        self.assertEqual(400, resp.status)
+        self.assertEqual(400, resp_body['code'])
+        self.assertEqual("invalid_uuid", resp_body['type'])
+        self.assertEqual("Invalid UUID pool_id: foo",
+                         resp_body['message'])

@@ -16,6 +16,7 @@ from oslo_log import log as logging
 from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+from tempest.lib.common.utils import data_utils
 
 from designate_tempest_plugin.tests import base
 
@@ -119,3 +120,84 @@ class TldAdminTest(BaseTldTest):
 
         self.assertRaises(lib_exc.NotFound,
             lambda: self.admin_client.get(uri))
+
+
+class TestTldNotFoundAdmin(BaseTldTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestTldNotFoundAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.tld_client
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('b237d5ee-0d76-4294-a3b6-c2f8bf4b0e30')
+    def test_show_tld_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.show_tld,
+                              data_utils.rand_uuid())
+        self.assertTld404(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('3d128772-7f52-4473-b569-51ae8294667b')
+    def test_update_tld_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.update_tld,
+                              data_utils.rand_uuid())
+        self.assertTld404(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('18e465e7-5c7d-4775-acef-bd12a8db1095')
+    def test_delete_tld_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.delete_tld,
+                              data_utils.rand_uuid())
+        self.assertTld404(e.resp, e.resp_body)
+
+    def assertTld404(self, resp, resp_body):
+        self.assertEqual(404, resp.status)
+        self.assertEqual(404, resp_body['code'])
+        self.assertEqual("tld_not_found", resp_body['type'])
+        self.assertEqual("Could not find Tld", resp_body['message'])
+
+
+class TestTldInvalidIdAdmin(BaseTldTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestTldInvalidIdAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.tld_client
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('f9ec0730-57ff-4720-8d06-e11d377c7cfc')
+    def test_show_tld_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.show_tld,
+                              'foo')
+        self.assertTldInvalidId(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('13dc6518-b479-4502-90f5-f5a5ecc8b1fb')
+    def test_update_tld_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.update_tld,
+                              'foo')
+        self.assertTldInvalidId(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('6a6fc9db-9a73-4ffc-831a-172e1cbc7394')
+    def test_delete_tld_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.delete_tld,
+                              'foo')
+        self.assertTldInvalidId(e.resp, e.resp_body)
+
+    def assertTldInvalidId(self, resp, resp_body):
+        self.assertEqual(400, resp.status)
+        self.assertEqual(400, resp_body['code'])
+        self.assertEqual("invalid_uuid", resp_body['type'])
+        self.assertEqual("Invalid UUID tld_id: foo",
+                         resp_body['message'])

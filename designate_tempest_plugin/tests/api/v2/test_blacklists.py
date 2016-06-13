@@ -108,3 +108,84 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         LOG.info('Ensure we response with updated values')
         self.assertEqual(pattern, body['pattern'])
         self.assertEqual(description, body['description'])
+
+
+class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestBlacklistNotFoundAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.blacklists_client
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('9d65b638-fe98-47a8-853f-fa9244d144cc')
+    def test_show_blacklist_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.show_blacklist,
+                              data_utils.rand_uuid())
+        self.assertBlacklist404(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('a9e12415-5040-4fba-905c-95d201fcfd3b')
+    def test_update_blacklist_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.update_blacklist,
+                              data_utils.rand_uuid())
+        self.assertBlacklist404(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('b1132586-bf06-47a6-9f6f-3bab6a2c1932')
+    def test_delete_blacklist_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.delete_blacklist,
+                              data_utils.rand_uuid())
+        self.assertBlacklist404(e.resp, e.resp_body)
+
+    def assertBlacklist404(self, resp, resp_body):
+        self.assertEqual(404, resp.status)
+        self.assertEqual(404, resp_body['code'])
+        self.assertEqual("blacklist_not_found", resp_body['type'])
+        self.assertEqual("Could not find Blacklist", resp_body['message'])
+
+
+class TestBlacklistInvalidIdAdmin(BaseBlacklistsTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestBlacklistInvalidIdAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.blacklists_client
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('c7bae53f-2edc-45d8-b254-8a81482728c1')
+    def test_show_blacklist_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.show_blacklist,
+                              'foo')
+        self.assertBlacklistInvalidId(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('c57b97da-ca87-44b5-9f40-a099937433bf')
+    def test_update_blacklist_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.update_blacklist,
+                              'foo')
+        self.assertBlacklistInvalidId(e.resp, e.resp_body)
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('5d62a026-13e4-48b9-9773-1780660c5920')
+    def test_delete_blacklist_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.delete_blacklist,
+                              'foo')
+        self.assertBlacklistInvalidId(e.resp, e.resp_body)
+
+    def assertBlacklistInvalidId(self, resp, resp_body):
+        self.assertEqual(400, resp.status)
+        self.assertEqual(400, resp_body['code'])
+        self.assertEqual("invalid_uuid", resp_body['type'])
+        self.assertEqual("Invalid UUID blacklist_id: foo",
+                         resp_body['message'])
