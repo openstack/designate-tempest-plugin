@@ -1,0 +1,48 @@
+# Copyright 2016 Rackspace
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+from oslo_log import log as logging
+from tempest import test
+from tempest.lib import decorators
+from tempest.lib import exceptions as lib_exc
+import ddt
+
+from designate_tempest_plugin.tests import base
+from designate_tempest_plugin.clients import ManagerV2Unauthed
+
+LOG = logging.getLogger(__name__)
+
+
+@ddt.ddt
+class TestDnsUnauthed(base.BaseDnsV2Test):
+
+    client_manager = ManagerV2Unauthed
+    credentials = ["primary"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestDnsUnauthed, cls).setup_clients()
+        cls.zones_client = cls.os.zones_client
+        cls.recordset_client = cls.os.recordset_client
+        cls.tld_client = cls.os.tld_client
+        cls.pool_client = cls.os.pool_client
+        cls.blacklists_client = cls.os.blacklists_client
+
+    @test.attr(type='smoke')
+    @decorators.idempotent_id('0f7a6d20-f6f3-4937-8fe6-7a9851227d98')
+    @ddt.file_data('unauthed_data.json')
+    def test_unauthed(self, client, method, args=None):
+        client = getattr(self, client)
+        method = getattr(client, method)
+        args = args or []
+        self.assertRaises(lib_exc.Unauthorized, method, *args)

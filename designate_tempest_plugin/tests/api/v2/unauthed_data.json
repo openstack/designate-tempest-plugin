@@ -1,0 +1,127 @@
+{
+    "list_zones": {
+        "client": "zones_client",
+        "method": "list_zones"
+    },
+    "show_zone": {
+        "client": "zones_client",
+        "method": "show_zone",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "create_zone": {
+        "client": "zones_client",
+        "method": "create_zone",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "update_zone": {
+        "client": "zones_client",
+        "method": "update_zone",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "delete_zone": {
+        "client": "zones_client",
+        "method": "delete_zone",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+
+    "list_recordsets": {
+        "client": "recordset_client",
+        "method": "list_recordset",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "show_recordset": {
+        "client": "recordset_client",
+        "method": "show_recordset",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90", "6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "create_recordset": {
+        "client": "recordset_client",
+        "method": "create_recordset",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90", "6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "update_recordset": {
+        "client": "recordset_client",
+        "method": "update_recordset",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90", "6ef3b7f2-df39-43ef-9f37-ce2bc424ab90", {}]
+    },
+    "delete_recordset": {
+        "client": "recordset_client",
+        "method": "delete_recordset",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90", "6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+
+    "list_tlds": {
+        "client": "tld_client",
+        "method": "list_tlds"
+    },
+    "show_tld": {
+        "client": "tld_client",
+        "method": "show_tld",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "create_tld": {
+        "client": "tld_client",
+        "method": "create_tld",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "update_tld": {
+        "client": "tld_client",
+        "method": "update_tld",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "delete_tld": {
+        "client": "tld_client",
+        "method": "delete_tld",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+
+    "list_blacklists": {
+        "client": "blacklists_client",
+        "method": "list_blacklists"
+    },
+    "show_blacklist": {
+        "client": "blacklists_client",
+        "method": "show_blacklist",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "create_blacklist": {
+        "client": "blacklists_client",
+        "method": "create_blacklist",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "update_blacklist": {
+        "client": "blacklists_client",
+        "method": "update_blacklist",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "delete_blacklist": {
+        "client": "blacklists_client",
+        "method": "delete_blacklist",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+
+    "list_pools": {
+        "client": "pool_client",
+        "method": "list_pools"
+    },
+    "show_pool": {
+        "client": "pool_client",
+        "method": "show_pool",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "create_pool": {
+        "client": "pool_client",
+        "method": "create_pool",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "update_pool": {
+        "client": "pool_client",
+        "method": "update_pool",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    },
+    "delete_pool": {
+        "client": "pool_client",
+        "method": "delete_pool",
+        "args": ["6ef3b7f2-df39-43ef-9f37-ce2bc424ab90"]
+    }
+}
