@@ -71,4 +71,11 @@ DnsFeatureGroup = [
     cfg.BoolOpt('api_v2_root_recordsets',
                 default=False,
                 help="Is the v2 root recordsets API enabled."),
+    cfg.BoolOpt('api_v2_quotas',
+                default=False,
+                help="Is the v2 quota API enabled."),
+    cfg.BoolOpt('bug_1573141_fixed',
+                default=False,
+                help="Is https://bugs.launchpad.net/designate/+bug/1573141 "
+                "fixed"),
 ]

@@ -14,17 +14,18 @@
 from oslo_log import log as logging
 
 from designate_tempest_plugin import data_utils as dns_data_utils
-from designate_tempest_plugin.services.dns.admin.json import base
+from designate_tempest_plugin.services.dns.v2.json import base
 
 LOG = logging.getLogger(__name__)
 
 
-class QuotasClient(base.DnsClientAdminBase):
+class QuotasClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def update_quotas(self, zones=None, zone_records=None,
                       zone_recordsets=None, recordset_records=None,
-                      api_export_size=None, project_id=None, params=None):
+                      api_export_size=None, project_id=None, params=None,
+                      headers=None):
         """Update the quotas for the project id
 
         :param zones: The limit on zones per tenant
@@ -41,6 +42,7 @@ class QuotasClient(base.DnsClientAdminBase):
             Default: The project id of this client
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the created quota.
         """
         project_id = project_id or self.tenant_id
@@ -53,40 +55,46 @@ class QuotasClient(base.DnsClientAdminBase):
             api_export_size=api_export_size,
         )
 
-        quotas_dict = {'quota': quotas}
-
-        resp, body = self._update_request('quotas', project_id, quotas_dict,
-                                          params=params)
+        resp, body = self._update_request('quotas', project_id, quotas,
+                                          params=params, headers=headers,
+                                          extra_headers=True)
 
         self.expected_success(200, resp.status)
 
         return resp, body
 
     @base.handle_errors
-    def show_quotas(self, project_id=None, params=None):
+    def show_quotas(self, project_id=None, params=None, headers=None):
         """Gets a specific quota.
 
         :param project_id: Show the quotas of this project id
             Default: The project id of this client
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized quota as a dictionary.
         """
         project_id = project_id or self.tenant_id
-        return self._show_request('quotas', project_id, params=params)
+        return self._show_request('quotas', project_id, params=params,
+                                  headers=headers, extra_headers=True)
 
     @base.handle_errors
-    def delete_quotas(self, project_id=None, params=None):
+    def delete_quotas(self, project_id=None, params=None, headers=None):
         """Resets the quotas for the specified project id
 
         :param project_id: Reset the quotas of this project id
             Default: The project id of this client
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the response body.
         """
         project_id = project_id or self.tenant_id
-        resp, body = self._delete_request('quotas', project_id, params=params)
+
+        resp, body = self._delete_request(
+            'quotas', project_id,
+            params=params, headers=headers,
+            extra_headers=True)
 
         self.expected_success(204, resp.status)
 

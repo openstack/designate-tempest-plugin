@@ -27,7 +27,7 @@ from designate_tempest_plugin.services.dns.v2.json.zone_imports_client import \
     ZoneImportsClient
 from designate_tempest_plugin.services.dns.v2.json.blacklists_client import \
     BlacklistsClient
-from designate_tempest_plugin.services.dns.admin.json.quotas_client import \
+from designate_tempest_plugin.services.dns.v2.json.quotas_client import \
     QuotasClient
 from designate_tempest_plugin.services.dns.v2.json.zone_exports_client import \
     ZoneExportsClient
@@ -37,6 +37,8 @@ from designate_tempest_plugin.services.dns.v2.json.pool_client import \
     PoolClient
 from designate_tempest_plugin.services.dns.v2.json.tld_client import \
     TldClient
+from designate_tempest_plugin.services.dns.admin.json.quotas_client import \
+    QuotasClient as AdminQuotaClient
 from designate_tempest_plugin.services.dns.query.query_client import \
     QueryClient
 from designate_tempest_plugin.services.dns.v2.json.transfer_request_client \
@@ -98,6 +100,28 @@ class ManagerV2(clients.Manager):
             build_interval=CONF.dns.build_interval,
             build_timeout=CONF.dns.build_timeout,
         )
+
+    def _get_params(self):
+        params = dict(self.default_params)
+        params.update({
+            'auth_provider': self.auth_provider,
+            'service': CONF.dns.catalog_type,
+            'region': CONF.identity.region,
+            'endpoint_type': CONF.dns.endpoint_type,
+            'build_interval': CONF.dns.build_interval,
+            'build_timeout': CONF.dns.build_timeout
+        })
+        return params
+
+
+class ManagerAdmin(clients.Manager):
+
+    def __init__(self, credentials=None, service=None):
+        super(ManagerAdmin, self).__init__(credentials, service)
+        self._init_clients(self._get_params())
+
+    def _init_clients(self, params):
+        self.quotas_client = AdminQuotaClient(**params)
 
     def _get_params(self):
         params = dict(self.default_params)
