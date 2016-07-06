@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils
@@ -36,7 +35,6 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         super(BlacklistsAdminTest, cls).setup_clients()
         cls.admin_client = cls.os_adm.blacklists_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('3a7f7564-6bdd-446e-addc-a3475b4c3f71')
     def test_create_blacklist(self):
         LOG.info('Create a blacklist')
@@ -49,7 +47,6 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
 
         self.assertExpected(blacklist, body, self.excluded_keys)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('5bc02942-6225-4619-8f49-2105581a8dd6')
     def test_show_blacklist(self):
         LOG.info('Create a blacklist')
@@ -62,7 +59,6 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         LOG.info('Ensure the fetched response matches the created blacklist')
         self.assertExpected(blacklist, body, self.excluded_keys)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('dcea40d9-8d36-43cb-8440-4a842faaef0d')
     def test_delete_blacklist(self):
         LOG.info('Create a blacklist')
@@ -76,7 +72,6 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         # A blacklist delete returns an empty body
         self.assertEqual(body.strip(), "")
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('3a2a1e6c-8176-428c-b5dd-d85217c0209d')
     def test_list_blacklists(self):
         LOG.info('Create a blacklist')
@@ -89,7 +84,6 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         # TODO(pglass): Assert that the created blacklist is in the response
         self.assertGreater(len(body['blacklists']), 0)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('0063d6ad-9557-49c7-b521-e64a14d4d0d0')
     def test_update_blacklist(self):
         LOG.info('Create a blacklist')
@@ -119,7 +113,6 @@ class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
         super(TestBlacklistNotFoundAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.blacklists_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('9d65b638-fe98-47a8-853f-fa9244d144cc')
     def test_show_blacklist_404(self):
         e = self.assertRaises(lib_exc.NotFound,
@@ -127,7 +120,6 @@ class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
                               data_utils.rand_uuid())
         self.assertBlacklist404(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('a9e12415-5040-4fba-905c-95d201fcfd3b')
     def test_update_blacklist_404(self):
         e = self.assertRaises(lib_exc.NotFound,
@@ -135,7 +127,6 @@ class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
                               data_utils.rand_uuid())
         self.assertBlacklist404(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('b1132586-bf06-47a6-9f6f-3bab6a2c1932')
     def test_delete_blacklist_404(self):
         e = self.assertRaises(lib_exc.NotFound,
@@ -159,7 +150,6 @@ class TestBlacklistInvalidIdAdmin(BaseBlacklistsTest):
         super(TestBlacklistInvalidIdAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.blacklists_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('c7bae53f-2edc-45d8-b254-8a81482728c1')
     def test_show_blacklist_invalid_uuid(self):
         e = self.assertRaises(lib_exc.BadRequest,
@@ -167,7 +157,6 @@ class TestBlacklistInvalidIdAdmin(BaseBlacklistsTest):
                               'foo')
         self.assertBlacklistInvalidId(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('c57b97da-ca87-44b5-9f40-a099937433bf')
     def test_update_blacklist_invalid_uuid(self):
         e = self.assertRaises(lib_exc.BadRequest,
@@ -175,7 +164,6 @@ class TestBlacklistInvalidIdAdmin(BaseBlacklistsTest):
                               'foo')
         self.assertBlacklistInvalidId(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('5d62a026-13e4-48b9-9773-1780660c5920')
     def test_delete_blacklist_invalid_uuid(self):
         e = self.assertRaises(lib_exc.BadRequest,

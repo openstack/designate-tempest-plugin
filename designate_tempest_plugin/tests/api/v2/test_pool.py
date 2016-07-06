@@ -15,7 +15,6 @@
 from operator import itemgetter
 
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils
@@ -43,7 +42,6 @@ class PoolAdminTest(BasePoolTest):
 
         cls.admin_client = cls.os_adm.pool_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('69257f7c-b3d5-4e1b-998e-0677ad12f125')
     def test_create_pool(self):
         pool_data = {
@@ -61,7 +59,6 @@ class PoolAdminTest(BasePoolTest):
         self.assertEqual(pool_data["name"], pool['name'])
         self.assertExpected(pool_data, pool, self.excluded_keys)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('e80eb70a-8ee5-40eb-b06e-599597a8ab7e')
     def test_show_pool(self):
         LOG.info('Create a pool')
@@ -76,7 +73,6 @@ class PoolAdminTest(BasePoolTest):
         self._assertExpectedNSRecords(pool["ns_records"], body["ns_records"],
                                 expected_key="priority")
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('d8c4c377-5d88-452d-a4d2-c004d72e1abe')
     def test_delete_pool(self):
         LOG.info('Create a pool')
@@ -90,7 +86,6 @@ class PoolAdminTest(BasePoolTest):
         self.assertRaises(lib_exc.NotFound,
            lambda: self.admin_client.show_pool(pool['id']))
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('77c85b40-83b2-4c17-9fbf-e6d516cfce90')
     def test_list_pools(self):
         LOG.info('Create a pool')
@@ -102,7 +97,6 @@ class PoolAdminTest(BasePoolTest):
 
         self.assertGreater(len(body['pools']), 0)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('fdcc84ce-af65-4af6-a5fc-6c50acbea0f0')
     def test_update_pool(self):
         LOG.info('Create a pool')
@@ -115,7 +109,6 @@ class PoolAdminTest(BasePoolTest):
 
         self.assertEqual("foo", patch_pool["name"])
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('41ad6a84-00ce-4a04-9fd5-b7c15c31e2db')
     def test_list_pools_dot_json_fails(self):
         uri = self.admin_client.get_uri('pools.json')
@@ -133,7 +126,6 @@ class TestPoolNotFoundAdmin(BasePoolTest):
         super(TestPoolNotFoundAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.pool_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('56281b2f-dd5a-4376-8c32-aba771062fa5')
     def test_show_pool_404(self):
         e = self.assertRaises(lib_exc.NotFound,
@@ -141,7 +133,6 @@ class TestPoolNotFoundAdmin(BasePoolTest):
                               data_utils.rand_uuid())
         self.assertPool404(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('10fba3c2-9972-479c-ace1-8f7eac7c159f')
     def test_update_pool_404(self):
         e = self.assertRaises(lib_exc.NotFound,
@@ -149,7 +140,6 @@ class TestPoolNotFoundAdmin(BasePoolTest):
                               data_utils.rand_uuid())
         self.assertPool404(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('96132295-896b-4de3-8f86-cc2ee513fdad')
     def test_delete_pool_404(self):
         e = self.assertRaises(lib_exc.NotFound,
@@ -173,7 +163,6 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
         super(TestPoolInvalidIdAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.pool_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('081d0188-42a7-4953-af0e-b022960715e2')
     def test_show_pool_invalid_uuid(self):
         e = self.assertRaises(lib_exc.BadRequest,
@@ -181,7 +170,6 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
                               'foo')
         self.assertPoolInvalidId(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('f4ab4f5a-d7f0-4758-b232-8338f02d7c5c')
     def test_update_pool_invalid_uuid(self):
         e = self.assertRaises(lib_exc.BadRequest,
@@ -189,7 +177,6 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
                               'foo')
         self.assertPoolInvalidId(e.resp, e.resp_body)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('bf5ad3be-2e79-439d-b247-902fe198143b')
     def test_delete_pool_invalid_uuid(self):
         e = self.assertRaises(lib_exc.BadRequest,

@@ -13,7 +13,6 @@
 #    under the License.
 
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -35,7 +34,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         cls.zone_client = cls.os.zones_client
         cls.admin_client = cls.os_admin.tsigkey_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('e7b484e3-7ed5-4840-89d7-1e696986f8e4')
     def test_create_tsigkey(self):
         LOG.info('Create a resource')
@@ -58,7 +56,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
         self.assertEqual(tsigkey_data["name"], tsigkey['name'])
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('d46e5e86-a18c-4315-aa0c-95a00e816fbf')
     def test_list_tsigkey(self):
         LOG.info('Create a resource')
@@ -70,7 +67,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         _, body = self.admin_client.list_tsigkeys()
         self.assertGreater(len(body['tsigkeys']), 0)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('c5d7facf-0f05-47a2-a4fb-87f203860880')
     def test_show_tsigkey(self):
         LOG.info('Create a resource')
@@ -87,7 +83,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Ensure the fetched response matches the created tsigkey')
         self.assertExpected(tsigkey, body, self.excluded_keys)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('d09dc0dd-dd72-41ee-9085-2afb2bf35459')
     def test_update_tsigkey(self):
         LOG.info('Create a resource')
@@ -113,7 +108,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertEqual(tsigkey_data['secret'], patch_tsigkey['secret'])
         self.assertEqual(tsigkey_data['scope'], patch_tsigkey['scope'])
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('9cdffbd2-bc67-4a25-8eb7-4be8635c88a3')
     def test_delete_tsigkey(self):
         LOG.info('Create a resource')
@@ -129,7 +123,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertRaises(lib_exc.NotFound,
            lambda: self.admin_client.show_tsigkey(tsigkey['id']))
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('4bdc20ef-96f9-47f6-a1aa-275159af326b')
     def test_list_tsigkeys_dot_json_fails(self):
         uri = self.admin_client.get_uri('tsigkeys.json')

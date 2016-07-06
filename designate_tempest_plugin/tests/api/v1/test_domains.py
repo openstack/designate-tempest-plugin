@@ -51,7 +51,6 @@ class DnsDomainsTest(base.BaseDnsV1Test):
         self.assertRaises(lib_exc.NotFound,
                           self.client.get_domain, domain_id)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('a78a4a6a-77a6-4dab-a61a-17df9731bca8')
     def test_list_domains(self):
         # Get a list of domains
