@@ -30,6 +30,21 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                      'type']
 
+    @classmethod
+    def resource_setup(cls):
+        super(BaseRecordsetsTest, cls).resource_setup()
+
+        # All the recordset tests need a zone, create one to share
+        LOG.info('Create a zone')
+        _, cls.zone = cls.zone_client.create_zone()
+
+    @classmethod
+    def resource_cleanup(cls):
+        super(BaseRecordsetsTest, cls).resource_cleanup()
+
+        cls.zone_client.delete_zone(
+            cls.zone['id'], ignore_errors=lib_exc.NotFound)
+
 
 @ddt.ddt
 class RecordsetsTest(BaseRecordsetsTest):
@@ -43,15 +58,12 @@ class RecordsetsTest(BaseRecordsetsTest):
     @test.attr(type='smoke')
     @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
     def test_create_recordset(self):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
-
         recordset_data = data_utils.rand_recordset_data(
-            record_type='A', zone_name=zone['name'])
+            record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
-        resp, body = self.client.create_recordset(zone['id'], recordset_data)
+        resp, body = self.client.create_recordset(
+            self.zone['id'], recordset_data)
 
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', body['status'])
@@ -59,36 +71,30 @@ class RecordsetsTest(BaseRecordsetsTest):
     @test.attr(type='smoke')
     @decorators.idempotent_id('5964f730-5546-46e6-9105-5030e9c492b2')
     def test_list_recordsets(self):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
-
         recordset_data = data_utils.rand_recordset_data(
-            record_type='A', zone_name=zone['name'])
+            record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
-        resp, body = self.client.create_recordset(zone['id'], recordset_data)
+        resp, body = self.client.create_recordset(
+            self.zone['id'], recordset_data)
 
         LOG.info('List zone recordsets')
-        _, body = self.client.list_recordset(zone['id'])
+        _, body = self.client.list_recordset(self.zone['id'])
 
         self.assertGreater(len(body), 0)
 
     @test.attr(type='smoke')
     @decorators.idempotent_id('84c13cb2-9020-4c1e-aeb0-c348d9a70caa')
     def test_show_recordsets(self):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
-
         recordset_data = data_utils.rand_recordset_data(
-            record_type='A', zone_name=zone['name'])
+            record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
-        resp, body = self.client.create_recordset(zone['id'], recordset_data)
+        resp, body = self.client.create_recordset(
+            self.zone['id'], recordset_data)
 
         LOG.info('Re-Fetch the Recordset')
-        _, record = self.client.show_recordset(zone['id'], body['id'])
+        _, record = self.client.show_recordset(self.zone['id'], body['id'])
 
         LOG.info('Ensure the fetched response matches the expected one')
         self.assertExpected(body, record, self.excluded_keys)
@@ -96,41 +102,35 @@ class RecordsetsTest(BaseRecordsetsTest):
     @test.attr(type='smoke')
     @decorators.idempotent_id('855399c1-8806-4ae5-aa31-cb8a6f35e218')
     def test_delete_recordset(self):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
-
         recordset_data = data_utils.rand_recordset_data(
-            record_type='A', zone_name=zone['name'])
+            record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
-        _, record = self.client.create_recordset(zone['id'], recordset_data)
+        _, record = self.client.create_recordset(
+            self.zone['id'], recordset_data)
 
         LOG.info('Delete a Recordset')
-        _, body = self.client.delete_recordset(zone['id'], record['id'])
+        _, body = self.client.delete_recordset(self.zone['id'], record['id'])
 
         LOG.info('Ensure successful deletion of Recordset')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.show_recordset(zone['id'], record['id']))
+            lambda: self.client.show_recordset(self.zone['id'], record['id']))
 
     @test.attr(type='smoke')
     @decorators.idempotent_id('8d41c85f-09f9-48be-a202-92d1bdf5c796')
     def test_update_recordset(self):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
-
         recordset_data = data_utils.rand_recordset_data(
-            record_type='A', zone_name=zone['name'])
+            record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a recordset')
-        _, record = self.client.create_recordset(zone['id'], recordset_data)
+        _, record = self.client.create_recordset(
+            self.zone['id'], recordset_data)
 
         recordset_data = data_utils.rand_recordset_data(
-            record_type='A', zone_name=zone['name'], name=record['name'])
+            record_type='A', zone_name=self.zone['name'], name=record['name'])
 
         LOG.info('Update the recordset')
-        _, update = self.client.update_recordset(zone['id'],
+        _, update = self.client.update_recordset(self.zone['id'],
             record['id'], recordset_data)
 
         self.assertEqual(record['name'], update['name'])
@@ -150,15 +150,11 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
     @ddt.file_data("recordset_data_invalid.json")
     def test_create_recordset_invalid(self, name, type, records):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
-
         if name is not None:
-            recordset_name = name + "." + zone['name']
+            recordset_name = name + "." + self.zone['name']
 
         else:
-            recordset_name = zone['name']
+            recordset_name = self.zone['name']
 
         recordset_data = {
             'name': recordset_name,
@@ -168,7 +164,8 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
 
         LOG.info('Attempt to create a invalid Recordset')
         self.assertRaises(lib_exc.BadRequest,
-            lambda: self.client.create_recordset(zone['id'], recordset_data))
+            lambda: self.client.create_recordset(
+                self.zone['id'], recordset_data))
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):
@@ -192,14 +189,6 @@ class RootRecordsetsTests(BaseRecordsetsTest):
     @test.attr(type='smoke')
     @decorators.idempotent_id('48a081b9-4474-4da0-9b1a-6359a80456ce')
     def test_list_zones_recordsets(self):
-        LOG.info('Create a zone')
-        _, zone1 = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone1['id'])
-
-        LOG.info('Create another zone')
-        _, zone2 = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone2['id'])
-
         LOG.info('List recordsets')
         _, body = self.client.list_zones_recordsets()
 
@@ -208,12 +197,8 @@ class RootRecordsetsTests(BaseRecordsetsTest):
     @test.attr(type='smoke')
     @decorators.idempotent_id('a8e41020-65be-453b-a8c1-2497d539c345')
     def test_list_filter_zones_recordsets(self):
-        LOG.info('Create a zone')
-        _, zone1 = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone1['id'])
-
         recordset_data = {
-            "name": zone1['name'],
+            "name": self.zone['name'],
             "description": "This is an example record set.",
             "type": "A",
             "ttl": 3600,
@@ -223,8 +208,8 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         }
 
         LOG.info('Create a Recordset')
-        resp, zone1_recordset = self.client.create_recordset(zone1['id'],
-                                                             recordset_data)
+        resp, zone_recordset = self.client.create_recordset(
+            self.zone['id'], recordset_data)
 
         LOG.info('Create another zone')
         _, zone2 = self.zone_client.create_zone()
@@ -235,4 +220,4 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
         recordsets = body['recordsets']
 
-        self.assertEqual(zone1_recordset['id'], recordsets[0]['id'])
+        self.assertEqual(zone_recordset['id'], recordsets[0]['id'])
