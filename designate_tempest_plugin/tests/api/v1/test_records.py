@@ -75,7 +75,6 @@ class RecordsTest(base.BaseDnsV1Test):
             self.assertIn(record['id'],
                           six.moves.map(lambda x: x['id'], records))
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('1714fe3a-8a29-420e-a7dc-8209c7c174de')
     def test_create_update_get_delete_record(self):
         # Create Domain

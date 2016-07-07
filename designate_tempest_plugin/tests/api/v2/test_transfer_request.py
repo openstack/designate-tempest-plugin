@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -34,7 +33,6 @@ class TransferRequestTest(BaseTransferRequestTest):
         cls.zone_client = cls.os.zones_client
         cls.client = cls.os.transfer_request_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('2381d489-ad84-403d-b0a2-8b77e4e966bf')
     def test_create_transfer_request(self):
         LOG.info('Create a zone')
@@ -49,7 +47,6 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Ensure we respond with ACTIVE status')
         self.assertEqual('ACTIVE', transfer_request['status'])
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('64a7be9f-8371-4ce1-a242-c1190de7c985')
     def test_show_transfer_request(self):
         LOG.info('Create a zone')
@@ -68,7 +65,6 @@ class TransferRequestTest(BaseTransferRequestTest):
                  'created transfer_request')
         self.assertExpected(transfer_request, body, self.excluded_keys)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('7d81c487-aa15-44c4-b3e5-424ab9e6a3e5')
     def test_delete_transfer_request(self):
         LOG.info('Create a zone')
@@ -86,7 +82,6 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.assertRaises(lib_exc.NotFound,
             lambda: self.client.show_transfer_request(transfer_request['id']))
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('ddd42a19-1768-428c-846e-32f9d6493011')
     def test_list_transfer_requests(self):
         LOG.info('Create a zone')
@@ -103,7 +98,6 @@ class TransferRequestTest(BaseTransferRequestTest):
 
         self.assertGreater(len(body['transfer_requests']), 0)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('de5e9d32-c723-4518-84e5-58da9722cc13')
     def test_update_transfer_request(self):
         LOG.info('Create a zone')
@@ -125,7 +119,6 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.assertEqual(data['description'],
                          transfer_request_patch['description'])
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('73b754a9-e856-4fd6-80ba-e8d1b80f5dfa')
     def test_list_transfer_requests_dot_json_fails(self):
         uri = self.client.get_uri('transfer_requests.json')

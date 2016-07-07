@@ -33,7 +33,6 @@ class ZonesImportTest(BaseZonesImportTest):
         super(ZonesImportTest, cls).setup_clients()
         cls.client = cls.os.zone_imports_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('2e2d907d-0609-405b-9c96-3cb2b87e3dce')
     def test_create_zone_import(self):
         LOG.info('Create a zone import')
@@ -56,7 +55,6 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Ensure the fetched response matches the expected one')
         self.assertExpected(zone_import, body, self.excluded_keys)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('56a16e68-b241-4e41-bc5c-c40747fa68e3')
     def test_delete_zone_import(self):
         LOG.info('Create a zone import')
@@ -69,7 +67,6 @@ class ZonesImportTest(BaseZonesImportTest):
         self.assertRaises(lib_exc.NotFound,
             lambda: self.client.show_zone_import(zone_import['id']))
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('9eab76af-1995-485f-a2ef-8290c1863aba')
     def test_list_zones_imports(self):
         LOG.info('Create a zone import')

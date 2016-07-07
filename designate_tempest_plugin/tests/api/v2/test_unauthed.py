@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 import ddt
@@ -38,7 +37,6 @@ class TestDnsUnauthed(base.BaseDnsV2Test):
         cls.pool_client = cls.os.pool_client
         cls.blacklists_client = cls.os.blacklists_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('0f7a6d20-f6f3-4937-8fe6-7a9851227d98')
     @ddt.file_data('unauthed_data.json')
     def test_unauthed(self, client, method, args=None):

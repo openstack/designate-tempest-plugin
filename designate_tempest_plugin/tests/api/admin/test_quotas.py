@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
@@ -36,7 +35,6 @@ class QuotasAdminTest(BaseQuotasTest):
 
         cls.admin_client = cls.os_adm.quotas_client
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('ed42f367-e5ba-40d7-a08d-366ad787d21c')
     def test_show_quotas(self):
         LOG.info("Updating quotas")
@@ -50,7 +48,6 @@ class QuotasAdminTest(BaseQuotasTest):
         LOG.info("Ensuring the response has all quota types")
         self.assertExpected(quotas['quota'], body['quota'], self.excluded_keys)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('33e0affb-5d66-4216-881c-f101a779851a')
     def test_delete_quotas(self):
         LOG.info("Deleting quotas")
@@ -59,7 +56,6 @@ class QuotasAdminTest(BaseQuotasTest):
         LOG.info("Ensuring an empty response body")
         self.assertEqual(body.strip(), "")
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('4f2b65b7-c4e1-489c-9047-755e42ba0985')
     def test_update_quotas(self):
         LOG.info("Updating quotas")

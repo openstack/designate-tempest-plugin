@@ -32,6 +32,7 @@ class ZonesTest(base.BaseDnsV2Test):
         cls.client = cls.os.zones_client
         cls.query_client = cls.os.query_client
 
+    @test.attr(type='smoke')
     @test.attr(type='slow')
     @decorators.idempotent_id('d0648f53-4114-45bd-8792-462a82f69d32')
     def test_create_and_delete_zone(self):
