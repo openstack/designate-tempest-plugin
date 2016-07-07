@@ -5,4 +5,4 @@
 dnspython>=1.14.0 # http://www.dnspython.org/LICENSE
 dnspython3>=1.12.0;python_version>='3.0' # http://www.dnspython.org/LICENSE
 ddt>=1.0.1 # MIT
-tempest>=11.0.0 # Apache-2.0
+tempest>=12.1.0 # Apache-2.0
