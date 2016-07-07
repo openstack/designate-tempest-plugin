@@ -15,7 +15,7 @@
 #    under the License.
 
 import six
-from tempest.common.utils import data_utils
+from tempest.lib.common.utils import data_utils
 from tempest import test
 from tempest.lib import decorators
 
