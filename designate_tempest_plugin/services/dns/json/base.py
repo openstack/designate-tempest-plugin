@@ -129,17 +129,24 @@ class DnsClientBase(rest_client.RestClient):
 
         return resp, self.deserialize(resp, body)
 
-    def _show_request(self, resource, uuid, headers=None, params=None):
+    def _show_request(self, resource, uuid, headers=None, params=None,
+                      extra_headers=False):
         """Gets a specific object of the specified type.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: Unique identifier of the object in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param extra_headers (bool): Boolean value than indicates if the
+                                     headers returned by the get_headers()
+                                     method are to be used but additional
+                                     headers are needed in the request
+                                     pass them in as a dict.
         :returns: Serialized object as a dictionary.
         """
         uri = self.get_uri(resource, uuid=uuid, params=params)
 
-        resp, body = self.get(uri, headers=headers)
+        resp, body = self.get(
+            uri, headers=headers, extra_headers=extra_headers)
 
         self.expected_success(self.SHOW_STATUS_CODES, resp.status)
 
@@ -179,7 +186,8 @@ class DnsClientBase(rest_client.RestClient):
 
         return resp, self.deserialize(resp, body)
 
-    def _update_request(self, resource, uuid, data, params=None):
+    def _update_request(self, resource, uuid, data, params=None, headers=None,
+                        extra_headers=False):
         """Updates the specified object using PATCH request.
         :param resource: The name of the REST resource, e.g., 'zones'
         :param uuid: Unique identifier of the object in UUID format.
@@ -188,28 +196,44 @@ class DnsClientBase(rest_client.RestClient):
                      is sent as-is.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
+        :param extra_headers (bool): Boolean value than indicates if the
+                                     headers returned by the get_headers()
+                                     method are to be used but additional
+                                     headers are needed in the request
+                                     pass them in as a dict.
         :returns: Serialized object as a dictionary.
         """
         body = self.serialize(data)
         uri = self.get_uri(resource, uuid=uuid, params=params)
 
-        resp, body = self.patch(uri, body=body)
+        resp, body = self.patch(uri, body=body,
+                                headers=headers, extra_headers=True)
 
         self.expected_success(self.UPDATE_STATUS_CODES, resp.status)
 
         return resp, self.deserialize(resp, body)
 
-    def _delete_request(self, resource, uuid, params=None):
+    def _delete_request(self, resource, uuid, params=None, headers=None,
+                        extra_headers=False):
         """Deletes the specified object.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: The unique identifier of an object in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
+        :param extra_headers (bool): Boolean value than indicates if the
+                                     headers returned by the get_headers()
+                                     method are to be used but additional
+                                     headers are needed in the request
+                                     pass them in as a dict.
         :returns: A tuple with the server response and the response body.
         """
         uri = self.get_uri(resource, uuid=uuid, params=params)
 
-        resp, body = self.delete(uri)
+        resp, body = self.delete(
+            uri, headers=headers, extra_headers=extra_headers)
+
         self.expected_success(self.DELETE_STATUS_CODES, resp.status)
         if resp.status == 202:
             body = self.deserialize(resp, body)

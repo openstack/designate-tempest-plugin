@@ -12,17 +12,24 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
 
 LOG = logging.getLogger(__name__)
+CONF = config.CONF
 
 
 class BaseQuotasTest(base.BaseDnsAdminTest):
-    # see: https://bugs.launchpad.net/designate/+bug/1573141
-    excluded_keys = ['api_expected_size']
+
+    excluded_keys = []
+
+    def setUp(self):
+        if CONF.dns_feature_enabled.bug_1573141_fixed:
+            self.excluded_keys = ['api_export_size']
+        super(BaseQuotasTest, self).setUp()
 
 
 class QuotasAdminTest(BaseQuotasTest):
@@ -39,14 +46,14 @@ class QuotasAdminTest(BaseQuotasTest):
     def test_show_quotas(self):
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()
-        _, body = self.admin_client.update_quotas(**quotas['quota'])
+        _, body = self.admin_client.update_quotas(**quotas)
         self.addCleanup(self.admin_client.delete_quotas)
 
         LOG.info("Fetching quotas")
         _, body = self.admin_client.show_quotas()
 
         LOG.info("Ensuring the response has all quota types")
-        self.assertExpected(quotas['quota'], body['quota'], self.excluded_keys)
+        self.assertExpected(quotas, body['quota'], self.excluded_keys)
 
     @decorators.idempotent_id('33e0affb-5d66-4216-881c-f101a779851a')
     def test_delete_quotas(self):
@@ -60,8 +67,8 @@ class QuotasAdminTest(BaseQuotasTest):
     def test_update_quotas(self):
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()
-        _, body = self.admin_client.update_quotas(**quotas['quota'])
+        _, body = self.admin_client.update_quotas(**quotas)
         self.addCleanup(self.admin_client.delete_quotas)
 
         LOG.info("Ensuring the response has all quota types")
-        self.assertExpected(quotas['quota'], body['quota'], self.excluded_keys)
+        self.assertExpected(quotas, body['quota'], self.excluded_keys)

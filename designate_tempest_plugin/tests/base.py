@@ -85,8 +85,8 @@ class BaseDnsV2Test(BaseDnsTest):
 class BaseDnsAdminTest(BaseDnsTest):
     """Base class for DNS Admin API tests."""
 
-    # Use the Designate V2 Client Manager
-    client_manager = clients.ManagerV2
+    # Use the Designate Admin Client Manager
+    client_manager = clients.ManagerAdmin
 
     @classmethod
     def skip_checks(cls):

@@ -81,23 +81,25 @@ def rand_zonefile_data(name=None, ttl=None):
 
 def rand_quotas(zones=None, zone_records=None, zone_recordsets=None,
                 recordset_records=None, api_export_size=None):
-    LOG.warn("Leaving `api_export_size` out of quota data due to: "
-             "https://bugs.launchpad.net/designate/+bug/1573141")
-    return {
-        'quota': {
-            'zones':
-                zones or data_utils.rand_int_id(100, 999999),
-            'zone_records':
-                zone_records or data_utils.rand_int_id(100, 999999),
-            'zone_recordsets':
-                zone_recordsets or data_utils.rand_int_id(100, 999999),
-            'recordset_records':
-                recordset_records or data_utils.rand_int_id(100, 999999),
-            # https://bugs.launchpad.net/designate/+bug/1573141
-            # 'api_export_size':
-            #     api_export_size or data_utils.rand_int_id(100, 999999),
-        }
+    quotas_dict = {
+        'zones':
+            zones or data_utils.rand_int_id(100, 999999),
+        'zone_records':
+            zone_records or data_utils.rand_int_id(100, 999999),
+        'zone_recordsets':
+            zone_recordsets or data_utils.rand_int_id(100, 999999),
+        'recordset_records':
+            recordset_records or data_utils.rand_int_id(100, 999999),
     }
+
+    if CONF.dns_feature_enabled.bug_1573141_fixed:
+        quotas_dict['api_export_size'] = \
+            api_export_size or data_utils.rand_int_id(100, 999999)
+    else:
+        LOG.warn("Leaving `api_export_size` out of quota data due to: "
+                 "https://bugs.launchpad.net/designate/+bug/1573141")
+
+    return quotas_dict
 
 
 def rand_zone_data(name=None, email=None, ttl=None, description=None):
