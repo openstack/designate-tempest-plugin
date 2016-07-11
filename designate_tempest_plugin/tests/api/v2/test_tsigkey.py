@@ -13,6 +13,7 @@
 #    under the License.
 
 from oslo_log import log as logging
+from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -129,3 +130,78 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
         self.assertRaises(lib_exc.NotFound,
             lambda: self.admin_client.get(uri))
+
+
+class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestTsigkeyNotFoundAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.tsigkey_client
+
+    @decorators.idempotent_id('824c9b49-edc5-4282-929e-467a158d23e4')
+    def test_show_tsigkey_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.show_tsigkey,
+                              data_utils.rand_uuid())
+        self.assertTsigkey404(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('4ef3493a-ee66-4c62-b070-c57fa9568b69')
+    def test_update_tsigkey_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.update_tsigkey,
+                              data_utils.rand_uuid())
+        self.assertTsigkey404(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('ba438ede-4823-4922-8f4c-8de278f3d454')
+    def test_delete_tsigkey_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.admin_client.delete_tsigkey,
+                              data_utils.rand_uuid())
+        self.assertTsigkey404(e.resp, e.resp_body)
+
+    def assertTsigkey404(self, resp, resp_body):
+        self.assertEqual(404, resp.status)
+        self.assertEqual(404, resp_body['code'])
+        self.assertEqual("tsigkey_not_found", resp_body['type'])
+        self.assertEqual("Could not find TsigKey", resp_body['message'])
+
+
+class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestTsigkeyInvalidIdAdmin, cls).setup_clients()
+        cls.admin_client = cls.os_adm.tsigkey_client
+
+    @decorators.idempotent_id('2a8dfc75-9884-4b1c-8f1f-ed835d96f2fe')
+    def test_show_tsigkey_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.show_tsigkey,
+                              'foo')
+        self.assertTsigkeyInvalidId(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('2befa10f-fc42-4ae9-9276-672e23f045f2')
+    def test_update_tsigkey_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.update_tsigkey,
+                              'foo')
+        self.assertTsigkeyInvalidId(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('55c2fea0-ead6-44c7-8bb1-05111412afdd')
+    def test_delete_tsigkey_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.admin_client.delete_tsigkey,
+                              'foo')
+        self.assertTsigkeyInvalidId(e.resp, e.resp_body)
+
+    def assertTsigkeyInvalidId(self, resp, resp_body):
+        self.assertEqual(400, resp.status)
+        self.assertEqual(400, resp_body['code'])
+        self.assertEqual("invalid_uuid", resp_body['type'])
+        self.assertEqual("Invalid UUID tsigkey_id: foo",
+                         resp_body['message'])

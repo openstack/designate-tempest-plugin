@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_log import log as logging
+from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -125,3 +126,73 @@ class TransferRequestTest(BaseTransferRequestTest):
 
         self.assertRaises(lib_exc.NotFound,
             lambda: self.client.get(uri))
+
+
+class TestTransferRequestNotFound(BaseTransferRequestTest):
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestTransferRequestNotFound, cls).setup_clients()
+        cls.client = cls.os.transfer_request_client
+
+    @decorators.idempotent_id('d255f72f-ba24-43df-9dba-011ed7f4625d')
+    def test_show_transfer_request_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.client.show_transfer_request,
+                              data_utils.rand_uuid())
+        self.assertTransferRequest404(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('9ff383fb-c31d-4c6f-8085-7b261e401223')
+    def test_update_transfer_request_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.client.update_transfer_request,
+                              data_utils.rand_uuid())
+        self.assertTransferRequest404(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('5a4a0755-c01d-448f-b856-b081b96ae77e')
+    def test_delete_transfer_request_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.client.delete_transfer_request,
+                              data_utils.rand_uuid())
+        self.assertTransferRequest404(e.resp, e.resp_body)
+
+    def assertTransferRequest404(self, resp, resp_body):
+        self.assertEqual(404, resp.status)
+        self.assertEqual(404, resp_body['code'])
+        self.assertEqual("zone_transfer_request_not_found", resp_body['type'])
+        self.assertEqual("Could not find ZoneTransferRequest",
+                         resp_body['message'])
+
+
+class TestTransferRequestInvalidId(BaseTransferRequestTest):
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestTransferRequestInvalidId, cls).setup_clients()
+        cls.client = cls.os.transfer_request_client
+
+    @decorators.idempotent_id('2205dd19-ecc7-4c68-9e89-63c47d642b07')
+    def test_show_transfer_request_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.client.show_transfer_request,
+                              'foo')
+        self.assertTransferRequestInvalidId(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('af0ce46f-10be-4cce-a1d5-1b5c2a39fb97')
+    def test_update_transfer_request_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.client.update_transfer_request,
+                              'foo')
+        self.assertTransferRequestInvalidId(e.resp, e.resp_body)
+
+    @decorators.idempotent_id('1728dca5-01f1-45f4-b59d-7a981d479394')
+    def test_delete_transfer_request_invalid_uuid(self):
+        e = self.assertRaises(lib_exc.BadRequest,
+                              self.client.delete_transfer_request,
+                              'foo')
+        self.assertTransferRequestInvalidId(e.resp, e.resp_body)
+
+    def assertTransferRequestInvalidId(self, resp, resp_body):
+        self.assertEqual(400, resp.status)
+        self.assertEqual(400, resp_body['code'])
+        self.assertEqual("invalid_uuid", resp_body['type'])
