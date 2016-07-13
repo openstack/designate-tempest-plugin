@@ -13,7 +13,9 @@
 # under the License.
 from tempest import clients
 from tempest import config
+from tempest.lib.auth import KeystoneAuthProvider
 from tempest.lib.auth import KeystoneV2AuthProvider
+from tempest.lib.auth import KeystoneV3AuthProvider
 
 from designate_tempest_plugin.services.dns.v1.json.domains_client import \
     DomainsClient
@@ -140,7 +142,7 @@ class ManagerV2Unauthed(ManagerV2):
 
     def __init__(self, credentials=None, service=None):
         super(ManagerV2Unauthed, self).__init__(credentials, service)
-        self.auth_provider = KeystoneV2UnauthedProvider(
+        self.auth_provider = self._auth_provider_class()(
             credentials=self.auth_provider.credentials,
             auth_url=self.auth_provider.auth_client.auth_url,
             disable_ssl_certificate_validation=self.auth_provider.dscv,
@@ -149,13 +151,18 @@ class ManagerV2Unauthed(ManagerV2):
         )
         self._init_clients(self._get_params())
 
+    def _auth_provider_class(self):
+        if CONF.identity.auth_version == 'v3':
+            return KeystoneV3UnauthedProvider
+        else:
+            return KeystoneV2UnauthedProvider
 
-class KeystoneV2UnauthedProvider(KeystoneV2AuthProvider):
-    """This auth provider will ensure requests are made without a token"""
+
+class BaseUnauthedProvider(KeystoneAuthProvider):
 
     def _decorate_request(self, filters, method, url, headers=None, body=None,
                           auth_data=None):
-        result = super(KeystoneV2UnauthedProvider, self)._decorate_request(
+        result = super(BaseUnauthedProvider, self)._decorate_request(
             filters, method, url, headers=headers, body=body,
             auth_data=auth_data)
         url, headers, body = result
@@ -164,3 +171,15 @@ class KeystoneV2UnauthedProvider(KeystoneV2AuthProvider):
         except KeyError:
             pass
         return url, headers, body
+
+
+class KeystoneV2UnauthedProvider(KeystoneV2AuthProvider, BaseUnauthedProvider):
+
+    def _decorate_request(self, *args, **kwargs):
+        return BaseUnauthedProvider._decorate_request(self, *args, **kwargs)
+
+
+class KeystoneV3UnauthedProvider(KeystoneV3AuthProvider, BaseUnauthedProvider):
+
+    def _decorate_request(self, *args, **kwargs):
+        return BaseUnauthedProvider._decorate_request(self, *args, **kwargs)
