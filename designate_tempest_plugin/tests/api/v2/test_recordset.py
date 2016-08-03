@@ -132,6 +132,28 @@ class RecordsetsTest(BaseRecordsetsTest):
         self.assertEqual(record['name'], update['name'])
         self.assertNotEqual(record['records'], update['records'])
 
+    @decorators.idempotent_id('60904cc5-148b-4e3b-a0c6-35656dc8d44c')
+    def test_update_recordset_one_field(self):
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
+
+        LOG.info('Create a recordset')
+        _, record = self.client.create_recordset(
+            self.zone['id'], recordset_data)
+
+        recordset_data = {
+            'ttl': data_utils.rand_ttl(start=record['ttl'] + 1)
+        }
+
+        LOG.info('Update the recordset')
+        _, update = self.client.update_recordset(self.zone['id'],
+            record['id'], recordset_data)
+
+        self.assertEqual(record['name'], update['name'])
+        self.assertEqual(record['records'], update['records'])
+        self.assertEqual(record['description'], update['description'])
+        self.assertNotEqual(record['ttl'], update['ttl'])
+
 
 @ddt.ddt
 class RecordsetsNegativeTest(BaseRecordsetsTest):
