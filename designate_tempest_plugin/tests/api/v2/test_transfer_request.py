@@ -17,22 +17,25 @@ from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
+from designate_tempest_plugin import data_utils as dns_data_utils
 
 LOG = logging.getLogger(__name__)
 
 
 class BaseTransferRequestTest(base.BaseDnsV2Test):
-    excluded_keys = ['created_at', 'updated_at', 'key', 'links',
-                    'zone_name']
+    excluded_keys = ['created_at', 'updated_at', 'key', 'links']
 
 
 class TransferRequestTest(BaseTransferRequestTest):
+    credentials = ['primary', 'alt']
+
     @classmethod
     def setup_clients(cls):
         super(TransferRequestTest, cls).setup_clients()
 
         cls.zone_client = cls.os.zones_client
         cls.client = cls.os.transfer_request_client
+        cls.alt_client = cls.os_alt.transfer_request_client
 
     @decorators.idempotent_id('2381d489-ad84-403d-b0a2-8b77e4e966bf')
     def test_create_transfer_request(self):
@@ -42,6 +45,38 @@ class TransferRequestTest(BaseTransferRequestTest):
 
         LOG.info('Create a zone transfer_request')
         _, transfer_request = self.client.create_transfer_request(zone['id'])
+        self.addCleanup(self.client.delete_transfer_request,
+                        transfer_request['id'])
+
+        LOG.info('Ensure we respond with ACTIVE status')
+        self.assertEqual('ACTIVE', transfer_request['status'])
+
+    @decorators.idempotent_id('5deae1ac-7c14-42dc-b14e-4e4b2725beb7')
+    def test_create_transfer_request_scoped(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        transfer_request_data = dns_data_utils.rand_transfer_request_data(
+            target_project_id=self.os_alt.credentials.project_id)
+
+        LOG.info('Create a scoped zone transfer_request')
+        _, transfer_request = self.client.create_transfer_request(
+            zone['id'], transfer_request_data)
+        self.addCleanup(self.client.delete_transfer_request,
+                        transfer_request['id'])
+
+        LOG.info('Ensure we respond with ACTIVE status')
+        self.assertEqual('ACTIVE', transfer_request['status'])
+
+    @decorators.idempotent_id('4505152f-0a9c-4f02-b385-2216c914a0be')
+    def test_create_transfer_request_empty_body(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        LOG.info('Create a zone transfer_request')
+        _, transfer_request = self.client.create_transfer_request_empty_body(
+            zone['id'])
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
@@ -65,6 +100,32 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Ensure the fetched response matches the '
                  'created transfer_request')
         self.assertExpected(transfer_request, body, self.excluded_keys)
+
+    @decorators.idempotent_id('235ded87-0c47-430b-8cad-4f3194b927a6')
+    def test_show_transfer_request_as_target(self):
+        # Checks the target of a scoped transfer request can see
+        # the request.
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        transfer_request_data = dns_data_utils.rand_transfer_request_data(
+            target_project_id=self.os_alt.credentials.project_id)
+
+        LOG.info('Create a scoped zone transfer_request')
+        _, transfer_request = self.client.create_transfer_request(
+            zone['id'], transfer_request_data)
+        self.addCleanup(self.client.delete_transfer_request,
+                        transfer_request['id'])
+
+        LOG.info('Fetch the transfer_request as the target')
+        _, body = self.alt_client.show_transfer_request(transfer_request['id'])
+
+        LOG.info('Ensure the fetched response matches the '
+                 'created transfer_request')
+        excluded_keys = self.excluded_keys + ["target_project_id",
+                                              "project_id"]
+        self.assertExpected(transfer_request, body, excluded_keys)
 
     @decorators.idempotent_id('7d81c487-aa15-44c4-b3e5-424ab9e6a3e5')
     def test_delete_transfer_request(self):

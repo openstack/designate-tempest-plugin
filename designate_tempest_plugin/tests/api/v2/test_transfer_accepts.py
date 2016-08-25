@@ -68,8 +68,8 @@ class TransferAcceptTest(BaseTransferAcceptTest):
                         transfer_request['id'])
 
         data = {
-                 "key": transfer_request['key'],
-                 "zone_transfer_request_id": transfer_request['id']
+            "key": transfer_request['key'],
+            "zone_transfer_request_id": transfer_request['id']
         }
 
         LOG.info('Create a zone transfer_accept')

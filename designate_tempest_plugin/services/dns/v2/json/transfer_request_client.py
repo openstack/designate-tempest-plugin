@@ -42,6 +42,24 @@ class TransferRequestClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
+    def create_transfer_request_empty_body(self, uuid, params=None):
+        """Create a zone transfer_requests.
+        :param uuid: Unique identifier of the zone in UUID format.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :return: Serialized zone trasfer request as a dictionary.
+        """
+
+        transfer_request_uri = 'zones/{0}/tasks/transfer_requests'.format(uuid)
+        resp, body = self._create_request(
+            transfer_request_uri, None, params=params)
+
+        # Create Transfer request should Return a HTTP 201
+        self.expected_success(201, resp.status)
+
+        return resp, body
+
+    @base.handle_errors
     def show_transfer_request(self, uuid, params=None):
         """Gets a specific transfer_requestsed zone.
         :param uuid: Unique identifier of the transfer_requestsed zone in
