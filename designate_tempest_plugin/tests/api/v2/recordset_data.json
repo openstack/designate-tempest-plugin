@@ -24,16 +24,11 @@
                     "20 30 5060 server3.example.com."]
     },
     "CNAME": {
-        "name": "www",
+        "name": "alias-of-target",
         "type": "CNAME",
         "records": ["target.example.org."]
     },
     "MX at APEX": {
-        "name": null,
-        "type": "MX",
-        "records": ["10 mail.example.org."]
-    },
-    "MX at APEX multiple": {
         "name": null,
         "type": "MX",
         "records": ["10 mail1.example.org.",
