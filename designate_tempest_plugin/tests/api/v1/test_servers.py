@@ -48,8 +48,8 @@ class ServersAdminTest(base.BaseDnsV1Test):
             raise cls.skipException(skip_msg)
 
     @classmethod
-    def setUpClass(cls):
-        super(ServersAdminTest, cls).setUpClass()
+    def resource_setup(cls):
+        super(ServersAdminTest, cls).resource_setup()
 
         cls.setup_servers = list()
         for i in range(2):
@@ -58,10 +58,10 @@ class ServersAdminTest(base.BaseDnsV1Test):
             cls.setup_servers.append(server)
 
     @classmethod
-    def tearDownClass(cls):
+    def resource_cleanup(cls):
         for server in cls.setup_servers:
             cls.client.delete_server(server['id'])
-        super(ServersAdminTest, cls).tearDownClass()
+        super(ServersAdminTest, cls).resource_cleanup()
 
     def _delete_server(self, server_id):
         self.client.delete_server(server_id)

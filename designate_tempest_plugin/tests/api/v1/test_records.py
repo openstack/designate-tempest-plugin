@@ -30,8 +30,8 @@ class RecordsTest(base.BaseDnsV1Test):
         cls.client = cls.os.records_client
 
     @classmethod
-    def setUpClass(cls):
-        super(RecordsTest, cls).setUpClass()
+    def resource_setup(cls):
+        super(RecordsTest, cls).resource_setup()
 
         # Creates domains and Records for testcase
         cls.setup_records = list()
@@ -53,11 +53,11 @@ class RecordsTest(base.BaseDnsV1Test):
         cls.setup_records.append(record)
 
     @classmethod
-    def tearDownClass(cls):
+    def resource_cleanup(cls):
         for record in cls.setup_records:
             cls.client.delete_record(cls.domain['id'], record['id'])
         cls.os.domains_client.delete_domain(cls.domain['id'])
-        super(RecordsTest, cls).tearDownClass()
+        super(RecordsTest, cls).resource_cleanup()
 
     def _delete_record(self, domain_id, record_id):
         self.client.delete_record(domain_id, record_id)
