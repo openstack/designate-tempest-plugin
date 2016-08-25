@@ -91,6 +91,28 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', body['status'])
 
+    @decorators.idempotent_id('69f002e5-6511-43d3-abae-7abdd45ae03e')
+    @ddt.file_data("recordset_wildcard_data.json")
+    def test_create_wildcard_recordset(self, name, type, records):
+        if name is not None:
+            recordset_name = name + "." + self.zone['name']
+
+        else:
+            recordset_name = "*." + self.zone['name']
+
+        recordset_data = {
+            'name': recordset_name,
+            'type': type,
+            'records': records,
+        }
+
+        LOG.info('Create a Recordset')
+        resp, body = self.client.create_recordset(
+            self.zone['id'], recordset_data)
+
+        LOG.info('Ensure we respond with PENDING')
+        self.assertEqual('PENDING', body['status'])
+
     @decorators.idempotent_id('5964f730-5546-46e6-9105-5030e9c492b2')
     def test_list_recordsets(self):
         recordset_data = data_utils.rand_recordset_data(
