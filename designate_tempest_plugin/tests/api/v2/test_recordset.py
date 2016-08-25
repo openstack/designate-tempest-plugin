@@ -236,3 +236,71 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         recordsets = body['recordsets']
 
         self.assertEqual(zone_recordset['id'], recordsets[0]['id'])
+
+
+class RecordsetOwnershipTest(BaseRecordsetsTest):
+
+    credentials = ['primary', 'alt']
+
+    @classmethod
+    def setup_clients(cls):
+        super(RecordsetOwnershipTest, cls).setup_clients()
+
+        cls.client = cls.os.recordset_client
+        cls.zone_client = cls.os.zones_client
+        cls.alt_zone_client = cls.os_alt.zones_client
+        cls.alt_client = cls.os_alt.recordset_client
+
+    @decorators.idempotent_id('9c0f58ad-1b31-4899-b184-5380720604e5')
+    def test_no_create_recordset_by_alt_tenant(self):
+        # try with name=A123456.zone.com.
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
+        resp, rrset = self.client.create_recordset(
+            self.zone['id'], recordset_data)
+        self.assertRaises(
+            lib_exc.RestClientException,
+            lambda: self.alt_client.create_recordset(
+                self.zone['id'], recordset_data)
+        )
+
+    @decorators.idempotent_id('d4a9aad9-c778-429b-9a0c-4cd2b61a0a01')
+    def test_no_create_super_recordsets(self):
+        zone_name = data_utils.rand_zone_name()
+
+        LOG.info('Create a zone as a default user')
+        _, zone = self.zone_client.create_zone(name='a.b.' + zone_name)
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        rrset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone_name)
+
+        LOG.info('Create a zone as an alt user with existing superdomain')
+        self.assertRaises(
+            lib_exc.NotFound,
+            self.alt_client.create_recordset,
+            self.zone['id'], rrset_data)
+
+    @decorators.idempotent_id('3dbe244d-fa85-4afc-869b-0306388d8746')
+    def test_no_create_recordset_via_alt_domain(self):
+        _, zone = self.zone_client.create_zone()
+        _, alt_zone = self.alt_zone_client.create_zone()
+
+        # alt attempts to create record with name A12345.{zone}
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+
+        self.assertRaises(
+            lib_exc.RestClientException,
+            lambda: self.alt_client.create_recordset(
+                zone['id'],
+                recordset_data
+            )
+        )
+        self.assertRaises(
+            lib_exc.RestClientException,
+            lambda: self.alt_client.create_recordset(
+                alt_zone['id'],
+                recordset_data
+            )
+        )
