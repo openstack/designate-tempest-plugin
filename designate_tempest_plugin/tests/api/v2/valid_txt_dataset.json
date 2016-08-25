@@ -1,0 +1,5 @@
+{
+  "slash_with_one_trailing_space": {"data": "\\ "},
+  "slash_with_many_trailing_space": {"data": "\\    "},
+  "text_with_slash_and_trailing_space": {"data": "the txts    "}
+}
