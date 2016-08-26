@@ -16,6 +16,7 @@ from tempest import config
 from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+from tempest.lib.common.utils import data_utils as lib_data_utils
 import ddt
 
 from designate_tempest_plugin.tests import base
@@ -183,6 +184,76 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         self.assertRaises(lib_exc.BadRequest,
             lambda: self.client.create_recordset(
                 self.zone['id'], recordset_data))
+
+    @decorators.idempotent_id('b6dad57e-5ce9-4fa5-8d66-aebbcd23b4ad')
+    def test_get_nonexistent_recordset(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        LOG.info('Attempt to get an invalid Recordset')
+        with self.assertRaisesDns(
+                lib_exc.NotFound, 'recordset_not_found', 404):
+            self.client.show_recordset(zone['id'], lib_data_utils.rand_uuid())
+
+    @decorators.idempotent_id('93d744a8-0dfd-4650-bcef-1e6ad632ad72')
+    def test_get_nonexistent_recordset_invalid_id(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        LOG.info('Attempt to get an invalid Recordset')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
+            self.client.show_recordset(zone['id'], 'invalid')
+
+    @decorators.idempotent_id('da08f19a-7f10-47cc-8b41-994507190812')
+    def test_update_nonexistent_recordset(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        recordset_data = data_utils.rand_recordset_data('A', zone['name'])
+
+        LOG.info('Attempt to update an invalid Recordset')
+        with self.assertRaisesDns(
+                lib_exc.NotFound, 'recordset_not_found', 404):
+            self.client.update_recordset(
+                zone['id'], lib_data_utils.rand_uuid(), recordset_data)
+
+    @decorators.idempotent_id('158340a1-3f69-4aaa-9968-956190563768')
+    def test_update_nonexistent_recordset_invalid_id(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        recordset_data = data_utils.rand_recordset_data('A', zone['name'])
+
+        LOG.info('Attempt to update an invalid Recordset')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
+            self.client.update_recordset(
+                zone['id'], 'invalid', recordset_data)
+
+    @decorators.idempotent_id('64bd94d4-54bd-4bee-b6fd-92ede063234e')
+    def test_delete_nonexistent_recordset(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        LOG.info('Attempt to delete an invalid Recordset')
+        with self.assertRaisesDns(
+                lib_exc.NotFound, 'recordset_not_found', 404):
+            self.client.delete_recordset(
+                zone['id'], lib_data_utils.rand_uuid())
+
+    @decorators.idempotent_id('5948b599-a332-4dcb-840b-afc825075ba3')
+    def test_delete_nonexistent_recordset_invalid_id(self):
+        LOG.info('Create a zone')
+        _, zone = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+
+        LOG.info('Attempt to get an invalid Recordset')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
+            self.client.delete_recordset(zone['id'], 'invalid')
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):
