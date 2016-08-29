@@ -17,7 +17,7 @@ from tempest.lib import exceptions as lib_exc
 import ddt
 
 from designate_tempest_plugin.tests import base
-from designate_tempest_plugin.clients import ManagerV2Unauthed
+from designate_tempest_plugin import clients
 
 LOG = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 @ddt.ddt
 class TestDnsUnauthed(base.BaseDnsV2Test):
 
-    client_manager = ManagerV2Unauthed
+    client_manager = clients.ManagerV2Unauthed
     credentials = ["primary"]
 
     @classmethod

@@ -20,7 +20,7 @@ from tempest.lib import exceptions as lib_exc
 from six.moves.urllib import parse as urllib
 import six
 
-from designate_tempest_plugin.common.models import ZoneFile
+from designate_tempest_plugin.common import models
 
 LOG = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class DnsClientBase(rest_client.RestClient):
         if 'application/json' in resp['content-type']:
             return json.loads(object_str)
         elif 'text/dns' in resp['content-type']:
-            return ZoneFile.from_text(object_str)
+            return models.ZoneFile.from_text(object_str)
         else:
             raise lib_exc.InvalidContentType()
 
