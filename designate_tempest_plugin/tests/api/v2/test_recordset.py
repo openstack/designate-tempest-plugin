@@ -303,17 +303,22 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
         self.assertGreater(len(body['recordsets']), 0)
 
+    @decorators.skip_because(bug="1616892")
+    @decorators.idempotent_id('65ec0495-81d9-4cfb-8007-9d93b32ae883')
+    def test_get_single_zones_recordsets(self):
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'], records=['10.1.0.2'])
+
+        LOG.info('Create a Recordset')
+        resp, zone_recordset = self.client.create_recordset(
+            self.zone['id'], recordset_data)
+
+        self.client.show_zones_recordset(zone_recordset['id'])
+
     @decorators.idempotent_id('a8e41020-65be-453b-a8c1-2497d539c345')
     def test_list_filter_zones_recordsets(self):
-        recordset_data = {
-            "name": self.zone['name'],
-            "description": "This is an example record set.",
-            "type": "A",
-            "ttl": 3600,
-            "records": [
-                "10.1.0.2"
-            ]
-        }
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'], records=['10.0.1.2'])
 
         LOG.info('Create a Recordset')
         resp, zone_recordset = self.client.create_recordset(
@@ -323,12 +328,44 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         _, zone2 = self.zone_client.create_zone()
         self.addCleanup(self.zone_client.delete_zone, zone2['id'])
 
+        LOG.info('Create another Recordset')
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone2['name'],
+            records=['10.0.1.3'])
+        resp, zone_recordset2 = self.client.create_recordset(
+            zone2['id'], recordset_data)
+
         LOG.info('List recordsets')
-        _, body = self.client.list_zones_recordsets(params={"data": "10.1.*"})
+        _, body = self.client.list_zones_recordsets(params={"data": "10.0.*"})
 
         recordsets = body['recordsets']
 
-        self.assertEqual(zone_recordset['id'], recordsets[0]['id'])
+        ids = [r['id'] for r in recordsets]
+        self.assertIn(zone_recordset['id'], ids)
+        self.assertIn(zone_recordset2['id'], ids)
+        # Ensure that every rrset has a record with the filtered data
+        for r in recordsets:
+            one_record_has_data = False
+            for record in r['records']:
+                if record.startswith('10.0.'):
+                    one_record_has_data = True
+            self.assertTrue(one_record_has_data)
+
+    @decorators.idempotent_id('7f4970bf-9aeb-4a3c-9afd-02f5a7178d35')
+    def test_list_zones_recordsets_zone_names(self):
+        LOG.info('Create another zone')
+        _, zone2 = self.zone_client.create_zone()
+        self.addCleanup(self.zone_client.delete_zone, zone2['id'])
+
+        LOG.info('List recordsets')
+        _, body = self.client.list_zones_recordsets()
+
+        recordsets = body['recordsets']
+        zone_names = set()
+        for r in recordsets:
+            zone_names.add(r['zone_name'])
+
+        self.assertGreaterEqual(len(zone_names), 2)
 
 
 class RecordsetOwnershipTest(BaseRecordsetsTest):
