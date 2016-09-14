@@ -11,12 +11,9 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-from oslo_log import log as logging
 
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.services.dns.admin.json import base
-
-LOG = logging.getLogger(__name__)
 
 
 class QuotasClient(base.DnsClientAdminBase):
