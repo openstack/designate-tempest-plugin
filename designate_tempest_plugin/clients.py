@@ -13,9 +13,7 @@
 # under the License.
 from tempest import clients
 from tempest import config
-from tempest.lib.auth import KeystoneAuthProvider
-from tempest.lib.auth import KeystoneV2AuthProvider
-from tempest.lib.auth import KeystoneV3AuthProvider
+from tempest.lib import auth
 
 from designate_tempest_plugin.services.dns.v1.json.domains_client import \
     DomainsClient
@@ -158,7 +156,7 @@ class ManagerV2Unauthed(ManagerV2):
             return KeystoneV2UnauthedProvider
 
 
-class BaseUnauthedProvider(KeystoneAuthProvider):
+class BaseUnauthedProvider(auth.KeystoneAuthProvider):
 
     def _decorate_request(self, filters, method, url, headers=None, body=None,
                           auth_data=None):
@@ -173,13 +171,15 @@ class BaseUnauthedProvider(KeystoneAuthProvider):
         return url, headers, body
 
 
-class KeystoneV2UnauthedProvider(KeystoneV2AuthProvider, BaseUnauthedProvider):
+class KeystoneV2UnauthedProvider(auth.KeystoneV2AuthProvider,
+                                 BaseUnauthedProvider):
 
     def _decorate_request(self, *args, **kwargs):
         return BaseUnauthedProvider._decorate_request(self, *args, **kwargs)
 
 
-class KeystoneV3UnauthedProvider(KeystoneV3AuthProvider, BaseUnauthedProvider):
+class KeystoneV3UnauthedProvider(auth.KeystoneV3AuthProvider,
+                                 BaseUnauthedProvider):
 
     def _decorate_request(self, *args, **kwargs):
         return BaseUnauthedProvider._decorate_request(self, *args, **kwargs)
