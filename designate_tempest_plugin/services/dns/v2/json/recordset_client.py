@@ -60,8 +60,9 @@ class RecordsetClient(base.DnsClientV2Base):
             'zones/{0}/recordsets'.format(zone_uuid), recordset_uuid,
             data=recordet_data, params=params)
 
-        # Update Recordset should Return a HTTP 202
-        self.expected_success(202, resp.status)
+        # Update Recordset should Return a HTTP 202, or a 200 if the recordset
+        # is already active
+        self.expected_success([200, 202], resp.status)
 
         return resp, body
 
