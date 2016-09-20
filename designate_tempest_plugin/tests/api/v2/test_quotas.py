@@ -75,7 +75,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
         LOG.info("Ensuring the response has all quota types")
         self.assertExpected(quotas, body, [])
 
-    @decorators.idempotent_id('76d24c87-1b39-4e19-947c-c08e1380dc61')
+    @decorators.idempotent_id('9b09b3e2-7e88-4569-bce3-9be2f7ac70c3')
     def test_update_quotas_other_project(self):
 
         project_id = self.quotas_client.tenant_id

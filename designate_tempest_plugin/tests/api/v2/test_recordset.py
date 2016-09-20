@@ -187,7 +187,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         cls.client = cls.os.recordset_client
         cls.zone_client = cls.os.zones_client
 
-    @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
+    @decorators.idempotent_id('98c94f8c-217a-4056-b996-b1f856d0753e')
     @ddt.file_data("recordset_data_invalid.json")
     def test_create_recordset_invalid(self, name, type, records):
         if name is not None:
