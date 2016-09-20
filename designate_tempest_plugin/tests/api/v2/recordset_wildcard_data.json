@@ -1,0 +1,53 @@
+{
+    "A at APEX": {
+        "name": "*",
+        "type": "A",
+        "records": ["192.0.2.1", "192.0.2.2", "192.0.2.3"]
+    },
+    "A under APEX": {
+        "name": "*.sub",
+        "type": "A",
+        "records": ["192.0.2.1", "192.0.2.2", "192.0.2.3"]
+    },
+    "AAAA at APEX": {
+        "name": "*",
+        "type": "AAAA",
+        "records": ["2001:db8::1", "2001:db8::1", "2001:db8::"]
+    },
+    "AAAA under APEX": {
+        "name": "*.sub",
+        "type": "AAAA",
+        "records": ["2001:db8::1", "2001:db8::1", "2001:db8::"]
+    },
+    "MX at APEX": {
+        "name": "*",
+        "type": "MX",
+        "records": ["10 mail1.example.org.",
+                    "20 mail2.example.org."]
+    },
+    "MX under APEX": {
+        "name": "*.sub",
+        "type": "MX",
+        "records": ["10 mail.example.org."]
+    },
+    "SPF at APEX": {
+        "name": "*",
+        "type": "SPF",
+        "records": ["v=spf1; a -all"]
+    },
+    "SPF under APEX": {
+        "name": "*.sub",
+        "type": "SPF",
+        "records": ["v=spf1; a -all"]
+    },
+    "TXT at APEX": {
+        "name": "*",
+        "type": "TXT",
+        "records": ["Can you read me?"]
+    },
+    "TXT under APEX": {
+        "name": "*.sub",
+        "type": "TXT",
+        "records": ["Can you read me?"]
+    }
+}
