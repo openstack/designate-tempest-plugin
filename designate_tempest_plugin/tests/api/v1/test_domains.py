@@ -31,8 +31,8 @@ class DnsDomainsTest(base.BaseDnsV1Test):
         cls.client = cls.os.domains_client
 
     @classmethod
-    def setUpClass(cls):
-        super(DnsDomainsTest, cls).setUpClass()
+    def resource_setup(cls):
+        super(DnsDomainsTest, cls).resource_setup()
         cls.setup_domains = list()
         for i in range(2):
             name = data_utils.rand_name('domain') + '.com.'
@@ -41,10 +41,10 @@ class DnsDomainsTest(base.BaseDnsV1Test):
             cls.setup_domains.append(domain)
 
     @classmethod
-    def tearDownClass(cls):
+    def resource_cleanup(cls):
         for domain in cls.setup_domains:
             cls.client.delete_domain(domain['id'])
-        super(DnsDomainsTest, cls).tearDownClass()
+        super(DnsDomainsTest, cls).resource_cleanup()
 
     def _delete_domain(self, domain_id):
         self.client.delete_domain(domain_id)
