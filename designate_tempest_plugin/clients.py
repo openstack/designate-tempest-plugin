@@ -53,8 +53,8 @@ CONF = config.CONF
 
 class ManagerV1(clients.Manager):
 
-    def __init__(self, credentials=None, service=None):
-        super(ManagerV1, self).__init__(credentials, service)
+    def __init__(self, credentials=None):
+        super(ManagerV1, self).__init__(credentials)
         self._init_clients(self._get_params())
 
     def _init_clients(self, params):
@@ -77,8 +77,8 @@ class ManagerV1(clients.Manager):
 
 class ManagerV2(clients.Manager):
 
-    def __init__(self, credentials=None, service=None):
-        super(ManagerV2, self).__init__(credentials, service)
+    def __init__(self, credentials=None):
+        super(ManagerV2, self).__init__(credentials)
         self._init_clients(self._get_params())
 
     def _init_clients(self, params):
@@ -116,8 +116,8 @@ class ManagerV2(clients.Manager):
 
 class ManagerAdmin(clients.Manager):
 
-    def __init__(self, credentials=None, service=None):
-        super(ManagerAdmin, self).__init__(credentials, service)
+    def __init__(self, credentials=None):
+        super(ManagerAdmin, self).__init__(credentials)
         self._init_clients(self._get_params())
 
     def _init_clients(self, params):
@@ -138,8 +138,8 @@ class ManagerAdmin(clients.Manager):
 
 class ManagerV2Unauthed(ManagerV2):
 
-    def __init__(self, credentials=None, service=None):
-        super(ManagerV2Unauthed, self).__init__(credentials, service)
+    def __init__(self, credentials=None):
+        super(ManagerV2Unauthed, self).__init__(credentials)
         self.auth_provider = self._auth_provider_class()(
             credentials=self.auth_provider.credentials,
             auth_url=self.auth_provider.auth_client.auth_url,
