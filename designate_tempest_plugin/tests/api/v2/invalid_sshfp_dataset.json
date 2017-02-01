@@ -1,0 +1,6 @@
+{
+  "minus_zero_algorithm": {"algo": "-0", "finger": null},
+  "minus_zero_fingerprint": {"algo": null, "finger": "-0"},
+  "minus_one_algorithm": {"algo": "-1", "finger": null},
+  "minus_one_fingerprint": {"algo": null, "finger": "-1"}
+}

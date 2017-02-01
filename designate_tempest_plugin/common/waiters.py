@@ -149,17 +149,17 @@ def wait_for_zone_export_status(client, zone_export_id, status):
             raise lib_exc.TimeoutException(message)
 
 
-def wait_for_recordset_status(client, recordset_id, status):
+def wait_for_recordset_status(client, zone_id, recordset_id, status):
     """Waits for a recordset to reach the given status."""
     LOG.info('Waiting for recordset %s to reach %s',
              recordset_id, status)
 
-    _, recordset = client.show_recordset(recordset_id)
+    _, recordset = client.show_recordset(zone_id, recordset_id)
     start = int(time.time())
 
     while recordset['status'] != status:
         time.sleep(client.build_interval)
-        _, recordset = client.show_recordset(recordset_id)
+        _, recordset = client.show_recordset(zone_id, recordset_id)
         status_curr = recordset['status']
         if status_curr == status:
             LOG.info('Recordset %s reached %s', recordset_id, status)

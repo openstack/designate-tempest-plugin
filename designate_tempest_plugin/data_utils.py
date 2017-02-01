@@ -246,3 +246,16 @@ def rand_tsig_algorithm():
 def rand_tsig_scope():
     scope = ["ZONE", "POOL"]
     return random.choice(scope)
+
+
+def make_rand_recordset(zone_name, record_type):
+    """Create a rand recordset by type
+    This essentially just dispatches to the relevant random recordset
+    creation functions.
+
+    :param str zone_name: The zone name the recordset applies to
+    :param str record_type: The type of recordset (ie A, MX, NS, etc...)
+    """
+
+    func = globals()["rand_{}_recordset".format(record_type.lower())]
+    return func(zone_name)
