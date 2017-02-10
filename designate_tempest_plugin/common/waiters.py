@@ -15,7 +15,7 @@
 import time
 
 from oslo_log import log as logging
-from tempest.lib.common.utils import misc as misc_utils
+from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 
 LOG = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def wait_for_zone_404(client, zone_id):
                         'status_curr': zone['status'],
                         'timeout': client.build_timeout})
 
-            caller = misc_utils.find_test_caller()
+            caller = test_utils.find_test_caller()
 
             if caller:
                 message = '(%s) %s' % (caller, message)
@@ -75,7 +75,7 @@ def wait_for_zone_status(client, zone_id, status):
                         'status_curr': status_curr,
                         'timeout': client.build_timeout})
 
-            caller = misc_utils.find_test_caller()
+            caller = test_utils.find_test_caller()
 
             if caller:
                 message = '(%s) %s' % (caller, message)
@@ -108,7 +108,7 @@ def wait_for_zone_import_status(client, zone_import_id, status):
                         'status_curr': status_curr,
                         'timeout': client.build_timeout})
 
-            caller = misc_utils.find_test_caller()
+            caller = test_utils.find_test_caller()
 
             if caller:
                 message = '(%s) %s' % (caller, message)
@@ -141,7 +141,7 @@ def wait_for_zone_export_status(client, zone_export_id, status):
                         'status_curr': status_curr,
                         'timeout': client.build_timeout})
 
-            caller = misc_utils.find_test_caller()
+            caller = test_utils.find_test_caller()
 
             if caller:
                 message = '(%s) %s' % (caller, message)
@@ -175,7 +175,7 @@ def wait_for_recordset_status(client, zone_id, recordset_id, status):
                         'status_curr': status_curr,
                         'timeout': client.build_timeout})
 
-            caller = misc_utils.find_test_caller()
+            caller = test_utils.find_test_caller()
 
             if caller:
                 message = '(%s) %s' % (caller, message)
@@ -221,7 +221,7 @@ def wait_for_query(client, name, rdatatype, found=True):
                         'nameservers': client.nameservers,
                         'timeout': client.build_timeout})
 
-            caller = misc_utils.find_test_caller()
+            caller = test_utils.find_test_caller()
             if caller:
                 message = "(%s) %s" % (caller, message)
 
