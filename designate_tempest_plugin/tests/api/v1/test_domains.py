@@ -17,7 +17,6 @@
 import six
 from tempest.lib.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
-from tempest import test
 from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
@@ -60,7 +59,6 @@ class DnsDomainsTest(base.BaseDnsV1Test):
             self.assertIn(domain['id'],
                           six.moves.map(lambda x: x['id'], domains))
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('29f76dd4-2456-4e42-b0ca-bbffcc6bbf59')
     def test_create_update_get_domain(self):
         # Create Domain

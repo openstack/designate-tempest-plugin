@@ -16,7 +16,6 @@
 
 import six
 from tempest.lib.common.utils import data_utils
-from tempest import test
 from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
@@ -65,7 +64,6 @@ class RecordsTest(base.BaseDnsV1Test):
         # self.assertRaises(lib_exc.NotFound,
         #                   self.client.get_record, domain_id, record_id)
 
-    @test.attr(type='smoke')
     @decorators.idempotent_id('4c7bee47-68a4-4668-81f9-fa973ddfa1f1')
     def test_list_records_for_domain(self):
         # Get a list of records for a domain
