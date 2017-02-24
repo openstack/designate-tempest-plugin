@@ -38,7 +38,7 @@ DnsGroup = [
                default=1,
                help="Time in seconds between build status checks."),
     cfg.IntOpt('build_timeout',
-               default=240,
+               default=360,
                help="Timeout in seconds to wait for an resource to build."),
     cfg.IntOpt('min_ttl',
                default=1,
