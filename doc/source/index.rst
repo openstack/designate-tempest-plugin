@@ -15,11 +15,11 @@
 
 .. _tempest:
 
-=======================
-Designat Tempest Plugin
-=======================
+========================
+Designate Tempest Plugin
+========================
 
-The Designate team maintains a set of tempest tests to exercise the Designate
+The Designate team maintains a set of Tempest tests to exercise the Designate
 service and APIs.
 
 Intro and References
