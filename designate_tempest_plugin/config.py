@@ -57,7 +57,7 @@ dns_feature_group = cfg.OptGroup(name='dns_feature_enabled',
 
 DnsFeatureGroup = [
     cfg.BoolOpt('api_v1',
-                default=True,
+                default=False,
                 help="Is the v1 dns API enabled."),
     cfg.BoolOpt('api_v2',
                 default=True,
