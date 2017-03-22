@@ -18,7 +18,7 @@ See the tempest plugin docs for information on using it:
 http://docs.openstack.org/developer/tempest/plugin.html#using-plugins
 
 See the designate docs for information on writing new tests etc:
-http://docs.openstack.org/developer/designate/tempest.html
+https://docs.openstack.org/developer/designate-tempest-plugin/#writing-new-tests
 
 Running the tests
 -----------------
