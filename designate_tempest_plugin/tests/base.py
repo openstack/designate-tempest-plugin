@@ -75,6 +75,12 @@ class BaseDnsTest(test.BaseTestCase):
                         % cls.__name__)
             raise cls.skipException(skip_msg)
 
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(BaseDnsTest, cls).setup_credentials()
+
     def assertExpected(self, expected, actual, excluded_keys):
         for key, value in six.iteritems(expected):
             if key not in excluded_keys:
