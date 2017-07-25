@@ -61,7 +61,7 @@ class QuotasAdminTest(BaseQuotasTest):
         _, body = self.admin_client.delete_quotas()
 
         LOG.info("Ensuring an empty response body")
-        self.assertEqual(body.strip(), "")
+        self.assertEqual(body.strip(), b"")
 
     @decorators.idempotent_id('4f2b65b7-c4e1-489c-9047-755e42ba0985')
     def test_update_quotas(self):

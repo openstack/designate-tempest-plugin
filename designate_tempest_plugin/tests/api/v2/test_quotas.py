@@ -63,7 +63,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
         _, body = self.admin_client.delete_quotas()
 
         LOG.info("Ensuring an empty response body")
-        self.assertEqual(body.strip(), "")
+        self.assertEqual(body.strip(), b"")
 
     @decorators.idempotent_id('76d24c87-1b39-4e19-947c-c08e1380dc61')
     def test_update_quotas(self):
