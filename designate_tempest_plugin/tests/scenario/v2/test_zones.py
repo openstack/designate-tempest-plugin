@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
-from tempest import test
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
@@ -33,8 +32,8 @@ class ZonesTest(base.BaseDnsV2Test):
         cls.client = cls.os.zones_client
         cls.query_client = cls.os.query_client
 
-    @test.attr(type='smoke')
-    @test.attr(type='slow')
+    @decorators.attr(type='smoke')
+    @decorators.attr(type='slow')
     @decorators.idempotent_id('d0648f53-4114-45bd-8792-462a82f69d32')
     def test_create_and_delete_zone(self):
         LOG.info('Create a zone')
@@ -65,7 +64,7 @@ class ZonesTest(base.BaseDnsV2Test):
 
         waiters.wait_for_zone_404(self.client, zone['id'])
 
-    @test.attr(type='slow')
+    @decorators.attr(type='slow')
     @decorators.idempotent_id('c9838adf-14dc-4097-9130-e5cea3727abb')
     def test_delete_zone_pending_create(self):
         LOG.info('Create a zone')
@@ -87,7 +86,7 @@ class ZonesTest(base.BaseDnsV2Test):
 
         waiters.wait_for_zone_404(self.client, zone['id'])
 
-    @test.attr(type='slow')
+    @decorators.attr(type='slow')
     @decorators.skip_because(bug='1623576')
     @decorators.idempotent_id('ad8d1f5b-da66-46a0-bbee-14dc84a5d791')
     @testtools.skipUnless(
@@ -101,7 +100,7 @@ class ZonesTest(base.BaseDnsV2Test):
         waiters.wait_for_zone_status(self.client, zone['id'], "ACTIVE")
         waiters.wait_for_query(self.query_client, zone['name'], "SOA")
 
-    @test.attr(type='slow')
+    @decorators.attr(type='slow')
     @decorators.skip_because(bug='1623576')
     @decorators.idempotent_id('d13d3095-c78f-4aae-8fe3-a74ccc335c84')
     @testtools.skipUnless(

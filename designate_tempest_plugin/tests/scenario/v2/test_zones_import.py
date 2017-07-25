@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 
 from designate_tempest_plugin.common import waiters
@@ -31,7 +30,7 @@ class ZonesImportTest(BaseZonesImportTest):
         cls.client = cls.os.zone_imports_client
         cls.zones_client = cls.os.zones_client
 
-    @test.attr(type='slow')
+    @decorators.attr(type='slow')
     @decorators.idempotent_id('679f38d0-2f2f-49c5-934e-8fe0c452f56e')
     def test_create_zone_import_and_wait_for_zone(self):
         name = dns_data_utils.rand_zone_name('testimport')

@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils
@@ -57,7 +56,7 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Ensure the fetched response matches the created zone')
         self.assertExpected(zone, body, self.excluded_keys)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     @decorators.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
     def test_delete_zone(self):
         LOG.info('Create a zone')
