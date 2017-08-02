@@ -70,7 +70,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         _, body = self.admin_client.delete_blacklist(blacklist['id'])
 
         # A blacklist delete returns an empty body
-        self.assertEqual(body.strip(), "")
+        self.assertEqual(body.strip(), b"")
 
     @decorators.idempotent_id('3a2a1e6c-8176-428c-b5dd-d85217c0209d')
     def test_list_blacklists(self):

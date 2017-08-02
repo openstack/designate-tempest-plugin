@@ -66,7 +66,7 @@ class DnsClientBase(rest_client.RestClient):
         if 'application/json' in resp['content-type']:
             return json.loads(object_str)
         elif 'text/dns' in resp['content-type']:
-            return models.ZoneFile.from_text(object_str)
+            return models.ZoneFile.from_text(object_str.decode("utf-8"))
         else:
             raise lib_exc.InvalidContentType()
 
