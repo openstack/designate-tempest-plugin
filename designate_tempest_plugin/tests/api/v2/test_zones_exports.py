@@ -13,7 +13,6 @@
 #    under the License.
 
 from oslo_log import log as logging
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -47,7 +46,7 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', zone_export['status'])
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     @decorators.idempotent_id('2d29a2a9-1941-4b7e-9d8a-ad6c2140ea68')
     def test_show_zone_export(self):
         LOG.info('Create a zone')

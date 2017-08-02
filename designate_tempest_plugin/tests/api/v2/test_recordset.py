@@ -13,7 +13,6 @@
 #    under the License.
 from oslo_log import log as logging
 from tempest import config
-from tempest import test
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils as lib_data_utils
@@ -56,7 +55,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         cls.client = cls.os.recordset_client
         cls.zone_client = cls.os.zones_client
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
     def test_create_recordset(self):
         recordset_data = data_utils.rand_recordset_data(

@@ -168,7 +168,7 @@ included below:
 
            cls.client = cls.os.zones_client
 
-       @test.attr(type='smoke')
+       @decorators.attr(type='smoke')
        @decorators.idempotent_id('fbabd6af-238a-462e-b923-de4d736b90a7')
        def test_create_zone(self):
            LOG.info('Create a zone')
@@ -244,7 +244,7 @@ Example:
            pass
 
 
-@test.attr
+@decorators.attr
 ~~~~~~~~~~
 
 The `attr` decorator is used to set test attributes, this is most commonly used
@@ -259,11 +259,11 @@ Example:
 .. code-block:: python
 
    class ZonesTest(BaseZonesTest):
-       @test.attr(type='smoke')
+       @decorators.attr(type='smoke')
        def test_create_zone(self):
            pass
 
-       @test.attr(type='slow')
+       @decorators.attr(type='slow')
        def test_something_else(self):
            pass
 
