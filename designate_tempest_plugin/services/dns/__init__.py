@@ -13,7 +13,6 @@
 # the License.
 
 from designate_tempest_plugin.services.dns import admin
-from designate_tempest_plugin.services.dns import v1
 from designate_tempest_plugin.services.dns import v2
 
-__all__ = ['admin', 'v1', 'v2']
+__all__ = ['admin', 'v2']

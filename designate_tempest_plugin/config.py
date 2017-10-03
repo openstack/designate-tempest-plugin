@@ -59,18 +59,12 @@ dns_feature_group = cfg.OptGroup(name='dns_feature_enabled',
                                  title='Enabled Designate Features')
 
 DnsFeatureGroup = [
-    cfg.BoolOpt('api_v1',
-                default=False,
-                help="Is the v1 dns API enabled."),
     cfg.BoolOpt('api_v2',
                 default=True,
                 help="Is the v2 dns API enabled."),
     cfg.BoolOpt('api_admin',
                 default=True,
                 help="Is the admin dns API enabled."),
-    cfg.BoolOpt('api_v1_servers',
-                default=False,
-                help="Is the v1 dns servers API enabled."),
     cfg.BoolOpt('api_v2_root_recordsets',
                 default=False,
                 help="Is the v2 root recordsets API enabled."),

@@ -119,22 +119,6 @@ class BaseDnsTest(test.BaseTestCase):
                                                   zone_id) is None
 
 
-class BaseDnsV1Test(BaseDnsTest):
-    """Base class for DNS V1 API tests."""
-
-    # Use the Designate V1 Client Manager
-    client_manager = clients.ManagerV1
-
-    @classmethod
-    def skip_checks(cls):
-        super(BaseDnsV1Test, cls).skip_checks()
-
-        if not CONF.dns_feature_enabled.api_v1:
-            skip_msg = ("%s skipped as designate v1 API is not available"
-                        % cls.__name__)
-            raise cls.skipException(skip_msg)
-
-
 class BaseDnsV2Test(BaseDnsTest):
     """Base class for DNS V2 API tests."""
 

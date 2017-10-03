@@ -1,0 +1,7 @@
+---
+other:
+  - |
+    The Designate API V1 tests have been removed. The V1 API was removed
+    from Designate in the Queens release. It has now been eight releases
+    since then, so it is time to remove the tests for it. If these tests are
+    still needed, please use git tag version 0.11.0 (Wallaby) or older.
