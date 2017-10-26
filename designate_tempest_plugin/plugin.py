@@ -74,3 +74,25 @@ class DesignateTempestPlugin(plugins.TempestPlugin):
             (project_config.dns_feature_group.name,
              project_config.DnsFeatureGroup),
         ]
+
+    def get_service_clients(self):
+        dns_config = config.service_client_config('dns')
+        admin_params = {
+            'name': 'dns_admin',
+            'service_version': 'dns.admin',
+            'module_path': 'designate_tempest_plugin.services.dns.admin',
+            'client_names': ['QuotasClient']
+        }
+        v2_params = {
+            'name': 'dns_v2',
+            'service_version': 'dns.v2',
+            'module_path': 'designate_tempest_plugin.services.dns.v2',
+            'client_names': ['BlacklistsClient', 'PoolClient', 'QuotasClient',
+                             'RecordsetClient', 'TldClient',
+                             'TransferAcceptClient', 'TransferRequestClient',
+                             'TsigkeyClient', 'ZoneExportsClient',
+                             'ZoneImportsClient', 'ZonesClient']
+        }
+        admin_params.update(dns_config)
+        v2_params.update(dns_config)
+        return [admin_params, v2_params]
