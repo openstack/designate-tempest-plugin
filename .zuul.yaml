@@ -2,3 +2,6 @@
     name: openstack/designate-tempest-plugin
     templates:
       - designate-devstack-jobs
+    check:
+      jobs:
+        - neutron-tempest-plugin-designate-scenario
