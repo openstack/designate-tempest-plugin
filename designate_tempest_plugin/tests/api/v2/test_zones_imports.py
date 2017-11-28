@@ -23,7 +23,7 @@ LOG = logging.getLogger(__name__)
 
 class BaseZonesImportTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
-                     'status', 'message']
+                     'status', 'message', 'zone_id']
 
 
 class ZonesImportTest(BaseZonesImportTest):
