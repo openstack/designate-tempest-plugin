@@ -30,6 +30,12 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     credentials = ['primary', 'admin']
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TsigkeyAdminTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TsigkeyAdminTest, cls).setup_clients()
         cls.zone_client = cls.os.zones_client
@@ -137,6 +143,12 @@ class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
     credentials = ["admin"]
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestTsigkeyNotFoundAdmin, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TestTsigkeyNotFoundAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.tsigkey_client
@@ -172,6 +184,12 @@ class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
 class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
 
     credentials = ["admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestTsigkeyInvalidIdAdmin, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):

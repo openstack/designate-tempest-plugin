@@ -29,6 +29,12 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 class ZonesTest(BaseZonesTest):
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZonesTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
 
@@ -116,6 +122,12 @@ class ZonesAdminTest(BaseZonesTest):
     credentials = ['primary', 'admin']
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZonesAdminTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(ZonesAdminTest, cls).setup_clients()
 
@@ -138,6 +150,12 @@ class ZonesAdminTest(BaseZonesTest):
 
 class ZoneOwnershipTest(BaseZonesTest):
     credentials = ['primary', 'alt']
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZoneOwnershipTest, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):

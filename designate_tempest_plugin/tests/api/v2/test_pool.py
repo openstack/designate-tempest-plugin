@@ -37,6 +37,12 @@ class PoolAdminTest(BasePoolTest):
     credentials = ['admin']
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(PoolAdminTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(PoolAdminTest, cls).setup_clients()
 
@@ -122,6 +128,12 @@ class TestPoolNotFoundAdmin(BasePoolTest):
     credentials = ["admin"]
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestPoolNotFoundAdmin, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TestPoolNotFoundAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.pool_client
@@ -157,6 +169,12 @@ class TestPoolNotFoundAdmin(BasePoolTest):
 class TestPoolInvalidIdAdmin(BasePoolTest):
 
     credentials = ["admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestPoolInvalidIdAdmin, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):

@@ -30,6 +30,12 @@ class TldAdminTest(BaseTldTest):
     credentials = ['admin']
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TldAdminTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TldAdminTest, cls).setup_clients()
         cls.admin_client = cls.os_adm.tld_client
@@ -120,6 +126,12 @@ class TestTldNotFoundAdmin(BaseTldTest):
     credentials = ["admin"]
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestTldNotFoundAdmin, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TestTldNotFoundAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.tld_client
@@ -155,6 +167,12 @@ class TestTldNotFoundAdmin(BaseTldTest):
 class TestTldInvalidIdAdmin(BaseTldTest):
 
     credentials = ["admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestTldInvalidIdAdmin, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):

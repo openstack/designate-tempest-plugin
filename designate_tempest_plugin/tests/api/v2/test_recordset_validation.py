@@ -42,6 +42,12 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
         self._zone = None
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(RecordsetValidationTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(RecordsetValidationTest, cls).setup_clients()
 

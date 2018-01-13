@@ -31,6 +31,12 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
     credentials = ["admin"]
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(BlacklistsAdminTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(BlacklistsAdminTest, cls).setup_clients()
         cls.admin_client = cls.os_adm.blacklists_client
@@ -109,6 +115,12 @@ class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
     credentials = ["admin"]
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestBlacklistNotFoundAdmin, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TestBlacklistNotFoundAdmin, cls).setup_clients()
         cls.admin_client = cls.os_adm.blacklists_client
@@ -144,6 +156,12 @@ class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
 class TestBlacklistInvalidIdAdmin(BaseBlacklistsTest):
 
     credentials = ["admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestBlacklistInvalidIdAdmin, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):
