@@ -1,5 +1,4 @@
 - project:
-    name: openstack/designate-tempest-plugin
     templates:
       - designate-devstack-jobs
     check:
