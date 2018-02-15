@@ -32,7 +32,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TsigkeyAdminTest, cls).setup_clients()
-        cls.zone_client = cls.os.zones_client
+        cls.zone_client = cls.os_primary.zones_client
         cls.admin_client = cls.os_admin.tsigkey_client
 
     @decorators.idempotent_id('e7b484e3-7ed5-4840-89d7-1e696986f8e4')
@@ -139,7 +139,7 @@ class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TestTsigkeyNotFoundAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_adm.tsigkey_client
+        cls.admin_client = cls.os_admin.tsigkey_client
 
     @decorators.idempotent_id('824c9b49-edc5-4282-929e-467a158d23e4')
     def test_show_tsigkey_404(self):
@@ -176,7 +176,7 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TestTsigkeyInvalidIdAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_adm.tsigkey_client
+        cls.admin_client = cls.os_admin.tsigkey_client
 
     @decorators.idempotent_id('2a8dfc75-9884-4b1c-8f1f-ed835d96f2fe')
     def test_show_tsigkey_invalid_uuid(self):

@@ -31,11 +31,11 @@ class TestDnsUnauthed(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(TestDnsUnauthed, cls).setup_clients()
-        cls.zones_client = cls.os.zones_client
-        cls.recordset_client = cls.os.recordset_client
-        cls.tld_client = cls.os.tld_client
-        cls.pool_client = cls.os.pool_client
-        cls.blacklists_client = cls.os.blacklists_client
+        cls.zones_client = cls.os_primary.zones_client
+        cls.recordset_client = cls.os_primary.recordset_client
+        cls.tld_client = cls.os_primary.tld_client
+        cls.pool_client = cls.os_primary.pool_client
+        cls.blacklists_client = cls.os_primary.blacklists_client
 
     @decorators.idempotent_id('0f7a6d20-f6f3-4937-8fe6-7a9851227d98')
     @ddt.file_data('unauthed_data.json')

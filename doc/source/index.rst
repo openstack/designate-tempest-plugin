@@ -166,7 +166,7 @@ included below:
        def setup_clients(cls):
            super(ZonesTest, cls).setup_clients()
 
-           cls.client = cls.os.zones_client
+           cls.client = cls.os_primary.zones_client
 
        @decorators.attr(type='smoke')
        @decorators.idempotent_id('fbabd6af-238a-462e-b923-de4d736b90a7')
@@ -200,8 +200,8 @@ credentials are available using the class level "credentials" property like so:
        def setup_clients(cls):
            super(ZonesAdminTest, cls).setup_clients()
 
-           cls.client = cls.os.zones_client
-           cls.adm_client = cls.os_adm.zones_client
+           cls.client = cls.os_primary.zones_client
+           cls.adm_client = cls.os_admin.zones_client
 
        @decorators.idempotent_id('6477f92d-70ba-46eb-bd6c-fc50c405e222')
        def test_get_other_tenant_zone(self):

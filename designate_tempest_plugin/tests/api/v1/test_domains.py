@@ -27,7 +27,7 @@ class DnsDomainsTest(base.BaseDnsV1Test):
     def setup_clients(cls):
         super(DnsDomainsTest, cls).setup_clients()
 
-        cls.client = cls.os.domains_client
+        cls.client = cls.os_primary.domains_client
 
     @classmethod
     def resource_setup(cls):

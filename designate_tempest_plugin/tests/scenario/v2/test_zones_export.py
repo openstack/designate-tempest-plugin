@@ -28,8 +28,8 @@ class ZonesExportTest(BaseZoneExportsTest):
     def setup_clients(cls):
         super(ZonesExportTest, cls).setup_clients()
 
-        cls.zones_client = cls.os.zones_client
-        cls.client = cls.os.zone_exports_client
+        cls.zones_client = cls.os_primary.zones_client
+        cls.client = cls.os_primary.zone_exports_client
 
     @decorators.attr(type='slow')
     @decorators.idempotent_id('0484c3c4-df57-458e-a6e5-6eb63e0475e0')

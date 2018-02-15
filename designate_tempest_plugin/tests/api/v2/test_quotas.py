@@ -41,8 +41,8 @@ class QuotasV2Test(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(QuotasV2Test, cls).setup_clients()
 
-        cls.quotas_client = cls.os.quotas_client
-        cls.admin_client = cls.os_adm.quotas_client
+        cls.quotas_client = cls.os_primary.quotas_client
+        cls.admin_client = cls.os_admin.quotas_client
 
     @decorators.idempotent_id('1dac991a-9e2e-452c-a47a-26ac37381ec5')
     def test_show_quotas(self):

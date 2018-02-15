@@ -36,7 +36,7 @@ class ServersAdminTest(base.BaseDnsV1Test):
     def setup_clients(cls):
         super(ServersAdminTest, cls).setup_clients()
 
-        cls.client = cls.os_adm.servers_client
+        cls.client = cls.os_admin.servers_client
 
     @classmethod
     def skip_checks(cls):

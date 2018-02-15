@@ -29,9 +29,9 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     def setup_clients(cls):
         super(TransferAcceptTest, cls).setup_clients()
 
-        cls.zone_client = cls.os.zones_client
-        cls.request_client = cls.os.transfer_request_client
-        cls.client = cls.os.transfer_accept_client
+        cls.zone_client = cls.os_primary.zones_client
+        cls.request_client = cls.os_primary.transfer_request_client
+        cls.client = cls.os_primary.transfer_accept_client
 
     @decorators.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
     def test_create_transfer_accept(self):

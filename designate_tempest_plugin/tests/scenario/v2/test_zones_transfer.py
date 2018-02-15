@@ -26,11 +26,11 @@ class ZonesTransferTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(ZonesTransferTest, cls).setup_clients()
-        cls.zones_client = cls.os.zones_client
+        cls.zones_client = cls.os_primary.zones_client
         cls.alt_zones_client = cls.os_alt.zones_client
-        cls.request_client = cls.os.transfer_request_client
+        cls.request_client = cls.os_primary.transfer_request_client
         cls.alt_request_client = cls.os_alt.transfer_request_client
-        cls.accept_client = cls.os.transfer_accept_client
+        cls.accept_client = cls.os_primary.transfer_accept_client
         cls.alt_accept_client = cls.os_alt.transfer_accept_client
 
     @decorators.idempotent_id('60bd80ac-c979-4686-9a03-f2f775f272ab')

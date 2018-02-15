@@ -30,7 +30,7 @@ class ZonesImportTest(BaseZonesImportTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
-        cls.client = cls.os.zone_imports_client
+        cls.client = cls.os_primary.zone_imports_client
 
     @decorators.idempotent_id('2e2d907d-0609-405b-9c96-3cb2b87e3dce')
     def test_create_zone_import(self):

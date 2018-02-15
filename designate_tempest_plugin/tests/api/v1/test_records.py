@@ -26,7 +26,7 @@ class RecordsTest(base.BaseDnsV1Test):
     def setup_clients(cls):
         super(RecordsTest, cls).setup_clients()
 
-        cls.client = cls.os.records_client
+        cls.client = cls.os_primary.records_client
 
     @classmethod
     def resource_setup(cls):
@@ -36,7 +36,8 @@ class RecordsTest(base.BaseDnsV1Test):
         cls.setup_records = list()
         name = data_utils.rand_name('domain') + '.com.'
         email = data_utils.rand_name('dns') + '@testmail.com'
-        _, cls.domain = cls.os.domains_client.create_domain(name, email)
+        _, cls.domain = cls.os_primary.domains_client.create_domain(
+            name, email)
         # Creates a record with type as A
         r_name = 'www.' + name
         data1 = "192.0.2.3"
@@ -55,7 +56,7 @@ class RecordsTest(base.BaseDnsV1Test):
     def resource_cleanup(cls):
         for record in cls.setup_records:
             cls.client.delete_record(cls.domain['id'], record['id'])
-        cls.os.domains_client.delete_domain(cls.domain['id'])
+        cls.os_primary.domains_client.delete_domain(cls.domain['id'])
         super(RecordsTest, cls).resource_cleanup()
 
     def _delete_record(self, domain_id, record_id):

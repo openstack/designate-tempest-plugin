@@ -32,7 +32,7 @@ class ZonesTest(BaseZonesTest):
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
 
-        cls.client = cls.os.zones_client
+        cls.client = cls.os_primary.zones_client
 
     @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
     def test_create_zone(self):
@@ -119,8 +119,8 @@ class ZonesAdminTest(BaseZonesTest):
     def setup_clients(cls):
         super(ZonesAdminTest, cls).setup_clients()
 
-        cls.client = cls.os.zones_client
-        cls.admin_client = cls.os_adm.zones_client
+        cls.client = cls.os_primary.zones_client
+        cls.admin_client = cls.os_admin.zones_client
 
     @decorators.idempotent_id('6477f92d-70ba-46eb-bd6c-fc50c405e222')
     def test_get_other_tenant_zone(self):
@@ -143,7 +143,7 @@ class ZoneOwnershipTest(BaseZonesTest):
     def setup_clients(cls):
         super(ZoneOwnershipTest, cls).setup_clients()
 
-        cls.client = cls.os.zones_client
+        cls.client = cls.os_primary.zones_client
         cls.alt_client = cls.os_alt.zones_client
 
     @decorators.idempotent_id('5d28580a-a012-4b57-b211-e077b1a01340')

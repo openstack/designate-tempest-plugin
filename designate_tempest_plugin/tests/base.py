@@ -60,8 +60,8 @@ class BaseDnsTest(test.BaseTestCase):
     # at class setup time. Credential types can be 'primary', 'alt', 'admin' or
     # a list of roles - the first element of the list being a label, and the
     # rest the actual roles.
-    # NOTE(kiall) primary will result in a manager @ cls.os, alt will have
-    # cls.os_alt, and admin will have cls.os_adm.
+    # NOTE(kiall) primary will result in a manager @ cls.os_primary, alt will
+    # have cls.os_alt, and admin will have cls.os_admin.
     # NOTE(kiall) We should default to only primary, and request additional
     # credentials in the tests that require them.
     credentials = ['primary']

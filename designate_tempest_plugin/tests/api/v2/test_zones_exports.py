@@ -31,8 +31,8 @@ class ZonesExportTest(BaseZoneExportsTest):
     def setup_clients(cls):
         super(ZonesExportTest, cls).setup_clients()
 
-        cls.zone_client = cls.os.zones_client
-        cls.client = cls.os.zone_exports_client
+        cls.zone_client = cls.os_primary.zones_client
+        cls.client = cls.os_primary.zone_exports_client
 
     @decorators.idempotent_id('2dd8a9a0-98a2-4bf6-bb51-286583b30f40')
     def test_create_zone_export(self):

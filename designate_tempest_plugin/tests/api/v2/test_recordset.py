@@ -52,8 +52,8 @@ class RecordsetsTest(BaseRecordsetsTest):
     def setup_clients(cls):
         super(RecordsetsTest, cls).setup_clients()
 
-        cls.client = cls.os.recordset_client
-        cls.zone_client = cls.os.zones_client
+        cls.client = cls.os_primary.recordset_client
+        cls.zone_client = cls.os_primary.zones_client
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
@@ -205,8 +205,8 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     def setup_clients(cls):
         super(RecordsetsNegativeTest, cls).setup_clients()
 
-        cls.client = cls.os.recordset_client
-        cls.zone_client = cls.os.zones_client
+        cls.client = cls.os_primary.recordset_client
+        cls.zone_client = cls.os_primary.zones_client
 
     @decorators.idempotent_id('98c94f8c-217a-4056-b996-b1f856d0753e')
     @ddt.file_data("recordset_data_invalid.json")
@@ -305,8 +305,8 @@ class RootRecordsetsTests(BaseRecordsetsTest):
     def setup_clients(cls):
         super(RootRecordsetsTests, cls).setup_clients()
 
-        cls.client = cls.os.recordset_client
-        cls.zone_client = cls.os.zones_client
+        cls.client = cls.os_primary.recordset_client
+        cls.zone_client = cls.os_primary.zones_client
 
     @classmethod
     def skip_checks(cls):
@@ -397,8 +397,8 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
     def setup_clients(cls):
         super(RecordsetOwnershipTest, cls).setup_clients()
 
-        cls.client = cls.os.recordset_client
-        cls.zone_client = cls.os.zones_client
+        cls.client = cls.os_primary.recordset_client
+        cls.zone_client = cls.os_primary.zones_client
         cls.alt_zone_client = cls.os_alt.zones_client
         cls.alt_client = cls.os_alt.recordset_client
 
