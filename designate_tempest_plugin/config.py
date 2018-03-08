@@ -49,6 +49,9 @@ DnsGroup = [
     cfg.IntOpt('query_timeout',
                default=1,
                help="The timeout on a single dns query to a nameserver"),
+    cfg.StrOpt('zone_id',
+               help="The target zone to test the dns recordsets "
+                    "If it is not specified, a new zone will be created ")
 
 ]
 
