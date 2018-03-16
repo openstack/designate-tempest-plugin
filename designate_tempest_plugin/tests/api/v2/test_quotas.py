@@ -29,6 +29,12 @@ class QuotasV2Test(base.BaseDnsV2Test):
     credentials = ['primary', 'admin']
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(QuotasV2Test, cls).setup_credentials()
+
+    @classmethod
     def skip_checks(cls):
         super(QuotasV2Test, cls).skip_checks()
 

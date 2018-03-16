@@ -28,6 +28,12 @@ class BaseZoneExportsTest(base.BaseDnsV2Test):
 
 class ZonesExportTest(BaseZoneExportsTest):
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZonesExportTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(ZonesExportTest, cls).setup_clients()
 

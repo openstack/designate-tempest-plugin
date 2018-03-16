@@ -26,6 +26,12 @@ class BaseTransferAcceptTest(base.BaseDnsV2Test):
 
 class TransferAcceptTest(BaseTransferAcceptTest):
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TransferAcceptTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TransferAcceptTest, cls).setup_clients()
 

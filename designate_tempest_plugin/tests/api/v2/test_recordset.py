@@ -49,6 +49,12 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
 @ddt.ddt
 class RecordsetsTest(BaseRecordsetsTest):
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(RecordsetsTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(RecordsetsTest, cls).setup_clients()
 
@@ -202,6 +208,12 @@ class RecordsetsTest(BaseRecordsetsTest):
 @ddt.ddt
 class RecordsetsNegativeTest(BaseRecordsetsTest):
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(RecordsetsNegativeTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(RecordsetsNegativeTest, cls).setup_clients()
 
@@ -300,6 +312,11 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(RootRecordsetsTests, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):
@@ -392,6 +409,12 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 class RecordsetOwnershipTest(BaseRecordsetsTest):
 
     credentials = ['primary', 'alt']
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(RecordsetOwnershipTest, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):

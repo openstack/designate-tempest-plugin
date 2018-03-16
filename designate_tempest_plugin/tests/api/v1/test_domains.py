@@ -24,6 +24,12 @@ from designate_tempest_plugin.tests import base
 
 class DnsDomainsTest(base.BaseDnsV1Test):
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(DnsDomainsTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(DnsDomainsTest, cls).setup_clients()
 

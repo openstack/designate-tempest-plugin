@@ -29,6 +29,12 @@ class TestDnsUnauthed(base.BaseDnsV2Test):
     credentials = ["primary"]
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestDnsUnauthed, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TestDnsUnauthed, cls).setup_clients()
         cls.zones_client = cls.os_primary.zones_client

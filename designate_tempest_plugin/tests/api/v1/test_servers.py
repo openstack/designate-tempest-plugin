@@ -33,6 +33,12 @@ class ServersAdminTest(base.BaseDnsV1Test):
     credentials = ['admin']
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ServersAdminTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(ServersAdminTest, cls).setup_clients()
 

@@ -30,6 +30,12 @@ class TransferRequestTest(BaseTransferRequestTest):
     credentials = ['primary', 'alt']
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TransferRequestTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TransferRequestTest, cls).setup_clients()
 
@@ -192,6 +198,12 @@ class TransferRequestTest(BaseTransferRequestTest):
 class TestTransferRequestNotFound(BaseTransferRequestTest):
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestTransferRequestNotFound, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(TestTransferRequestNotFound, cls).setup_clients()
         cls.client = cls.os_primary.transfer_request_client
@@ -226,6 +238,12 @@ class TestTransferRequestNotFound(BaseTransferRequestTest):
 
 
 class TestTransferRequestInvalidId(BaseTransferRequestTest):
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestTransferRequestInvalidId, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):

@@ -28,6 +28,12 @@ class BaseZonesImportTest(base.BaseDnsV2Test):
 
 class ZonesImportTest(BaseZonesImportTest):
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZonesImportTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
         cls.client = cls.os_primary.zone_imports_client

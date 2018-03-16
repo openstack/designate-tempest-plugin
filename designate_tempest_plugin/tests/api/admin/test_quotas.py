@@ -37,6 +37,12 @@ class QuotasAdminTest(BaseQuotasTest):
     credentials = ["admin"]
 
     @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(QuotasAdminTest, cls).setup_credentials()
+
+    @classmethod
     def setup_clients(cls):
         super(QuotasAdminTest, cls).setup_clients()
 
