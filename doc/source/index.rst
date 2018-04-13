@@ -286,6 +286,6 @@ Example:
            pass
 
 
-.. _Tempest Docs: http://docs.openstack.org/developer/tempest/
-.. _Tempest HACKING: http://docs.openstack.org/developer/tempest/HACKING.html
-.. _Tempest Plugins: http://docs.openstack.org/developer/tempest/plugin.html
+.. _Tempest Docs: https://docs.openstack.org/tempest/latest/
+.. _Tempest HACKING: https://docs.openstack.org/tempest/latest/HACKING.html
+.. _Tempest Plugins: https://docs.openstack.org/tempest/latest/plugin.html
