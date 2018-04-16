@@ -167,7 +167,7 @@ def wait_for_recordset_status(client, zone_id, recordset_id, status):
 
         if int(time.time()) - start >= client.build_timeout:
             message = ('Recordset %(recordset_id)s failed to reach '
-                       'status=%(status) within the required time '
+                       'status=%(status)s within the required time '
                        '(%(timeout)s s). Current '
                        'status: %(status_curr)s' %
                        {'recordset_id': recordset_id,
