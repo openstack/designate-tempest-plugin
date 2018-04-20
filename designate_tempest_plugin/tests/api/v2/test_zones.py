@@ -192,7 +192,7 @@ class ZoneOwnershipTest(BaseZonesTest):
 
     @decorators.idempotent_id('f1723d48-c082-43cd-94bf-ebeb5b8c9458')
     def test_no_create_superdomain_by_alt_user(self):
-        zone_name = dns_data_utils.rand_zone_name()
+        zone_name = dns_data_utils.rand_zone_name('testdomain')
 
         LOG.info('Create a zone as a default user')
         _, zone = self.client.create_zone(name='a.b.' + zone_name)
