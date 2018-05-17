@@ -1,5 +1,5 @@
 {
-  "trailing_slash": {"data": "\\"},
-  "trailing_double_slash": {"data": "\\\\"},
-  "trailing_slash_after_text": {"data": "v=spf1 +all\\"}
+  "trailing_slash": {"data": '"\\"'},
+  "trailing_double_slash": {"data": '"\\\\"'},
+  "trailing_slash_after_text": {"data": '"v=spf1 +all\\"'}
 }
