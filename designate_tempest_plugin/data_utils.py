@@ -34,7 +34,7 @@ def rand_ipv6():
     return an.format(netaddr.ipv6_compact)
 
 
-def rand_zone_name(name='testdomain', prefix=None, suffix='.com.'):
+def rand_zone_name(name='', prefix=None, suffix='.com.'):
     """Generate a random zone name
     :param str name: The name that you want to include
     :param prefix: the exact text to start the string. Defaults to "rand"
