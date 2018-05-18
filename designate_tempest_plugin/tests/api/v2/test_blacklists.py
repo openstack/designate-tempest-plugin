@@ -45,7 +45,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
     def test_create_blacklist(self):
         LOG.info('Create a blacklist')
         blacklist = {
-            'pattern': dns_data_utils.rand_zone_name('testdomain'),
+            'pattern': dns_data_utils.rand_zone_name(prefix='testdomain'),
             'description': data_utils.rand_name(),
         }
         _, body = self.admin_client.create_blacklist(**blacklist)

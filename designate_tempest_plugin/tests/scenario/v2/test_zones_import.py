@@ -33,7 +33,7 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.attr(type='slow')
     @decorators.idempotent_id('679f38d0-2f2f-49c5-934e-8fe0c452f56e')
     def test_create_zone_import_and_wait_for_zone(self):
-        name = dns_data_utils.rand_zone_name('testdomainimport')
+        name = dns_data_utils.rand_zone_name(prefix='testdomainimport')
         zonefile = dns_data_utils.rand_zonefile_data(name=name)
 
         LOG.info('Import zone %r', name)

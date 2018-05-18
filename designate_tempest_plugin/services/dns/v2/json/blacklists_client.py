@@ -32,7 +32,7 @@ class BlacklistsClient(base.DnsClientV2Base):
         :return: A tuple with the server response and the created blacklist.
         """
         blacklist = {
-            'pattern': pattern or dns_data_utils.rand_zone_name('testdomain'),
+            'pattern': pattern or dns_data_utils.rand_zone_name(prefix='testdomain'),
             'description': description or data_utils.rand_name(),
         }
 
@@ -94,7 +94,7 @@ class BlacklistsClient(base.DnsClientV2Base):
         :return: A tuple with the server response and the updated blacklist.
         """
         blacklist = {
-            'pattern': pattern or dns_data_utils.rand_zone_name('testdomain'),
+            'pattern': pattern or dns_data_utils.rand_zone_name(prefix='testdomain'),
             'description': description or data_utils.rand_name(),
         }
 

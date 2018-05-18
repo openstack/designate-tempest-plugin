@@ -40,7 +40,7 @@ class ZonesClient(base.DnsClientV2Base):
         :return: A tuple with the server response and the created zone.
         """
         zone = {
-            'name': name or dns_data_utils.rand_zone_name('testdomain'),
+            'name': name or dns_data_utils.rand_zone_name(prefix='testdomain'),
             'email': email or dns_data_utils.rand_email(),
             'ttl': ttl or dns_data_utils.rand_ttl(),
             'description': description or data_utils.rand_name('test-zone'),

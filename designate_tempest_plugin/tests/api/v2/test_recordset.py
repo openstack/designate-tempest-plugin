@@ -440,7 +440,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('d4a9aad9-c778-429b-9a0c-4cd2b61a0a01')
     def test_no_create_super_recordsets(self):
-        zone_name = data_utils.rand_zone_name('testdomain')
+        zone_name = data_utils.rand_zone_name(prefix='testdomain')
 
         LOG.info('Create a zone as a default user')
         _, zone = self.zone_client.create_zone(name='a.b.' + zone_name)
