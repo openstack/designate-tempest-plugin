@@ -169,7 +169,7 @@ def rand_mx_recordset(zone_name, pref=None, host=None, **kwargs):
 
 
 def rand_spf_recordset(zone_name, data=None, **kwargs):
-    data = data or "v=spf1 +all"
+    data = data or '"v=spf1 +all"'
     return rand_recordset_data('SPF', zone_name, records=[data], **kwargs)
 
 
