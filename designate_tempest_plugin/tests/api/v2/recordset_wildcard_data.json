@@ -33,21 +33,21 @@
     "SPF at APEX": {
         "name": "*",
         "type": "SPF",
-        "records": ["v=spf1; a -all"]
+        "records": ["\"v=spf1; a -all\""]
     },
     "SPF under APEX": {
         "name": "*.sub",
         "type": "SPF",
-        "records": ["v=spf1; a -all"]
+        "records": ["\"v=spf1; a -all\""]
     },
     "TXT at APEX": {
         "name": "*",
         "type": "TXT",
-        "records": ["Can you read me?"]
+        "records": ["\"Can you read me?\""]
     },
     "TXT under APEX": {
         "name": "*.sub",
         "type": "TXT",
-        "records": ["Can you read me?"]
+        "records": ["\"Can you read me?\""]
     }
 }
