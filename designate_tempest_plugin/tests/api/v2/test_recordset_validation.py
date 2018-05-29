@@ -131,7 +131,7 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
         self.assertRaisesDns(
             exceptions.BadRequest, 'invalid_object', 400,
             self.recordset_client.create_recordset,
-            self.zone['id'], post_model,
+            self.zone['id'], post_model
         )
 
     @decorators.idempotent_id('03e4f811-0c37-4ce2-8b16-662c824f8f18')
