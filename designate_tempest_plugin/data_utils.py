@@ -193,7 +193,7 @@ def rand_sshfp_recordset(zone_name, algorithm_number=None,
 
 
 def rand_txt_recordset(zone_name, data=None, **kwargs):
-    data = data or "v=spf1 +all"
+    data = data or '"v=spf1 +all"'
     return rand_recordset_data('TXT', zone_name, records=[data], **kwargs)
 
 
