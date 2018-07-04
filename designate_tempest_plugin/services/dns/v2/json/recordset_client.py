@@ -19,6 +19,20 @@ from designate_tempest_plugin.services.dns.v2.json import base
 class RecordsetClient(base.DnsClientV2Base):
     """API V2 Tempest REST client for Recordset API"""
 
+    SHOW_STATUS_CODES = [200, 301]
+
+    def __init__(self, auth_provider, service, region,
+                 endpoint_type='publicURL',
+                 build_interval=1, build_timeout=60,
+                 disable_ssl_certificate_validation=False, ca_certs=None,
+                 trace_requests='', name=None, http_timeout=None,
+                 proxy_url=None):
+        super(RecordsetClient, self).__init__(
+                auth_provider, service, region, endpoint_type, build_interval,
+                build_timeout, disable_ssl_certificate_validation, ca_certs,
+                trace_requests, name, http_timeout, proxy_url,
+                follow_redirects=False)
+
     @base.handle_errors
     def create_recordset(self, zone_uuid, recordset_data,
                          params=None, wait_until=False):
