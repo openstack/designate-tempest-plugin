@@ -78,7 +78,7 @@ DnsFeatureGroup = [
                 default=False,
                 help="Is the v2 quota API enabled."),
     cfg.BoolOpt('bug_1573141_fixed',
-                default=False,
+                default=True,
                 help="Is https://bugs.launchpad.net/designate/+bug/1573141 "
                 "fixed"),
 ]
