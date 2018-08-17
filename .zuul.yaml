@@ -2,7 +2,7 @@
     templates:
       - designate-devstack-jobs
       - check-requirements
-      - publish-openstack-sphinx-docs
+      - publish-openstack-docs-pti
       - tempest-plugin-jobs
     check:
       jobs:

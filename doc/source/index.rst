@@ -245,7 +245,7 @@ Example:
 
 
 @decorators.attr
-~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 The `attr` decorator is used to set test attributes, this is most commonly used
 to set the test type. Currently, we use one test type "smoke", which should be
