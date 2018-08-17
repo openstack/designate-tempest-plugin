@@ -1,6 +1,11 @@
 - project:
     templates:
       - designate-devstack-jobs
+      - check-requirements
+      - publish-openstack-sphinx-docs
+      - tempest-plugin-jobs
     check:
       jobs:
         - neutron-tempest-plugin-designate-scenario
+    gate:
+      queue: designate
