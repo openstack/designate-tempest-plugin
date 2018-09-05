@@ -39,11 +39,6 @@
         "type": "MX",
         "records": ["10 mail.example.org."]
     },
-    "SSHFP": {
-        "name": "www",
-        "type": "SSHFP",
-        "records": ["2 1 123456789abcdef67890123456789abcdef67890"]
-    },
     "TXT": {
         "name": "www",
         "type": "TXT",

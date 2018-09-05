@@ -29,7 +29,6 @@ RECORDSETS_DATASET = [
     'MX',
     'SPF',
     'SRV',
-    'SSHFP',
     'TXT',
 ]
 
