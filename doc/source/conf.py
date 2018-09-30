@@ -37,8 +37,8 @@ html_theme_path = [openstackdocstheme.get_html_theme_path()]
 # We ask git for the SHA checksum
 # The git SHA checksum is used by "log-a-bug"
 git_cmd = ["/usr/bin/git", "rev-parse", "HEAD"]
-gitsha = subprocess.Popen(
-    git_cmd, stdout=subprocess.PIPE).communicate()[0].strip('\n')
+gitsha = str(subprocess.Popen(
+    git_cmd, stdout=subprocess.PIPE).communicate())[0].strip('\n')
 # tag that reported bugs will be tagged with
 bug_tag = "tempest-plugin-docs"
 # source tree
