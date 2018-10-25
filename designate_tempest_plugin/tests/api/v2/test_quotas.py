@@ -52,8 +52,22 @@ class QuotasV2Test(base.BaseDnsV2Test):
         cls.admin_client = cls.os_admin.quotas_client
         cls.alt_client = cls.os_alt.quotas_client
 
+    def _store_quotas(self, project_id=None, cleanup=True):
+        """Remember current quotas and reset them after the test"""
+        params = {}
+        if project_id:
+            params['project_id'] = project_id
+            params['headers'] = {'X-Auth-All-Projects': True}
+
+        _r, original_quotas = self.admin_client.show_quotas(**params)
+        params.update(original_quotas)
+        if cleanup:
+            self.addCleanup(self.admin_client.update_quotas, **params)
+        return original_quotas
+
     @decorators.idempotent_id('1dac991a-9e2e-452c-a47a-26ac37381ec5')
     def test_show_quotas(self):
+        self._store_quotas()
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()
         _, body = self.admin_client.update_quotas(**quotas)
@@ -67,6 +81,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
     @decorators.idempotent_id('0448b089-5803-4ce3-8a6c-5c15ff75a2cc')
     def test_delete_quotas(self):
+        self._store_quotas()
         LOG.info("Deleting quotas")
         _, body = self.admin_client.delete_quotas()
 
@@ -75,10 +90,10 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
     @decorators.idempotent_id('76d24c87-1b39-4e19-947c-c08e1380dc61')
     def test_update_quotas(self):
+        self._store_quotas()
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()
         _, body = self.admin_client.update_quotas(**quotas)
-        self.addCleanup(self.admin_client.delete_quotas)
 
         LOG.info("Ensuring the response has all quota types")
         self.assertExpected(quotas, body, [])
@@ -87,6 +102,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
     def test_update_quotas_other_project(self):
 
         project_id = self.quotas_client.tenant_id
+        self._store_quotas(project_id=project_id)
 
         LOG.info("Updating quotas for %s ", project_id)
 
@@ -95,7 +111,6 @@ class QuotasV2Test(base.BaseDnsV2Test):
         request['project_id'] = project_id
         request['headers'] = {'X-Auth-All-Projects': True}
         _, body = self.admin_client.update_quotas(**request)
-        self.addCleanup(self.admin_client.delete_quotas, project_id=project_id)
 
         LOG.info("Ensuring the response has all quota types")
         self.assertExpected(quotas, body, [])
@@ -109,8 +124,13 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
         LOG.info("Using 'alt' project id to set quotas on.")
         project_id = self.alt_client.tenant_id
+        self._store_quotas(project_id=project_id)
 
-        _, original_quotas = self.admin_client.show_quotas(
+        LOG.info("Resetting quotas to default for %s ", project_id)
+        self.admin_client.delete_quotas(
+            project_id=project_id,
+            headers={'X-Auth-All-Projects': True})
+        _, default_quotas = self.admin_client.show_quotas(
             project_id=project_id, headers={'X-Auth-All-Projects': True})
 
         LOG.info("Updating quotas for %s ", project_id)
@@ -120,7 +140,6 @@ class QuotasV2Test(base.BaseDnsV2Test):
         request['project_id'] = project_id
         request['headers'] = {'X-Auth-All-Projects': True}
         _, body = self.admin_client.update_quotas(**request)
-        self.addCleanup(self.admin_client.delete_quotas, project_id=project_id)
 
         self.admin_client.delete_quotas(
             project_id=project_id,
@@ -129,7 +148,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
         _, final_quotas = self.admin_client.show_quotas(
             project_id=project_id, headers={'X-Auth-All-Projects': True})
 
-        self.assertExpected(original_quotas, final_quotas, [])
+        self.assertExpected(default_quotas, final_quotas, [])
 
     @decorators.idempotent_id('9b09b3e2-7e88-4569-bce3-9be2f7ac70c4')
     def test_update_quotas_invalid_project(self):
@@ -139,11 +158,10 @@ class QuotasV2Test(base.BaseDnsV2Test):
                                      "is not being verified.")
 
         project_id = 'project-that-does-not-exist'
+        original_quotas = self._store_quotas(project_id=project_id,
+                                             cleanup=False)
 
         LOG.info("Updating quotas for non-existing %s ", project_id)
-
-        _, original_quotas = self.admin_client.show_quotas(
-            project_id=project_id, headers={'X-Auth-All-Projects': True})
 
         quotas = dns_data_utils.rand_quotas()
         request = quotas.copy()
@@ -151,7 +169,6 @@ class QuotasV2Test(base.BaseDnsV2Test):
         request['headers'] = {'X-Auth-All-Projects': True}
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_project', 400):
             self.admin_client.update_quotas(**request)
-        self.addCleanup(self.admin_client.delete_quotas, project_id=project_id)
 
         _, client_body = self.quotas_client.show_quotas()
 
