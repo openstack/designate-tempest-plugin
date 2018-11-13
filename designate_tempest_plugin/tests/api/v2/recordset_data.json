@@ -47,6 +47,6 @@
     "TXT": {
         "name": "www",
         "type": "TXT",
-        "records": ["Any Old Text Goes Here"]
+        "records": ["\"Any Old Text Goes Here\""]
     }
 }
