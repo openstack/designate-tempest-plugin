@@ -36,10 +36,12 @@ class ZonesExportTest(BaseZoneExportsTest):
     def test_create_zone_export_and_show_exported_zonefile(self):
         LOG.info('Create a zone to be exported')
         _, zone = self.zones_client.create_zone()
-        self.addCleanup(self.zones_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone export')
         _, zone_export = self.client.create_zone_export(zone['id'])
+        self.addCleanup(self.client.delete_zone_export, zone_export['id'])
+
         self.assertEqual('PENDING', zone_export['status'])
         self.assertEqual(zone['id'], zone_export['zone_id'])
         self.assertIsNone(zone_export['links'].get('export'))
@@ -51,6 +53,7 @@ class ZonesExportTest(BaseZoneExportsTest):
 
         LOG.info('Check the zone export looks good')
         _, zone_export = self.client.show_zone_export(zone_export['id'])
+
         self.assertEqual('COMPLETE', zone_export['status'])
         self.assertEqual(zone['id'], zone_export['zone_id'])
         self.assertIsNotNone(zone_export['links'].get('export'))

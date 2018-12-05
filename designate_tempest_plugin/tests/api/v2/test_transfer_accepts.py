@@ -43,7 +43,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     def test_create_transfer_accept(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         _, transfer_request = self.request_client.create_transfer_request(
@@ -65,7 +65,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     def test_show_transfer_accept(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         _, transfer_request = self.request_client.create_transfer_request(

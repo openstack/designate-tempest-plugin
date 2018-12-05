@@ -44,7 +44,7 @@ class ZonesTest(BaseZonesTest):
     def test_create_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual('CREATE', zone['action'])
@@ -54,7 +54,7 @@ class ZonesTest(BaseZonesTest):
     def test_show_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Fetch the zone')
         _, body = self.client.show_zone(zone['id'])
@@ -67,7 +67,7 @@ class ZonesTest(BaseZonesTest):
     def test_delete_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'],
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Delete the zone')
@@ -81,7 +81,7 @@ class ZonesTest(BaseZonesTest):
     def test_list_zones(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('List zones')
         _, body = self.client.list_zones()
@@ -94,7 +94,7 @@ class ZonesTest(BaseZonesTest):
     def test_update_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         # Generate a random description
         description = data_utils.rand_name()
@@ -138,7 +138,7 @@ class ZonesAdminTest(BaseZonesTest):
     def test_get_other_tenant_zone(self):
         LOG.info('Create a zone as a user')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Fetch the zone as an admin')
         _, body = self.admin_client.show_zone(
@@ -168,7 +168,7 @@ class ZoneOwnershipTest(BaseZonesTest):
     def test_no_create_duplicate_domain(self):
         LOG.info('Create a zone as a default user')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Create a zone as an default with existing domain')
         self.assertRaises(lib_exc.Conflict,
@@ -182,7 +182,7 @@ class ZoneOwnershipTest(BaseZonesTest):
     def test_no_create_subdomain_by_alt_user(self):
         LOG.info('Create a zone as a default user')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Create a zone as an alt user with existing subdomain')
         self.assertRaises(lib_exc.Forbidden,
@@ -196,7 +196,7 @@ class ZoneOwnershipTest(BaseZonesTest):
 
         LOG.info('Create a zone as a default user')
         _, zone = self.client.create_zone(name='a.b.' + zone_name)
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Create a zone as an alt user with existing superdomain')
         self.assertRaises(lib_exc.Forbidden,

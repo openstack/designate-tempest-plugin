@@ -40,10 +40,10 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
 
     @classmethod
     def resource_cleanup(cls):
-        super(BaseRecordsetsTest, cls).resource_cleanup()
-
         cls.zone_client.delete_zone(
             cls.zone['id'], ignore_errors=lib_exc.NotFound)
+
+        super(BaseRecordsetsTest, cls).resource_cleanup()
 
 
 @ddt.ddt
@@ -244,7 +244,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     def test_get_nonexistent_recordset(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Attempt to get an invalid Recordset')
         with self.assertRaisesDns(
@@ -255,7 +255,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     def test_get_nonexistent_recordset_invalid_id(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Attempt to get an invalid Recordset')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
@@ -265,7 +265,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     def test_update_nonexistent_recordset(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         recordset_data = data_utils.rand_recordset_data('A', zone['name'])
 
@@ -279,7 +279,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     def test_update_nonexistent_recordset_invalid_id(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         recordset_data = data_utils.rand_recordset_data('A', zone['name'])
 
@@ -292,7 +292,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     def test_delete_nonexistent_recordset(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Attempt to delete an invalid Recordset')
         with self.assertRaisesDns(
@@ -304,7 +304,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
     def test_delete_nonexistent_recordset_invalid_id(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Attempt to get an invalid Recordset')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
@@ -363,7 +363,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
         LOG.info('Create another zone')
         _, zone2 = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone2['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone2['id'])
 
         LOG.info('Create another Recordset')
         recordset_data = data_utils.rand_recordset_data(
@@ -392,7 +392,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
     def test_list_zones_recordsets_zone_names(self):
         LOG.info('Create another zone')
         _, zone2 = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone2['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone2['id'])
 
         LOG.info('List recordsets')
         _, body = self.client.list_zones_recordsets()
@@ -443,7 +443,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
 
         LOG.info('Create a zone as a default user')
         _, zone = self.zone_client.create_zone(name='a.b.' + zone_name)
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         rrset_data = data_utils.rand_recordset_data(
             record_type='A', zone_name=zone_name)
@@ -458,6 +458,12 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
     def test_no_create_recordset_via_alt_domain(self):
         _, zone = self.zone_client.create_zone()
         _, alt_zone = self.alt_zone_client.create_zone()
+        self.addCleanup(self.wait_zone_delete,
+                        self.zone_client,
+                        zone['id'])
+        self.addCleanup(self.wait_zone_delete,
+                        self.alt_zone_client,
+                        alt_zone['id'])
 
         # alt attempts to create record with name A12345.{zone}
         recordset_data = data_utils.rand_recordset_data(
