@@ -77,8 +77,12 @@ DnsFeatureGroup = [
     cfg.BoolOpt('api_v2_quotas',
                 default=False,
                 help="Is the v2 quota API enabled."),
-    cfg.BoolOpt('bug_1573141_fixed',
+    cfg.BoolOpt('api_v2_quotas_verify_project',
                 default=False,
+                help="Is project IDs verified when setting v2 quotas. "
+                "Must be set to True starting from Rocky release."),
+    cfg.BoolOpt('bug_1573141_fixed',
+                default=True,
                 help="Is https://bugs.launchpad.net/designate/+bug/1573141 "
                 "fixed"),
 ]

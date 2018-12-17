@@ -341,7 +341,6 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
         self.assertGreater(len(body['recordsets']), 0)
 
-    @decorators.skip_because(bug="1616892")
     @decorators.idempotent_id('65ec0495-81d9-4cfb-8007-9d93b32ae883')
     def test_get_single_zones_recordsets(self):
         recordset_data = data_utils.rand_recordset_data(

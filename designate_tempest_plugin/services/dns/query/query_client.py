@@ -14,6 +14,7 @@
 import dns
 import dns.exception
 import dns.query
+import six
 from tempest import config
 
 CONF = config.CONF
@@ -50,7 +51,7 @@ class SingleQueryClient(object):
     @classmethod
     def _prepare_query(cls, zone_name, rdatatype):
         # support plain strings: "SOA", "A"
-        if isinstance(rdatatype, basestring):
+        if isinstance(rdatatype, six.string_types):
             rdatatype = dns.rdatatype.from_text(rdatatype)
         dns_message = dns.message.make_query(zone_name, rdatatype)
         dns_message.set_opcode(dns.opcode.QUERY)

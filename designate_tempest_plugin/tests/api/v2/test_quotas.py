@@ -14,6 +14,7 @@
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
+from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
@@ -26,7 +27,7 @@ CONF = config.CONF
 
 class QuotasV2Test(base.BaseDnsV2Test):
 
-    credentials = ['primary', 'admin']
+    credentials = ['primary', 'admin', 'alt']
 
     @classmethod
     def setup_credentials(cls):
@@ -49,6 +50,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
         cls.quotas_client = cls.os_primary.quotas_client
         cls.admin_client = cls.os_admin.quotas_client
+        cls.alt_client = cls.os_alt.quotas_client
 
     @decorators.idempotent_id('1dac991a-9e2e-452c-a47a-26ac37381ec5')
     def test_show_quotas(self):
@@ -105,8 +107,8 @@ class QuotasV2Test(base.BaseDnsV2Test):
     @decorators.idempotent_id('21e45d30-dbc1-4173-9d6b-9b6813ef514b')
     def test_reset_quotas_other_project(self):
 
-        # Use a fake project for this
-        project_id = '21e45d30-dbc1-4173-9d6b-9b6813ef514b'
+        LOG.info("Using 'alt' project id to set quotas on.")
+        project_id = self.alt_client.tenant_id
 
         _, original_quotas = self.admin_client.show_quotas(
             project_id=project_id, headers={'X-Auth-All-Projects': True})
@@ -128,3 +130,29 @@ class QuotasV2Test(base.BaseDnsV2Test):
             project_id=project_id, headers={'X-Auth-All-Projects': True})
 
         self.assertExpected(original_quotas, final_quotas, [])
+
+    @decorators.idempotent_id('9b09b3e2-7e88-4569-bce3-9be2f7ac70c4')
+    def test_update_quotas_invalid_project(self):
+
+        if not CONF.dns_feature_enabled.api_v2_quotas_verify_project:
+            raise self.skipException("Project ID in quotas "
+                                     "is not being verified.")
+
+        project_id = 'project-that-does-not-exist'
+
+        LOG.info("Updating quotas for non-existing %s ", project_id)
+
+        _, original_quotas = self.admin_client.show_quotas(
+            project_id=project_id, headers={'X-Auth-All-Projects': True})
+
+        quotas = dns_data_utils.rand_quotas()
+        request = quotas.copy()
+        request['project_id'] = project_id
+        request['headers'] = {'X-Auth-All-Projects': True}
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_project', 400):
+            self.admin_client.update_quotas(**request)
+        self.addCleanup(self.admin_client.delete_quotas, project_id=project_id)
+
+        _, client_body = self.quotas_client.show_quotas()
+
+        self.assertExpected(original_quotas, client_body, [])

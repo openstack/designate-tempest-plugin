@@ -37,8 +37,8 @@ html_theme_path = [openstackdocstheme.get_html_theme_path()]
 # We ask git for the SHA checksum
 # The git SHA checksum is used by "log-a-bug"
 git_cmd = ["/usr/bin/git", "rev-parse", "HEAD"]
-gitsha = subprocess.Popen(
-    git_cmd, stdout=subprocess.PIPE).communicate()[0].strip('\n')
+gitsha = str(subprocess.Popen(
+    git_cmd, stdout=subprocess.PIPE).communicate())[0].strip('\n')
 # tag that reported bugs will be tagged with
 bug_tag = "tempest-plugin-docs"
 # source tree
@@ -127,7 +127,7 @@ modindex_common_prefix = ["designate_tempest_plugin."]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

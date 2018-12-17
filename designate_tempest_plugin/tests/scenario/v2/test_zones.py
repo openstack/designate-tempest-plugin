@@ -87,7 +87,6 @@ class ZonesTest(base.BaseDnsV2Test):
         waiters.wait_for_zone_404(self.client, zone['id'])
 
     @decorators.attr(type='slow')
-    @decorators.skip_because(bug='1623576')
     @decorators.idempotent_id('ad8d1f5b-da66-46a0-bbee-14dc84a5d791')
     @testtools.skipUnless(
         config.CONF.dns.nameservers,
@@ -101,7 +100,6 @@ class ZonesTest(base.BaseDnsV2Test):
         waiters.wait_for_query(self.query_client, zone['name'], "SOA")
 
     @decorators.attr(type='slow')
-    @decorators.skip_because(bug='1623576')
     @decorators.idempotent_id('d13d3095-c78f-4aae-8fe3-a74ccc335c84')
     @testtools.skipUnless(
         config.CONF.dns.nameservers,
