@@ -22,7 +22,7 @@ from designate_tempest_plugin import clients
 CONF = config.CONF
 
 
-class AssertRaisesDns(object):
+class AssertRaisesDns(test.BaseTestCase):
     def __init__(self, test_class, exc, type_, code):
         self.test_class = test_class
         self.exc = exc
