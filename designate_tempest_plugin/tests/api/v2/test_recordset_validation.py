@@ -59,7 +59,9 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
             zone_data = data_utils.rand_zone_data()
             resp, body = self.zones_client.create_zone(**zone_data)
             self._zone = body
-            self.addCleanup(self.zones_client.delete_zone, body['id'])
+            self.addCleanup(self.wait_zone_delete,
+                            self.zones_client,
+                            body['id'])
         return self._zone
 
     def create_recordset(self, data):

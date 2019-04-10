@@ -27,6 +27,7 @@ class ZonesImportTest(BaseZonesImportTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
+
         cls.client = cls.os_primary.zone_imports_client
         cls.zones_client = cls.os_primary.zones_client
 
@@ -46,6 +47,10 @@ class ZonesImportTest(BaseZonesImportTest):
 
         LOG.info('Check the zone import looks good')
         _, zone_import = self.client.show_zone_import(zone_import['id'])
+        self.addCleanup(self.wait_zone_delete,
+                        self.zones_client,
+                        zone_import['zone_id'])
+
         self.assertEqual('COMPLETE', zone_import['status'])
         self.assertIsNotNone(zone_import['zone_id'])
         self.assertIsNotNone(zone_import['links'].get('zone'))

@@ -45,7 +45,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     def test_create_tsigkey(self):
         LOG.info('Create a resource')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         tsigkey_data = {
                         "name": "Example tsigkey",
@@ -67,7 +67,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     def test_list_tsigkey(self):
         LOG.info('Create a resource')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         LOG.info('Create a tsigkey')
         _, tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])
         self.addCleanup(self.admin_client.delete_tsigkey, tsigkey['id'])
@@ -78,7 +78,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     def test_show_tsigkey(self):
         LOG.info('Create a resource')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a tsigkey')
         _, tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])
@@ -94,7 +94,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     def test_update_tsigkey(self):
         LOG.info('Create a resource')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a tsigkey')
         _, tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])
@@ -119,7 +119,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     def test_delete_tsigkey(self):
         LOG.info('Create a resource')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a tsigkey')
         _, tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])

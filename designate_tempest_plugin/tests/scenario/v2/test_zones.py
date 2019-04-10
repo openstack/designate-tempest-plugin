@@ -38,7 +38,7 @@ class ZonesTest(base.BaseDnsV2Test):
     def test_create_and_delete_zone(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'],
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Ensure we respond with CREATE+PENDING')
@@ -69,7 +69,7 @@ class ZonesTest(base.BaseDnsV2Test):
     def test_delete_zone_pending_create(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'],
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         # NOTE(kiall): This is certainly a little racey, it's entirely
@@ -94,7 +94,7 @@ class ZonesTest(base.BaseDnsV2Test):
     def test_zone_create_propagates_to_nameservers(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         waiters.wait_for_zone_status(self.client, zone['id'], "ACTIVE")
         waiters.wait_for_query(self.query_client, zone['name'], "SOA")
@@ -107,7 +107,7 @@ class ZonesTest(base.BaseDnsV2Test):
     def test_zone_delete_propagates_to_nameservers(self):
         LOG.info('Create a zone')
         _, zone = self.client.create_zone()
-        self.addCleanup(self.client.delete_zone, zone['id'],
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         waiters.wait_for_zone_status(self.client, zone['id'], "ACTIVE")

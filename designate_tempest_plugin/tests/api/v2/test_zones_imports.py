@@ -16,6 +16,7 @@ from oslo_log import log as logging
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
+from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin.tests import base
 
 LOG = logging.getLogger(__name__)
@@ -36,13 +37,22 @@ class ZonesImportTest(BaseZonesImportTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
+
         cls.client = cls.os_primary.zone_imports_client
+        cls.zone_client = cls.os_primary.zones_client
+
+    def clean_up_resources(self, zone_import_id):
+        waiters.wait_for_zone_import_status(self.client, zone_import_id,
+                                            "COMPLETE")
+        _, zone_import = self.client.show_zone_import(zone_import_id)
+        self.client.delete_zone_import(zone_import['id'])
+        self.wait_zone_delete(self.zone_client, zone_import['zone_id'])
 
     @decorators.idempotent_id('2e2d907d-0609-405b-9c96-3cb2b87e3dce')
     def test_create_zone_import(self):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
-        self.addCleanup(self.client.delete_zone_import, zone_import['id'])
+        self.addCleanup(self.clean_up_resources, zone_import['id'])
 
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', zone_import['status'])
@@ -52,7 +62,7 @@ class ZonesImportTest(BaseZonesImportTest):
     def test_show_zone_import(self):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
-        self.addCleanup(self.client.delete_zone_import, zone_import['id'])
+        self.addCleanup(self.clean_up_resources, zone_import['id'])
 
         LOG.info('Re-Fetch the zone import')
         resp, body = self.client.show_zone_import(zone_import['id'])
@@ -64,6 +74,12 @@ class ZonesImportTest(BaseZonesImportTest):
     def test_delete_zone_import(self):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
+        waiters.wait_for_zone_import_status(self.client, zone_import['id'],
+                                            "COMPLETE")
+        _, zone_import = self.client.show_zone_import(zone_import['id'])
+        self.addCleanup(self.wait_zone_delete,
+                        self.zone_client,
+                        zone_import['zone_id'])
 
         LOG.info('Delete the zone')
         resp, body = self.client.delete_zone_import(zone_import['id'])
@@ -75,7 +91,8 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.idempotent_id('9eab76af-1995-485f-a2ef-8290c1863aba')
     def test_list_zones_imports(self):
         LOG.info('Create a zone import')
-        _, zone = self.client.create_zone_import()
+        _, zone_import = self.client.create_zone_import()
+        self.addCleanup(self.clean_up_resources, zone_import['id'])
 
         LOG.info('List zones imports')
         _, body = self.client.list_zone_imports()

@@ -44,10 +44,11 @@ class ZonesExportTest(BaseZoneExportsTest):
     def test_create_zone_export(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone export')
         _, zone_export = self.client.create_zone_export(zone['id'])
+        self.addCleanup(self.client.delete_zone_export, zone_export['id'])
 
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', zone_export['status'])
@@ -57,10 +58,11 @@ class ZonesExportTest(BaseZoneExportsTest):
     def test_show_zone_export(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone export')
         resp, zone_export = self.client.create_zone_export(zone['id'])
+        self.addCleanup(self.client.delete_zone_export, zone_export['id'])
 
         LOG.info('Re-Fetch the zone export')
         _, body = self.client.show_zone_export(zone_export['id'])
@@ -72,7 +74,7 @@ class ZonesExportTest(BaseZoneExportsTest):
     def test_delete_zone_export(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'],
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone export')
@@ -89,9 +91,10 @@ class ZonesExportTest(BaseZoneExportsTest):
     def test_list_zone_exports(self):
         LOG.info('Create a zone')
         _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.zone_client.delete_zone, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         _, export = self.client.create_zone_export(zone['id'])
+        self.addCleanup(self.client.delete_zone_export, export['id'])
 
         LOG.info('List zone exports')
         _, body = self.client.list_zone_exports()

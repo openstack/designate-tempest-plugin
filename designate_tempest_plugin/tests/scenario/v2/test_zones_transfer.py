@@ -37,14 +37,14 @@ class ZonesTransferTest(base.BaseDnsV2Test):
     def test_zone_transfer(self):
         LOG.info('Create a zone as primary tenant')
         _, zone = self.zones_client.create_zone()
-        self.addCleanup(self.zones_client.delete_zone, zone['id'],
-                        ignore_errors=lib_exc.NotFound)
-        self.addCleanup(self.alt_zones_client.delete_zone, zone['id'],
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone transfer_request for zone as primary tenant')
         _, transfer_request = \
             self.request_client.create_transfer_request_empty_body(zone['id'])
+        self.addCleanup(self.request_client.delete_transfer_request,
+                        transfer_request['id'])
 
         accept_data = {
                  "key": transfer_request['key'],
@@ -55,7 +55,10 @@ class ZonesTransferTest(base.BaseDnsV2Test):
         self.alt_accept_client.create_transfer_accept(accept_data)
 
         LOG.info('Fetch the zone as alt tenant')
-        self.alt_zones_client.show_zone(zone['id'])
+        _, alt_zone = self.alt_zones_client.show_zone(zone['id'])
+        self.addCleanup(self.wait_zone_delete,
+                        self.alt_zones_client,
+                        alt_zone['id'])
 
         LOG.info('Ensure 404 when fetching the zone as primary tenant')
         self.assertRaises(lib_exc.NotFound,
