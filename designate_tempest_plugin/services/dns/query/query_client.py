@@ -60,7 +60,7 @@ class SingleQueryClient(object):
     @classmethod
     def _dig(cls, name, rdatatype, ip, port, timeout):
         query = cls._prepare_query(name, rdatatype)
-        return dns.query.udp(query, ip, port=port, timeout=timeout)
+        return dns.query.udp(query, ip.strip('[]'), port=port, timeout=timeout)
 
 
 class Nameserver(object):
@@ -78,6 +78,6 @@ class Nameserver(object):
     @classmethod
     def from_str(self, nameserver):
         if ':' in nameserver:
-            ip, port = nameserver.split(':')
+            ip, port = nameserver.rsplit(':', 1)
             return Nameserver(ip, int(port))
         return Nameserver(nameserver)
