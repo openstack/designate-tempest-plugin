@@ -19,6 +19,7 @@ from .json.ptr_client import PtrClient
 from .json.quotas_client import QuotasClient
 from .json.recordset_client import RecordsetClient
 from .json.service_client import ServiceClient
+from .json.shared_zones_client import SharedZonesClient
 from .json.tld_client import TldClient
 from .json.transfer_accepts_client import TransferAcceptClient
 from .json.transfer_request_client import TransferRequestClient
@@ -30,6 +31,6 @@ from .json.api_version_client import ApiVersionClient
 
 __all__ = ['BlacklistsClient', 'DesignateLimitClient', 'PoolClient',
            'PtrClient', 'QuotasClient', 'RecordsetClient', 'ServiceClient',
-           'TldClient', 'TransferAcceptClient', 'TransferRequestClient',
-           'TsigkeyClient', 'ZonesClient', 'ZoneExportsClient',
-           'ZoneImportsClient', 'ApiVersionClient']
+           'SharedZonesClient', 'TldClient', 'TransferAcceptClient',
+           'TransferRequestClient', 'TsigkeyClient', 'ZonesClient',
+           'ZoneExportsClient', 'ZoneImportsClient', 'ApiVersionClient']

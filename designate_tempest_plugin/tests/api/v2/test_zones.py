@@ -13,6 +13,7 @@
 # under the License.
 import uuid
 from oslo_log import log as logging
+from oslo_utils import versionutils
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib.common.utils import data_utils
@@ -20,7 +21,6 @@ from tempest.lib import exceptions as lib_exc
 
 
 from designate_tempest_plugin.common import constants as const
-
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 
@@ -72,6 +72,8 @@ class ZonesTest(BaseZonesTest):
         else:
             cls.pool_client = cls.os_admin.dns_v2.PoolClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
+        cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
+        cls.share_zone_client = cls.os_primary.dns_v2.SharedZonesClient()
 
     @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
     def test_create_zones(self):
@@ -217,6 +219,49 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual(const.DELETE, body['action'])
         self.assertEqual(const.PENDING, body['status'])
+
+    @decorators.idempotent_id('bf2ee5c1-67b5-47dc-9902-ddb5b0e03e37')
+    def test_delete_zone_with_shares(self):
+
+        if not versionutils.is_compatible('2.1', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'Zone share tests require Designate API version 2.1 or newer. '
+                'Skipping test_delete_zone_with_shares test.')
+
+        LOG.info('Create a zone')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="delete_zones_with_shares", suffix=self.tld_name)
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
+                        ignore_errors=lib_exc.NotFound)
+
+        shared_zone = self.share_zone_client.create_zone_share(
+            zone['id'], self.alt_zone_client.project_id)[1]
+        self.addCleanup(self.share_zone_client.delete_zone_share,
+                        zone['id'], shared_zone['id'],
+                        ignore_errors=lib_exc.NotFound)
+
+        LOG.info('Attempt to delete the zone with shares')
+        self.assertRaises(lib_exc.BadRequest, self.zones_client.delete_zone,
+                          zone['id'])
+
+        LOG.info('Make sure the zone share is still present')
+        check_share = self.share_zone_client.show_zone_share(
+            zone['id'], shared_zone['id'])[1]
+        self.assertEqual(shared_zone['id'], check_share['id'])
+
+        LOG.info('Delete the zone using delete-shares')
+        body = self.zones_client.delete_zone(
+            zone['id'], headers={'x-designate-delete-shares': True})[1]
+
+        LOG.info('Ensure we respond with DELETE+PENDING')
+        self.assertEqual(const.DELETE, body['action'])
+        self.assertEqual(const.PENDING, body['status'])
+
+        self.assertRaises(lib_exc.NotFound,
+                          self.share_zone_client.show_zone_share,
+                          zone['id'], shared_zone['id'])
 
     @decorators.idempotent_id('5bfa3cfe-5bc8-443b-bf48-cfba44cbb247')
     def test_list_zones(self):
