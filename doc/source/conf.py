@@ -27,26 +27,13 @@ sys.path.insert(0, os.path.abspath('./'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = []
-
-import openstackdocstheme
+extensions = ['openstackdocstheme']
 
 html_theme = 'openstackdocs'
-html_theme_path = [openstackdocstheme.get_html_theme_path()]
 
-# We ask git for the SHA checksum
-# The git SHA checksum is used by "log-a-bug"
-git_cmd = ["/usr/bin/git", "rev-parse", "HEAD"]
-gitsha = str(subprocess.Popen(
-    git_cmd, stdout=subprocess.PIPE).communicate())[0].strip('\n')
-# tag that reported bugs will be tagged with
-bug_tag = "tempest-plugin-docs"
-# source tree
-pwd = os.getcwd()
-# html_context allows us to pass arbitrary values into the html template
-html_context = {"pwd": pwd, "gitsha": gitsha}
-# Must set this variable to include year, month, day, hours, and minutes.
-html_last_updated_fmt = '%Y-%m-%d %H:%M'
+# openstackdocstheme options
+openstackdocs_repo_name = 'openstack/designate-tempest-plugin'
+openstackdocs_bug_tag = "tempest-plugin-docs"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -97,7 +84,7 @@ exclude_patterns = []
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'native'
 
 # A list of ignored prefixes for module index sorting.
 modindex_common_prefix = ["designate_tempest_plugin."]
