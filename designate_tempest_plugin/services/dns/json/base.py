@@ -63,12 +63,15 @@ class DnsClientBase(rest_client.RestClient):
         return json.dumps(data)
 
     def deserialize(self, resp, object_str):
-        if 'application/json' in resp['content-type']:
-            return json.loads(object_str)
-        elif 'text/dns' in resp['content-type']:
-            return models.ZoneFile.from_text(object_str.decode("utf-8"))
+        if 'content-type' in resp.keys():
+            if 'application/json' in resp['content-type']:
+                return json.loads(object_str)
+            elif 'text/dns' in resp['content-type']:
+                return models.ZoneFile.from_text(object_str.decode("utf-8"))
+            else:
+                raise lib_exc.InvalidContentType()
         else:
-            raise lib_exc.InvalidContentType()
+            return None
 
     @classmethod
     def expected_success(cls, expected_code, read_code):
@@ -103,7 +106,8 @@ class DnsClientBase(rest_client.RestClient):
                                   params=params)
 
     def _create_request(self, resource, data=None, params=None,
-                        headers=None, extra_headers=False):
+                        headers=None, extra_headers=False,
+                        expected_statuses=None):
         """Create an object of the specified type.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param data: A Python dict that represents an object of the
@@ -117,6 +121,9 @@ class DnsClientBase(rest_client.RestClient):
                                      method are to be used but additional
                                      headers are needed in the request
                                      pass them in as a dict.
+        :param expected_statuses: If set, it will override the default expected
+                                  statuses list with the status codes provided
+                                  by caller function
         :returns: A tuple with the server response and the deserialized created
                  object.
         """
@@ -125,7 +132,11 @@ class DnsClientBase(rest_client.RestClient):
 
         resp, body = self.post(uri, body=body, headers=headers,
                                extra_headers=extra_headers)
-        self.expected_success(self.CREATE_STATUS_CODES, resp.status)
+
+        if expected_statuses is None:
+            self.expected_success(self.CREATE_STATUS_CODES, resp.status)
+        else:
+            self.expected_success(expected_statuses, resp.status)
 
         return resp, self.deserialize(resp, body)
 

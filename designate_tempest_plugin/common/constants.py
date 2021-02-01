@@ -14,3 +14,7 @@
 
 # API statuses
 UP = 'UP'
+
+# Zone types
+PRIMARY_ZONE_TYPE = 'PRIMARY'
+SECONDARY_ZONE_TYPE = 'SECONDARY'

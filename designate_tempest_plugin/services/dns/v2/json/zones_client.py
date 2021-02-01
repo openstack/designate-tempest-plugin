@@ -13,6 +13,8 @@
 # under the License.
 from tempest.lib.common.utils import data_utils
 
+from designate_tempest_plugin.common import constants as const
+
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin.services.dns.v2.json import base
@@ -23,7 +25,10 @@ class ZonesClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def create_zone(self, name=None, email=None, ttl=None, description=None,
-                    attributes=None, wait_until=False, params=None):
+                    attributes=None, wait_until=False,
+                    zone_type=const.PRIMARY_ZONE_TYPE,
+                    primaries=None, params=None):
+
         """Create a zone with the specified parameters.
 
         :param name: The name of the zone.
@@ -39,10 +44,15 @@ class ZonesClient(base.DnsClientV2Base):
                This information can be used by the scheduler to place
                zones on the correct pool.
         :param wait_until: Block until the zone reaches the desiered status
+        :param zone_type: PRIMARY or SECONDARY
+            Default: PRIMARY
+        :param primaries: List of Primary nameservers. Required for SECONDARY
+            Default: None
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :return: A tuple with the server response and the created zone.
         """
+
         zone = {
             'name': name or dns_data_utils.rand_zone_name(),
             'email': email or dns_data_utils.rand_email(),
@@ -51,7 +61,17 @@ class ZonesClient(base.DnsClientV2Base):
             'attributes': attributes or {
                 'attribute_key': data_utils.rand_name('attribute_value')}
         }
+        # If SECONDARY, "email" and "ttl" cannot be supplied
+        if zone_type == const.SECONDARY_ZONE_TYPE:
+            zone['type'] = zone_type
+            del zone['email']
+            del zone['ttl']
+            if primaries is None:
+                raise AttributeError(
+                    'Error - "primaries" is mandatory parameter'
+                    ' for a SECONDARY zone type')
 
+            zone['masters'] = primaries
         resp, body = self._create_request('zones', zone, params=params)
 
         # Create Zone should Return a HTTP 202
@@ -73,6 +93,18 @@ class ZonesClient(base.DnsClientV2Base):
         """
         return self._show_request(
             'zones', uuid, params=params, headers=headers)
+
+    @base.handle_errors
+    def show_zone_nameservers(self, zone_uuid, params=None):
+        """Gets list of Zone Name Servers
+        :param zone_uuid: Unique identifier of the zone in UUID format.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :return: Serialized nameservers as a list.
+        """
+        return self._show_request(
+            'zones/{0}/nameservers'.format(zone_uuid), uuid=None,
+            params=params)
 
     @base.handle_errors
     def list_zones(self, params=None, headers=None):
@@ -129,4 +161,35 @@ class ZonesClient(base.DnsClientV2Base):
         if wait_until:
             waiters.wait_for_zone_status(self, body['id'], wait_until)
 
+        return resp, body
+
+    @base.handle_errors
+    def trigger_manual_update(self, zone_id, headers=None):
+        """Trigger manually update for secondary zone.
+
+        :param zone_id: Secondary zone ID.
+        :param headers (dict): The headers to use for the request.
+        :return: A tuple with the server response and body.
+        """
+        resp, body = self._create_request(
+            'zones/{}/tasks/xfr'.format(zone_id), headers=headers)
+        # Trigger Zone Update should Return a HTTP 202
+        self.expected_success(202, resp.status)
+        return resp, body
+
+    @base.handle_errors
+    def abandon_zone(self, zone_id, headers=None):
+        """This removes a zone from the designate database without removing
+         it from the backends.
+
+        :param zone_id: Zone ID.
+        :param headers (dict): The headers to use for the request.
+        :return: A tuple with the server response and body.
+        """
+        resp, body = self._create_request(
+            'zones/{}/tasks/abandon'.format(zone_id),
+            headers=headers,
+            expected_statuses=self.DELETE_STATUS_CODES)
+
+        self.expected_success(self.DELETE_STATUS_CODES, resp.status)
         return resp, body
