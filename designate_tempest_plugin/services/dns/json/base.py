@@ -152,16 +152,17 @@ class DnsClientBase(rest_client.RestClient):
 
         return resp, self.deserialize(resp, body)
 
-    def _list_request(self, resource, params=None):
+    def _list_request(self, resource, params=None, headers=None):
         """Gets a list of objects.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :returns: Serialized object as a dictionary.
         """
         uri = self.get_uri(resource, params=params)
 
-        resp, body = self.get(uri)
+        resp, body = self.get(uri, headers=headers)
 
         self.expected_success(self.LIST_STATUS_CODES, resp.status)
 

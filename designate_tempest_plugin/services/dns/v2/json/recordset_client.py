@@ -150,3 +150,14 @@ class RecordsetClient(base.DnsClientV2Base):
         """
         return self._list_request(
             'recordsets', params=params)
+
+    @base.handle_errors
+    def list_owned_recordsets(self, params=None, headers=None):
+        """Lists recordsets for all projects in Designate.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :param headers: (dict): The headers to use for the request.
+        :return: Serialized recordset as a list.
+        """
+        return self._list_request(
+            'recordsets', params=params, headers=headers)[1]['recordsets']
