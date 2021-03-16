@@ -49,6 +49,8 @@ from designate_tempest_plugin.services.dns.v2.json.tsigkey_client \
     import TsigkeyClient
 from designate_tempest_plugin.services.dns.v2.json.service_client \
     import SevriceClient
+from designate_tempest_plugin.services.dns.v2.json.designate_limit_client \
+    import DesignateLimitClient
 
 CONF = config.CONF
 
@@ -96,6 +98,7 @@ class ManagerV2(clients.Manager):
         self.transfer_accept_client = TransferAcceptClient(**params)
         self.tsigkey_client = TsigkeyClient(**params)
         self.service_client = SevriceClient(**params)
+        self.designate_limit_client = DesignateLimitClient(**params)
 
         self.query_client = QueryClient(
             nameservers=CONF.dns.nameservers,
