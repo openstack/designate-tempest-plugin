@@ -87,17 +87,25 @@ class DnsClientBase(rest_client.RestClient):
             expected_code=expected_code, read_code=int(read_code),
         )
 
-    def get_uri(self, resource_name, uuid=None, params=None):
+    def get_uri(self, resource_name, uuid=None, params=None,
+                uuid_prefix_char=None):
         """Get URI for a specific resource or object.
         :param resource_name: The name of the REST resource, e.g., 'zones'.
         :param uuid: The unique identifier of an object in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param uuid_prefix_char: applies to override hardcoded ('/')
+                prefix UUID character. This parameter enables to set required
+                by API character, for example ":" instead of "/".
         :returns: Relative URI for the resource or object.
         """
         uri_pattern = '{pref}/{res}{uuid}{params}'
 
-        uuid = '/%s' % uuid if uuid else ''
+        if uuid_prefix_char:
+            uuid = uuid_prefix_char + '%s' % uuid if uuid else ''
+        else:
+            uuid = '/%s' % uuid if uuid else ''
+
         params = '?%s' % urllib.urlencode(params) if params else ''
 
         return uri_pattern.format(pref=self.uri_prefix,
@@ -141,7 +149,7 @@ class DnsClientBase(rest_client.RestClient):
         return resp, self.deserialize(resp, body)
 
     def _show_request(self, resource, uuid, headers=None, params=None,
-                      extra_headers=False):
+                      extra_headers=False, uuid_prefix_char=None):
         """Gets a specific object of the specified type.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: Unique identifier of the object in UUID format.
@@ -152,9 +160,13 @@ class DnsClientBase(rest_client.RestClient):
                                      method are to be used but additional
                                      headers are needed in the request
                                      pass them in as a dict.
+        :param uuid_prefix_char: applies to override hardcoded ('/')
+                prefix UUID character. This parameter enables to set required
+                by API character, for example ":" instead of "/".
         :returns: Serialized object as a dictionary.
         """
-        uri = self.get_uri(resource, uuid=uuid, params=params)
+        uri = self.get_uri(resource, uuid=uuid, params=params,
+                           uuid_prefix_char=uuid_prefix_char)
 
         resp, body = self.get(
             uri, headers=headers, extra_headers=extra_headers)
@@ -199,7 +211,7 @@ class DnsClientBase(rest_client.RestClient):
         return resp, self.deserialize(resp, body)
 
     def _update_request(self, resource, uuid, data, params=None, headers=None,
-                        extra_headers=False):
+                        extra_headers=False, uuid_prefix_char=None):
         """Updates the specified object using PATCH request.
         :param resource: The name of the REST resource, e.g., 'zones'
         :param uuid: Unique identifier of the object in UUID format.
@@ -214,13 +226,18 @@ class DnsClientBase(rest_client.RestClient):
                                      method are to be used but additional
                                      headers are needed in the request
                                      pass them in as a dict.
+        :param uuid_prefix_char: applies to override hardcoded ('/')
+                prefix UUID character. This parameter enables to set required
+                by API character, for example ":" instead of "/".
         :returns: Serialized object as a dictionary.
         """
         body = self.serialize(data)
-        uri = self.get_uri(resource, uuid=uuid, params=params)
+        uri = self.get_uri(
+            resource, uuid=uuid, params=params,
+            uuid_prefix_char=uuid_prefix_char)
 
         resp, body = self.patch(uri, body=body,
-                                headers=headers, extra_headers=True)
+                                headers=headers, extra_headers=extra_headers)
 
         self.expected_success(self.UPDATE_STATUS_CODES, resp.status)
 
