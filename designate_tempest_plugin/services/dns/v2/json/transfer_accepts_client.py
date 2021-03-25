@@ -47,3 +47,15 @@ class TransferAcceptClient(base.DnsClientV2Base):
         """
         return self._show_request(
             'zones/tasks/transfer_accepts', uuid, params=params)
+
+    @base.handle_errors
+    def list_transfer_accept(self, params=None, headers=None):
+        """Lists all accepted zone transfers.
+        :param params: A Python dict that represents the query paramaters to
+                       include in the accept URI.
+        :param headers (dict): The headers to use for the request.
+        :return: List of accepted zone transfers
+        """
+        return self._list_request(
+            'zones/tasks/transfer_accepts', params=params,
+            headers=headers)[1]['transfer_accepts']
