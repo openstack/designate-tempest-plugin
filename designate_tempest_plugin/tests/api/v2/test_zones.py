@@ -11,6 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import uuid
 from oslo_log import log as logging
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
@@ -62,6 +63,18 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Ensure the fetched response matches the created zone')
         self.assertExpected(zone, body, self.excluded_keys)
 
+    @decorators.idempotent_id('49268b24-92de-11eb-9d02-74e5f9e2a801')
+    def test_show_not_existing_zone(self):
+        LOG.info('Fetch non existing zone')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.show_zone(uuid.uuid1()))
+
+    @decorators.idempotent_id('736e3b50-92e0-11eb-9d02-74e5f9e2a801')
+    def test_use_invalid_id_to_show_zone(self):
+        LOG.info('Fetch the zone using invalid zone ID')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
+            self.client.show_zone(uuid='zahlabut')
+
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
     def test_delete_zone(self):
@@ -76,6 +89,12 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual('DELETE', body['action'])
         self.assertEqual('PENDING', body['status'])
+
+    @decorators.idempotent_id('79921370-92e1-11eb-9d02-74e5f9e2a801')
+    def test_delete_non_existing_zone(self):
+        LOG.info('Delete non existing zone')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.delete_zone(uuid.uuid1()))
 
     @decorators.idempotent_id('5bfa3cfe-5bc8-443b-bf48-cfba44cbb247')
     def test_list_zones(self):
@@ -109,6 +128,13 @@ class ZonesTest(BaseZonesTest):
 
         LOG.info('Ensure we respond with updated values')
         self.assertEqual(description, zone['description'])
+
+    @decorators.idempotent_id('e391e30a-92e0-11eb-9d02-74e5f9e2a801')
+    def test_update_non_existing_zone(self):
+        LOG.info('Update non existing zone')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.update_zone(
+                uuid.uuid1(), description=data_utils.rand_name()))
 
     @decorators.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
     def test_list_zones_dot_json_fails(self):
