@@ -43,25 +43,27 @@ class ZoneImportsClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def show_zone_import(self, uuid, params=None):
+    def show_zone_import(self, uuid, params=None, headers=None):
         """Gets a specific zone import.
         :param uuid: Unique identifier of the imported zone in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized imported zone as a dictionary.
         """
         return self._show_request(
-            'zones/tasks/imports', uuid, params=params)
+            'zones/tasks/imports', uuid, params=params, headers=headers)
 
     @base.handle_errors
-    def list_zone_imports(self, params=None):
+    def list_zone_imports(self, params=None, headers=None):
         """Gets all the imported zones.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized imported zones as a list.
         """
         return self._list_request(
-            'zones/tasks/imports', params=params)
+            'zones/tasks/imports', params=params, headers=headers)
 
     @base.handle_errors
     def delete_zone_import(self, uuid, params=None):
