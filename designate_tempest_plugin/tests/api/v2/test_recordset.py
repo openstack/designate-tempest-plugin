@@ -435,35 +435,55 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
         recordsets_created = {}
         for client in clients_list:
             if client == 'primary':
+                # Create a zone and wait till it's ACTIVE
                 zone = self.zone_client.create_zone()[1]
                 self.addCleanup(self.wait_zone_delete,
                                 self.zone_client,
                                 zone['id'])
+                waiters.wait_for_zone_status(
+                    self.zone_client, zone['id'], 'ACTIVE')
+
+                # Create a recordset and wait till it's ACTIVE
                 recordset_data = data_utils.rand_recordset_data(
                     record_type='A', zone_name=zone['name'])
                 resp, body = self.client.create_recordset(
                     zone['id'], recordset_data)
                 self.assertEqual('PENDING', body['status'],
                                  'Failed, expected status is PENDING')
-                waiters.wait_for_zone_status(
-                    self.zone_client, zone['id'], 'ACTIVE')
+                LOG.info('Wait until the recordset is active')
+                waiters.wait_for_recordset_status(
+                    self.client, zone['id'],
+                    body['id'], 'ACTIVE')
+
+                # Add "project_id" into the recordset_data
                 recordset_data['project_id'] = zone['project_id']
                 recordsets_created['primary'] = recordset_data
+
             if client == 'alt':
+                # Create a zone and wait till it's ACTIVE
                 alt_zone = self.alt_zone_client.create_zone()[1]
                 self.addCleanup(self.wait_zone_delete,
                                 self.alt_zone_client,
                                 alt_zone['id'])
+                waiters.wait_for_zone_status(
+                    self.alt_zone_client, alt_zone['id'], 'ACTIVE')
+
+                # Create a recordset and wait till it's ACTIVE
                 recordset_data = data_utils.rand_recordset_data(
                     record_type='A', zone_name=alt_zone['name'])
                 resp, body = self.alt_client.create_recordset(
                     alt_zone['id'], recordset_data)
                 self.assertEqual('PENDING', body['status'],
                                  'Failed, expected status is PENDING')
-                waiters.wait_for_zone_status(
-                    self.alt_zone_client, alt_zone['id'], 'ACTIVE')
+                LOG.info('Wait until the recordset is active')
+                waiters.wait_for_recordset_status(
+                    self.alt_client, alt_zone['id'],
+                    body['id'], 'ACTIVE')
+
+                # Add "project_id" into the recordset_data
                 recordset_data['project_id'] = alt_zone['project_id']
                 recordsets_created['alt'] = recordset_data
+
         return recordsets_created
 
     @decorators.idempotent_id('9c0f58ad-1b31-4899-b184-5380720604e5')
