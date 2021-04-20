@@ -19,18 +19,20 @@ class TransferAcceptClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def create_transfer_accept(self, transfer_accept_data,
-                               params=None):
+                               params=None, headers=None):
         """Create a zone transfer_accept.
         :param transfer_accept_data: A python dictionary representing
                                 data for the zone transfer accept.
         :param params: A Python dict that represents the query paramaters to
                        include in the accept URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized accepted zone transfer as a dictionary.
         """
 
         transfer_accept_uri = 'zones/tasks/transfer_accepts'
         resp, body = self._create_request(
-            transfer_accept_uri, transfer_accept_data, params=params)
+            transfer_accept_uri, transfer_accept_data,
+            params=params, headers=headers)
 
         # Create Transfer accept should Return a HTTP 201
         self.expected_success(201, resp.status)
@@ -38,15 +40,17 @@ class TransferAcceptClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def show_transfer_accept(self, uuid, params=None):
+    def show_transfer_accept(self, uuid, params=None, headers=None):
         """Gets a specific accepted zone transfer..
         :param uuid: Unique identifier of the transfer_accept.
         :param params: A Python dict that represents the query paramaters to
                        include in the accept URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized accepted zone transfer as a dictionary.
         """
         return self._show_request(
-            'zones/tasks/transfer_accepts', uuid, params=params)
+            'zones/tasks/transfer_accepts', uuid,
+            params=params, headers=headers)
 
     @base.handle_errors
     def list_transfer_accept(self, params=None, headers=None):
