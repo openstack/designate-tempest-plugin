@@ -20,6 +20,7 @@ from tempest.lib.common.utils import data_utils
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 
+from designate_tempest_plugin.common import waiters
 LOG = logging.getLogger(__name__)
 
 
@@ -145,7 +146,7 @@ class ZonesTest(BaseZonesTest):
 
 
 class ZonesAdminTest(BaseZonesTest):
-    credentials = ['primary', 'admin']
+    credentials = ['primary', 'admin', 'alt']
 
     @classmethod
     def setup_credentials(cls):
@@ -159,19 +160,82 @@ class ZonesAdminTest(BaseZonesTest):
 
         cls.client = cls.os_primary.zones_client
         cls.admin_client = cls.os_admin.zones_client
+        cls.alt_client = cls.os_alt.zones_client
 
-    @decorators.idempotent_id('6477f92d-70ba-46eb-bd6c-fc50c405e222')
-    def test_get_other_tenant_zone(self):
-        LOG.info('Create a zone as a user')
-        _, zone = self.client.create_zone()
+    @decorators.idempotent_id('f6fe8cce-8b04-11eb-a861-74e5f9e2a801')
+    def test_show_zone_impersonate_another_project(self):
+        LOG.info('Create zone "A" using primary client')
+        zone = self.client.create_zone()[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
-        LOG.info('Fetch the zone as an admin')
-        _, body = self.admin_client.show_zone(
-            zone['id'], params={'all_projects': True})
+        LOG.info('As Alt tenant show zone created by Primary tenant. '
+                 'Expected: 404 NotFound')
+        self.assertRaises(
+            lib_exc.NotFound, self.alt_client.show_zone, uuid=zone['id'])
 
-        LOG.info('Ensure the fetched response matches the created zone')
-        self.assertExpected(zone, body, self.excluded_keys)
+        LOG.info('As Admin tenant show zone created by Primary tenant. '
+                 'Expected: 404 NotFound')
+        self.assertRaises(
+            lib_exc.NotFound, self.admin_client.show_zone, uuid=zone['id'])
+
+        LOG.info('As Alt tenant show zone created by Primary tenant using '
+                 '"x-auth-sudo-project-id" HTTP header. '
+                 'Expected: 403 Forbidden')
+        self.assertRaises(
+            lib_exc.Forbidden, self.alt_client.show_zone, uuid=None,
+            headers={'x-auth-sudo-project-id': zone['project_id']})
+
+        LOG.info('As Admin user impersonate another project '
+                 '(using "x-auth-sudo-project-id" HTTP header) to show '
+                 'a Primary tenant zone.')
+        body = self.admin_client.show_zone(
+            uuid=None, headers={
+                'x-auth-sudo-project-id': zone['project_id']})[1]
+
+        LOG.info('Ensure the fetched response matches the impersonated'
+                 ' project, it means the ID of a zone "A"')
+        self.assertExpected(zone, body['zones'][0], self.excluded_keys)
+
+    @decorators.idempotent_id('e1cf7104-8b06-11eb-a861-74e5f9e2a801')
+    def test_list_all_projects_zones(self):
+
+        LOG.info('Create zone "A" using Primary client')
+        primary_zone = self.client.create_zone()[1]
+        self.addCleanup(
+            self.wait_zone_delete, self.client, primary_zone['id'])
+        LOG.info('Wait till the zone is ACTIVE')
+        waiters.wait_for_zone_status(
+            self.client, primary_zone['id'], 'ACTIVE')
+
+        LOG.info('Create zone "B" using Alt client')
+        alt_zone = self.alt_client.create_zone()[1]
+        self.addCleanup(
+            self.wait_zone_delete, self.alt_client, alt_zone['id'])
+        LOG.info('Wait till the zone is ACTIVE')
+        waiters.wait_for_zone_status(
+            self.alt_client, alt_zone['id'], 'ACTIVE')
+
+        LOG.info('Create zone "C" using Admin client')
+        admin_zone = self.admin_client.create_zone()[1]
+        self.addCleanup(
+            self.wait_zone_delete, self.admin_client, admin_zone['id'])
+        LOG.info('Wait till the zone is ACTIVE')
+        waiters.wait_for_zone_status(
+            self.admin_client, admin_zone['id'], 'ACTIVE')
+
+        LOG.info('As admin user list all projects zones')
+        body = self.admin_client.list_zones(
+            headers={'x-auth-all-projects': True})[1]['zones']
+        listed_zone_ids = [item['id'] for item in body]
+
+        LOG.info('Ensure the fetched response includes all zone '
+                 'IDs created within the test')
+
+        for id in [primary_zone['id'], alt_zone['id'], admin_zone['id']]:
+            self.assertIn(
+                id, listed_zone_ids,
+                'Failed, id:{} was not found in listed zones:{} '.format(
+                    id, listed_zone_ids))
 
 
 class ZoneOwnershipTest(BaseZonesTest):

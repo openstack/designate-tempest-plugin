@@ -63,23 +63,26 @@ class ZonesClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def show_zone(self, uuid, params=None):
+    def show_zone(self, uuid, params=None, headers=None):
         """Gets a specific zone.
         :param uuid: Unique identifier of the zone in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized zone as a dictionary.
         """
-        return self._show_request('zones', uuid, params=params)
+        return self._show_request(
+            'zones', uuid, params=params, headers=headers)
 
     @base.handle_errors
-    def list_zones(self, params=None):
+    def list_zones(self, params=None, headers=None):
         """Gets a list of zones.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized zones as a list.
         """
-        return self._list_request('zones', params=params)
+        return self._list_request('zones', params=params, headers=headers)
 
     @base.handle_errors
     def delete_zone(self, uuid, params=None):
