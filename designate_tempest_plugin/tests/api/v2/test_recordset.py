@@ -49,6 +49,9 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
 
 @ddt.ddt
 class RecordsetsTest(BaseRecordsetsTest):
+
+    credentials = ["admin", 'primary', 'alt']
+
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -60,7 +63,11 @@ class RecordsetsTest(BaseRecordsetsTest):
         super(RecordsetsTest, cls).setup_clients()
 
         cls.client = cls.os_primary.recordset_client
+        cls.alt_client = cls.os_alt.recordset_client
+        cls.admin_client = cls.os_admin.recordset_client
         cls.zone_client = cls.os_primary.zones_client
+        cls.alt_zone_client = cls.os_alt.zones_client
+        cls.admin_zone_client = cls.os_admin.zones_client
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
@@ -205,9 +212,92 @@ class RecordsetsTest(BaseRecordsetsTest):
         self.assertEqual(record['description'], update['description'])
         self.assertNotEqual(record['ttl'], update['ttl'])
 
+    @decorators.idempotent_id('3f3575a0-a28b-11eb-ab42-74e5f9e2a801')
+    def test_show_recordsets_impersonate_another_project(self):
+
+        LOG.info('Create a Recordset')
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
+        resp, body = self.client.create_recordset(
+            self.zone['id'], recordset_data)
+        self.assertEqual('PENDING', body['status'],
+                         'Failed, expected status is PENDING')
+        LOG.info('Wait until the recordset is active')
+        waiters.wait_for_recordset_status(
+            self.client, self.zone['id'],
+            body['id'], 'ACTIVE')
+
+        LOG.info('Re-Fetch the Recordset as Alt tenant with '
+                 '"x-auth-sudo-project-id" HTTP header included in request. '
+                 'Expected: 403')
+        self.assertRaises(
+            lib_exc.Forbidden, lambda: self.alt_client.show_recordset(
+                self.zone['id'], body['id'], headers={
+                    'x-auth-sudo-project-id': body['project_id']}))
+
+        LOG.info('Re-Fetch the Recordset as Admin tenant without '
+                 '"x-auth-sudo-project-id" HTTP header. Expected: 404')
+        self.assertRaises(lib_exc.NotFound,
+                          lambda: self.admin_client.show_recordset(
+                              self.zone['id'], body['id']))
+
+        record = self.admin_client.show_recordset(
+            self.zone['id'], body['id'],
+            headers={'x-auth-sudo-project-id': body['project_id']})[1]
+
+        LOG.info('Ensure the fetched response matches the expected one')
+        self.assertExpected(body, record,
+                            self.excluded_keys + ['action', 'status'])
+
+    @decorators.idempotent_id('9f364a64-a2aa-11eb-aad4-74e5f9e2a801')
+    def test_admin_list_all_recordsets_for_a_project(self):
+
+        LOG.info('Create a Recordset as Primary tenant')
+        recordset_data_primary_1 = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
+        body_pr_1 = self.client.create_recordset(
+            self.zone['id'], recordset_data_primary_1)[1]
+        self.assertEqual('PENDING', body_pr_1['status'],
+                         'Failed, expected status is PENDING')
+        recordset_data_primary_2 = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
+        body_pr_2 = self.client.create_recordset(
+            self.zone['id'], recordset_data_primary_2)[1]
+        self.assertEqual('PENDING', body_pr_2['status'],
+                         'Failed, expected status is PENDING')
+
+        LOG.info('Re-Fetch Recordsets as Alt tenant for a Primary project. '
+                 'Expected: 404')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.alt_client.list_recordset(
+                self.zone['id']))
+
+        LOG.info('Re-Fetch Recordsets as Alt tenant for a Primary project '
+                 'using "x-auth-all-projects" HTTP header. Expected: 403')
+        self.assertRaises(lib_exc.Forbidden,
+            lambda: self.alt_client.list_recordset(
+                self.zone['id'],
+                headers={'x-auth-all-projects': True}))
+
+        LOG.info('Re-Fetch Recordsets as Admin tenant for a Primary project '
+                 'using "x-auth-all-projects" HTTP header.')
+        primary_recordsets_ids = [
+            item['id'] for item in self.admin_client.list_recordset(
+                self.zone['id'],
+                headers={'x-auth-all-projects': True})[1]['recordsets']]
+
+        for recordset_id in [body_pr_1['id'], body_pr_2['id']]:
+            self.assertIn(
+                recordset_id, primary_recordsets_ids,
+                'Failed, recordset ID:{} was not found in listed '
+                'recordsets: {}'.format(recordset_id, primary_recordsets_ids))
+
 
 @ddt.ddt
 class RecordsetsNegativeTest(BaseRecordsetsTest):
+
+    credentials = ['primary', 'alt']
+
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -219,6 +309,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         super(RecordsetsNegativeTest, cls).setup_clients()
 
         cls.client = cls.os_primary.recordset_client
+        cls.alt_client = cls.os_alt.recordset_client
         cls.zone_client = cls.os_primary.zones_client
 
     @decorators.idempotent_id('98c94f8c-217a-4056-b996-b1f856d0753e')
@@ -310,6 +401,46 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         LOG.info('Attempt to get an invalid Recordset')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
             self.client.delete_recordset(zone['id'], 'invalid')
+
+    @decorators.idempotent_id('64e01dc4-a2a8-11eb-aad4-74e5f9e2a801')
+    def test_show_recordsets_invalid_ids(self):
+
+        LOG.info('Create a Recordset')
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
+        resp, body = self.client.create_recordset(
+            self.zone['id'], recordset_data)
+        self.assertEqual('PENDING', body['status'],
+                         'Failed, expected status is PENDING')
+        LOG.info('Wait until the recordset is active')
+        waiters.wait_for_recordset_status(
+            self.client, self.zone['id'],
+            body['id'], 'ACTIVE')
+
+        LOG.info('Ensure 404 NotFound status code is received if '
+                 'recordset ID is invalid.')
+        self.assertRaises(
+            lib_exc.NotFound, lambda: self.client.show_recordset(
+                zone_uuid=self.zone['id'],
+                recordset_uuid=lib_data_utils.rand_uuid()))
+
+        LOG.info('Ensure 404 NotFound status code is received if '
+                 'zone ID is invalid.')
+        self.assertRaises(
+            lib_exc.NotFound, lambda: self.client.show_recordset(
+                zone_uuid=lib_data_utils.rand_uuid(),
+                recordset_uuid=body['id']))
+
+    @decorators.idempotent_id('c1d9f046-a2b1-11eb-aad4-74e5f9e2a801')
+    def test_create_recordset_for_other_tenant(self):
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
+
+        LOG.info('Create a Recordset as Alt tenant for a zone created by '
+                 'Primary tenant. Expected: 404 NotFound')
+        self.assertRaises(
+            lib_exc.NotFound, lambda: self.alt_client.create_recordset(
+                self.zone['id'], recordset_data))
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):
