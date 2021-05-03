@@ -43,16 +43,17 @@ class ZoneExportsClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def show_zone_export(self, uuid, params=None):
+    def show_zone_export(self, uuid, params=None, headers=None):
         """Get the zone export task
 
         :param uuid: Unique identifier of the zone export task in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized exported zone as a dictionary.
         """
         return self._show_request(
-             'zones/tasks/exports', uuid, params=params)
+             'zones/tasks/exports', uuid, params=params, headers=headers)
 
     @base.handle_errors
     def show_exported_zonefile(self, uuid, params=None):
@@ -70,15 +71,16 @@ class ZoneExportsClient(base.DnsClientV2Base):
             headers=headers, params=params)
 
     @base.handle_errors
-    def list_zone_exports(self, params=None):
+    def list_zone_exports(self, params=None, headers=None):
         """List zone export tasks
 
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized exported zone as a list.
         """
         return self._list_request(
-            'zones/tasks/exports', params=params)
+            'zones/tasks/exports', params=params, headers=headers)
 
     @base.handle_errors
     def delete_zone_export(self, uuid, params=None):
