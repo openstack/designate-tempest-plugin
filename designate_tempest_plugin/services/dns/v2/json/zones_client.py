@@ -23,7 +23,7 @@ class ZonesClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def create_zone(self, name=None, email=None, ttl=None, description=None,
-                    wait_until=False, params=None):
+                    attributes=None, wait_until=False, params=None):
         """Create a zone with the specified parameters.
 
         :param name: The name of the zone.
@@ -34,6 +34,10 @@ class ZonesClient(base.DnsClientV2Base):
             Default: Random Value
         :param description: A description of the zone.
             Default: Random Value
+        :param attributes: Key:Value pairs of information about this zone,
+               and the pool the user would like to place the zone in.
+               This information can be used by the scheduler to place
+               zones on the correct pool.
         :param wait_until: Block until the zone reaches the desiered status
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
@@ -44,6 +48,8 @@ class ZonesClient(base.DnsClientV2Base):
             'email': email or dns_data_utils.rand_email(),
             'ttl': ttl or dns_data_utils.rand_ttl(),
             'description': description or data_utils.rand_name('test-zone'),
+            'attributes': attributes or {
+                'attribute_key': data_utils.rand_name('attribute_value')}
         }
 
         resp, body = self._create_request('zones', zone, params=params)
