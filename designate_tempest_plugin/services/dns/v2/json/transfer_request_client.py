@@ -60,26 +60,30 @@ class TransferRequestClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def show_transfer_request(self, uuid, params=None):
+    def show_transfer_request(self, uuid, params=None, headers=None):
         """Gets a specific transfer_requestsed zone.
         :param uuid: Unique identifier of the transfer_requestsed zone in
                      UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+
+        :param headers (dict): The headers to use for the request.
         :return: Serialized transfer_requestsed zone as a dictionary.
         """
         return self._show_request(
-            'zones/tasks/transfer_requests', uuid, params=params)
+            'zones/tasks/transfer_requests', uuid,
+            params=params, headers=headers)
 
     @base.handle_errors
-    def list_transfer_requests(self, params=None):
+    def list_transfer_requests(self, params=None, headers=None):
         """Gets all the transfer_requestsed zones
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized transfer_requestsed zone as a list.
         """
         return self._list_request(
-            'zones/tasks/transfer_requests', params=params)
+            'zones/tasks/transfer_requests', params=params, headers=headers)
 
     @base.handle_errors
     def delete_transfer_request(self, uuid, params=None):

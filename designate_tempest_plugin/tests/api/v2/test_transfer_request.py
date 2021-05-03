@@ -27,7 +27,7 @@ class BaseTransferRequestTest(base.BaseDnsV2Test):
 
 
 class TransferRequestTest(BaseTransferRequestTest):
-    credentials = ['primary', 'alt']
+    credentials = ['primary', 'alt', 'admin']
 
     @classmethod
     def setup_credentials(cls):
@@ -40,8 +40,10 @@ class TransferRequestTest(BaseTransferRequestTest):
         super(TransferRequestTest, cls).setup_clients()
 
         cls.zone_client = cls.os_primary.zones_client
+        cls.alt_zone_client = cls.os_alt.zones_client
         cls.client = cls.os_primary.transfer_request_client
         cls.alt_client = cls.os_alt.transfer_request_client
+        cls.admin_client = cls.os_admin.transfer_request_client
 
     @decorators.idempotent_id('2381d489-ad84-403d-b0a2-8b77e4e966bf')
     def test_create_transfer_request(self):
@@ -107,6 +109,34 @@ class TransferRequestTest(BaseTransferRequestTest):
                  'created transfer_request')
         self.assertExpected(transfer_request, body, self.excluded_keys)
 
+    @decorators.idempotent_id('5bed4582-9cfb-11eb-a160-74e5f9e2a801')
+    @decorators.skip_because(bug="1926572")
+    def test_show_transfer_request_impersonate_another_project(self):
+        LOG.info('Create a zone')
+        zone = self.zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+
+        LOG.info('Create a zone transfer_request')
+        transfer_request = self.client.create_transfer_request(zone['id'])[1]
+        self.addCleanup(self.client.delete_transfer_request,
+                        transfer_request['id'])
+
+        LOG.info('As Admin tenant fetch the transfer_request without using '
+                 '"x-auth-sudo-project-id" HTTP header. Expected: 404')
+        self.assertRaises(lib_exc.NotFound,
+                          lambda: self.admin_client.show_transfer_request(
+                              transfer_request['id']))
+
+        LOG.info('As Admin tenant fetch the transfer_request using '
+                 '"x-auth-sudo-project-id" HTTP header.')
+        body = self.admin_client.show_transfer_request(
+            transfer_request['id'],
+            headers={'x-auth-sudo-project-id': zone['project_id']})[1]
+
+        LOG.info('Ensure the fetched response matches the '
+                 'created transfer_request')
+        self.assertExpected(transfer_request, body, self.excluded_keys)
+
     @decorators.idempotent_id('235ded87-0c47-430b-8cad-4f3194b927a6')
     def test_show_transfer_request_as_target(self):
         # Checks the target of a scoped transfer request can see
@@ -165,6 +195,48 @@ class TransferRequestTest(BaseTransferRequestTest):
         _, body = self.client.list_transfer_requests()
 
         self.assertGreater(len(body['transfer_requests']), 0)
+
+    @decorators.idempotent_id('db985892-9d02-11eb-a160-74e5f9e2a801')
+    def test_list_transfer_requests_all_projects(self):
+        LOG.info('Create a Primary zone')
+        primary_zone = self.zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete,
+                        self.zone_client, primary_zone['id'])
+
+        LOG.info('Create an Alt zone')
+        alt_zone = self.alt_zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete,
+                        self.alt_zone_client, alt_zone['id'])
+
+        LOG.info('Create a zone transfer_request using Primary client')
+        primary_transfer_request = self.client.create_transfer_request(
+            primary_zone['id'])[1]
+        self.addCleanup(self.client.delete_transfer_request,
+                        primary_transfer_request['id'])
+
+        LOG.info('Create a zone transfer_request using Alt client')
+        alt_transfer_request = self.alt_client.create_transfer_request(
+            alt_zone['id'])[1]
+        self.addCleanup(self.alt_client.delete_transfer_request,
+                        alt_transfer_request['id'])
+
+        LOG.info('List transfer_requests for all projects using Admin tenant '
+                 'without "x-auth-all-projects" HTTP header. '
+                 'Expected: empty list')
+        self.assertEqual([], self.admin_client.list_transfer_requests()[1][
+            'transfer_requests'], 'Failed, requests list is not empty')
+
+        LOG.info('List transfer_requests for all projects using Admin tenant '
+                 'and "x-auth-all-projects" HTTP header.')
+        request_ids = [
+            item['id'] for item in self.admin_client.list_transfer_requests(
+                headers={'x-auth-all-projects': True})[1]['transfer_requests']]
+
+        for request_id in [primary_transfer_request['id'],
+                           alt_transfer_request['id']]:
+            self.assertIn(request_id, request_ids,
+                          "Failed, transfer request ID:{} wasn't found in "
+                          "listed IDs{}".format(request_id, request_ids))
 
     @decorators.idempotent_id('de5e9d32-c723-4518-84e5-58da9722cc13')
     def test_update_transfer_request(self):
