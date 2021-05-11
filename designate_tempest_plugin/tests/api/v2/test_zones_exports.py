@@ -58,12 +58,6 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', zone_export['status'])
 
-    @decorators.idempotent_id('76ab8ec4-95fd-11eb-b1cd-74e5f9e2a801')
-    def test_create_zone_export_using_invalid_zone_id(self):
-        self.assertRaises(
-            lib_exc.NotFound, self.client.create_zone_export,
-            'e35bc796-9841-11eb-898b-74e5f9e2a801')
-
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('2d29a2a9-1941-4b7e-9d8a-ad6c2140ea68')
     def test_show_zone_export(self):
@@ -163,6 +157,85 @@ class ZonesExportTest(BaseZoneExportsTest):
                 id, listed_exports_ids,
                 'Failed, expected ID:{} was not found in '
                 'listed IDs:{}'.format(id, listed_exports_ids))
+
+    @decorators.idempotent_id('e4a11a14-9aaa-11eb-be59-74e5f9e2a801')
+    @decorators.skip_because(bug='1926058')
+    def test_list_zone_exports_filter_results(self):
+
+        LOG.info('Create a primary zone and its export')
+        primary_zone = self.zone_client.create_zone()[1]
+        self.addCleanup(
+            self.wait_zone_delete, self.zone_client, primary_zone['id'])
+        primary_export = self.client.create_zone_export(primary_zone['id'])[1]
+        self.addCleanup(self.client.delete_zone_export, primary_export['id'])
+
+        LOG.info('Create an alt zone, its export and delete it')
+        alt_zone = self.alt_zone_client.create_zone()[1]
+        self.addCleanup(
+            self.wait_zone_delete, self.alt_zone_client, alt_zone['id'])
+        alt_export = self.alt_client.create_zone_export(alt_zone['id'])[1]
+        self.alt_client.delete_zone_export(alt_export['id'])
+        LOG.info('Ensure the zone export has been successfully deleted')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.alt_client.show_zone_export(alt_export['id']))
+
+        LOG.info('Filter out "export zones" in status:ZAHLABUT,'
+                 ' expected: empty list')
+        self.assertEqual(
+            [], self.admin_client.list_zone_exports(
+                headers={'x-auth-all-projects': True},
+                params={'status': 'ZAHLABUT'})[1]['exports'],
+            'Failed, filtered result is expected to be empty.')
+
+        LOG.info('Filter out "export zones" with message:ZABABUN,'
+                 ' expected: empty list')
+        self.assertEqual(
+            [], self.admin_client.list_zone_exports(
+                headers={'x-auth-all-projects': True},
+                params={'message': 'ZABABUN'})[1]['exports'],
+            'Failed, filtered result is expected to be empty.')
+
+        LOG.info('Filter out "export zones" that have been created for '
+                 'a primary zone. Expected: single zone export is listed')
+        self.assertEqual(
+            1, len(self.admin_client.list_zone_exports(
+                headers={'x-auth-all-projects': True},
+                params={'zone_id': primary_zone['id']})[1]['exports']),
+            'Failed, filtered result should contain a single zone '
+            '(primary zone export)')
+
+        LOG.info('Filter out "export zones" that have been created for '
+                 'an alt zone expected: empty list (it was deleted)')
+        self.assertEqual(
+            [], self.admin_client.list_zone_exports(
+                headers={'x-auth-all-projects': True},
+                params={'zone_id': primary_zone['id']})[1]['exports'],
+            'Failed, filtered result should contain a single zone '
+            '(primary zone export)')
+
+
+class ZonesExportTestNegative(BaseZoneExportsTest):
+    credentials = ['primary', 'alt']
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZonesExportTestNegative, cls).setup_credentials()
+
+    @classmethod
+    def setup_clients(cls):
+        super(ZonesExportTestNegative, cls).setup_clients()
+
+        cls.zone_client = cls.os_primary.zones_client
+        cls.client = cls.os_primary.zone_exports_client
+        cls.alt_client = cls.os_alt.zone_exports_client
+
+    @decorators.idempotent_id('76ab8ec4-95fd-11eb-b1cd-74e5f9e2a801')
+    def test_create_zone_export_using_invalid_zone_id(self):
+        self.assertRaises(
+            lib_exc.NotFound, self.client.create_zone_export,
+            'e35bc796-9841-11eb-898b-74e5f9e2a801')
 
     @decorators.idempotent_id('943dad4a-9617-11eb-b1cd-74e5f9e2a801')
     def test_export_not_your_zone(self):
