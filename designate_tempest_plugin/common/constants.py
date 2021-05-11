@@ -12,5 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# API statuses
+# Designate statuses strings
+PENDING = 'PENDING'
+COMPLETE = 'COMPLETE'
+ERROR = 'ERROR'
+DELETED = 'DELETED'
+ACTIVE = 'ACTIVE'
 UP = 'UP'
