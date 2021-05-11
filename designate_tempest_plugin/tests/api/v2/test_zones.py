@@ -14,8 +14,11 @@
 import uuid
 from oslo_log import log as logging
 from tempest.lib import decorators
-from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as lib_exc
+
+
+from designate_tempest_plugin.common import constants as const
 
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
@@ -30,6 +33,7 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 
 class ZonesTest(BaseZonesTest):
+    credentials = ['admin', 'primary']
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -41,11 +45,27 @@ class ZonesTest(BaseZonesTest):
         super(ZonesTest, cls).setup_clients()
 
         cls.client = cls.os_primary.zones_client
+        cls.pool_client = cls.os_admin.pool_client
 
     @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
-    def test_create_zone(self):
-        LOG.info('Create a zone')
-        _, zone = self.client.create_zone()
+    def test_create_zones(self):
+        # Create a PRIMARY zone
+        LOG.info('Create a PRIMARY zone')
+        zone = self.client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual('CREATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        # Get the Name Servers (hosts) created in PRIMARY zone
+        nameservers = self.client.show_zone_nameservers(zone['id'])[1]
+        nameservers = [dic['hostname'] for dic in nameservers['nameservers']]
+
+        # Create a SECONDARY zone
+        LOG.info('Create a SECONDARY zone')
+        zone = self.client.create_zone(
+            zone_type=const.SECONDARY_ZONE_TYPE, primaries=nameservers)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
@@ -143,6 +163,32 @@ class ZonesTest(BaseZonesTest):
 
         self.assertRaises(lib_exc.NotFound,
             lambda: self.client.get(uri))
+
+    @decorators.idempotent_id('d4ce813e-64a5-11eb-9f43-74e5f9e2a801')
+    def test_get_primary_zone_nameservers(self):
+        # Create a zone and get the associated "pool_id"
+        LOG.info('Create a zone')
+        zone = self.client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone_pool_id = zone['pool_id']
+
+        # Get zone's Name Servers using dedicated API request
+        zone_nameservers = self.client.show_zone_nameservers(zone['id'])[1]
+        zone_nameservers = zone_nameservers['nameservers']
+        LOG.info('Zone Name Servers are: {}'.format(zone_nameservers))
+        self.assertIsNot(
+            0, len(zone_nameservers),
+            "Failed - received list of nameservers shouldn't be empty")
+
+        # Use "pool_id" to get the Name Servers used
+        pool = self.pool_client.show_pool(zone_pool_id)[1]
+        pool_nameservers = pool['ns_records']
+        LOG.info('Pool nameservers: {}'.format(pool_nameservers))
+
+        # Make sure that pool's and zone's Name Servers are same
+        self.assertCountEqual(
+            pool_nameservers, zone_nameservers,
+            'Failed - Pool and Zone nameservers should be the same')
 
 
 class ZonesAdminTest(BaseZonesTest):
