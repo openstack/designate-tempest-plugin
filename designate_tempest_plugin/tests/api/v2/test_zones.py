@@ -337,3 +337,58 @@ class ZoneOwnershipTest(BaseZonesTest):
         LOG.info('Create a zone as an alt user with existing superdomain')
         self.assertRaises(lib_exc.Forbidden,
             self.alt_client.create_zone, name=zone_name)
+
+
+class ZonesNegativeTest(BaseZonesTest):
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZonesNegativeTest, cls).setup_credentials()
+
+    @classmethod
+    def setup_clients(cls):
+        super(ZonesNegativeTest, cls).setup_clients()
+        cls.client = cls.os_primary.zones_client
+
+    @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
+    def test_no_valid_zone_name(self):
+        no_valid_names = ['a' * 1000, '___', '!^%&^#%^!@#', 'ggg', '.a', '']
+        for name in no_valid_names:
+            LOG.info('Trying to create a zone named: {} '.format(name))
+            self.assertRaisesDns(
+                lib_exc.BadRequest, 'invalid_object', 400,
+                self.client.create_zone, name=name)
+
+    @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
+    def test_no_valid_email(self):
+        no_valid_emails = [
+            'zahlabut#gmail.com', '123456', '___', '', '*&^*^%$']
+        for email in no_valid_emails:
+            LOG.info(
+                'Trying to create a zone using: {} as email'
+                ' value: '.format(email))
+            self.assertRaisesDns(
+                lib_exc.BadRequest, 'invalid_object', 400,
+                self.client.create_zone, email=email)
+
+    @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
+    def test_no_valid_ttl(self):
+        no_valid_tls = ['zahlabut', -60000,
+                        2147483647 + 10]  # Max valid TTL is 2147483647
+
+        for ttl in no_valid_tls:
+            LOG.info(
+                'Trying to create a zone using: {} as TTL'
+                ' value: '.format(ttl))
+            self.assertRaisesDns(
+                lib_exc.BadRequest, 'invalid_object', 400,
+                self.client.create_zone, ttl=ttl)
+
+    @decorators.idempotent_id('a3b0a928-a682-11eb-9899-74e5f9e2a801')
+    def test_huge_size_description(self):
+        LOG.info('Trying to create a zone using huge size description')
+        self.assertRaisesDns(
+            lib_exc.BadRequest, 'invalid_object', 400,
+            self.client.create_zone,
+            description=dns_data_utils.rand_zone_name() * 10000)
