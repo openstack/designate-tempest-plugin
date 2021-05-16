@@ -72,10 +72,8 @@ class ZonesImportTest(BaseZonesImportTest):
         zone_import = self.client.create_zone_import(
             zonefile_data=dns_data_utils.rand_zonefile_data(ttl='zahlabut'))[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
-        self.assertEqual(
-            const.ERROR,
-            self.client.show_zone_import(zone_import['id'])[1]['status'],
-            'Failed, expected status is: ERROR')
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], "ERROR")
 
     @decorators.idempotent_id('31eaf25a-9532-11eb-a55d-74e5f9e2a801')
     def test_create_zone_import_invalid_name(self):
@@ -83,10 +81,8 @@ class ZonesImportTest(BaseZonesImportTest):
         zone_import = self.client.create_zone_import(
             zonefile_data=dns_data_utils.rand_zonefile_data(name='@@@'))[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
-        self.assertEqual(
-            const.ERROR,
-            self.client.show_zone_import(zone_import['id'])[1]['status'],
-            'Failed, expected status is: ERROR')
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], "ERROR")
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('c8909558-0dc6-478a-9e91-eb97b52e59e0')
