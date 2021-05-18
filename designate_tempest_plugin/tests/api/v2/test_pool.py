@@ -208,3 +208,79 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
         self.assertEqual("invalid_uuid", resp_body['type'])
         self.assertEqual("Invalid UUID pool_id: foo",
                          resp_body['message'])
+
+
+class TestPoolAdminNegative(BasePoolTest):
+
+    credentials = ["admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TestPoolAdminNegative, cls).setup_credentials()
+
+    @classmethod
+    def setup_clients(cls):
+        super(TestPoolAdminNegative, cls).setup_clients()
+        cls.admin_client = cls.os_admin.pool_client
+
+    @decorators.idempotent_id('0a8cdc1e-ac02-11eb-ae06-74e5f9e2a801')
+    def test_create_pool_invalid_name(self):
+        LOG.info('Create a pool using a huge size string for name)')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
+            self.admin_client.create_pool(
+                pool_name=data_utils.rand_name(name="Huge_size_name") * 10000)
+
+    @decorators.idempotent_id('9a787d0e-ac04-11eb-ae06-74e5f9e2a801')
+    def test_create_pool_invalid_hostname_in_ns_records(self):
+        LOG.info('Create a pool using invalid hostname in ns_records')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
+            self.admin_client.create_pool(
+                ns_records=[{"hostname": "ns1_example_org_", "priority": 1}])
+
+    @decorators.idempotent_id('9a787d0e-ac04-11eb-ae06-74e5f9e2a801')
+    def test_create_pool_invalid_priority_in_ns_records(self):
+        LOG.info('Create a pool using invalid priority in ns_records')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
+            self.admin_client.create_pool(
+                ns_records=[{"hostname": "ns1.example.org.", "priority": -1}])
+
+    @decorators.idempotent_id('cc378e4c-ac05-11eb-ae06-74e5f9e2a801')
+    # Note: Update pool API is deprecated for removal.
+    def test_update_pool_with_invalid_name(self):
+        LOG.info('Create a pool')
+        pool = self.admin_client.create_pool()[1]
+        self.addCleanup(self.admin_client.delete_pool, pool['id'])
+
+        LOG.info('Update the pool using a name that is too long')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
+            self.admin_client.update_pool(
+                pool['id'],
+                pool_name=data_utils.rand_name(name="Huge_size_name") * 10000)
+
+    @decorators.idempotent_id('2e496596-ac07-11eb-ae06-74e5f9e2a801')
+    def test_update_pool_with_invalid_hostname_in_ns_records(self):
+        # Note: Update pool API is deprecated for removal.
+        LOG.info('Create a pool')
+        pool = self.admin_client.create_pool()[1]
+        self.addCleanup(self.admin_client.delete_pool, pool['id'])
+
+        LOG.info('Update the pool using invalid hostname in ns_records')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
+            self.admin_client.update_pool(
+                pool['id'],
+                ns_records=[{"hostname": "ns1_example_org_", "priority": 1}])
+
+    @decorators.idempotent_id('3e934624-ac07-11eb-ae06-74e5f9e2a801')
+    def test_update_pool_with_invalid_priority_in_ns_records(self):
+        # Note: Update pool API is deprecated for removal.
+        LOG.info('Create a pool')
+        pool = self.admin_client.create_pool()[1]
+        self.addCleanup(self.admin_client.delete_pool, pool['id'])
+
+        LOG.info('Update the pool using invalid priority in ns_records')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
+            self.admin_client.update_pool(
+                pool['id'],
+                ns_records=[{"hostname": "ns1.example.org.", "priority": -1}])
