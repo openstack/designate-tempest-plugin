@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_log import log as logging
+from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -169,7 +170,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             transfer_accept = self.alt_accept_client.create_transfer_accept(
                 data)[1]
 
-            LOG.info('Ensure we respond with ACTIVE status')
+            LOG.info('Ensure we respond with COMPLETE status')
             self.assertEqual('COMPLETE', transfer_accept['status'])
             transfer_request_ids.append(transfer_accept['id'])
 
@@ -216,3 +217,108 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             admin_client_accept_ids,
             "Failed, filtered list should be empty, but actually it's not, "
             "filtered IDs:{} ".format(admin_client_accept_ids))
+
+    @decorators.idempotent_id('b6ac770e-a1d3-11eb-b534-74e5f9e2a801')
+    def test_show_transfer_accept_impersonate_another_project(self):
+        LOG.info('Create a zone as primary tenant')
+        zone = self.prm_zone_client.create_zone()[1]
+
+        # In case when something goes wrong with the test and E2E
+        # scenario fails for some reason, we'll use Admin tenant
+        # to activate Cleanup for a zone.
+        # Note: "ignore_errors=lib_exc.NotFound" is used to prevent a
+        # failure in case when E2E scenario was successfully completed.
+        # Means that Alt tenant has already been able to run a cleanup
+        # for a zone.
+        self.addCleanup(
+            self.wait_zone_delete, self.admin_zone_client, zone['id'],
+            headers={'x-auth-all-projects': True},
+            ignore_errors=lib_exc.NotFound)
+
+        LOG.info('Create a zone transfer_request as primary tenant')
+        transfer_request = self.prm_request_client.create_transfer_request(
+                                  zone['id'])[1]
+        self.addCleanup(self.prm_request_client.delete_transfer_request,
+                        transfer_request['id'])
+        data = {
+            "key": transfer_request['key'],
+            "zone_transfer_request_id": transfer_request['id']
+        }
+
+        LOG.info('Create a zone transfer_accept for Alt tenant, using '
+                 'Admin client and "sudo" option')
+        transfer_accept = self.admin_accept_client.create_transfer_accept(
+            data, headers={
+                'x-auth-sudo-project-id': self.os_alt.credentials.project_id,
+                'content-type': 'application/json'})[1]
+
+        LOG.info('Fetch the transfer_accept as Alt tenant')
+        body = self.alt_accept_client.show_transfer_accept(
+            transfer_accept['id'])[1]
+
+        LOG.info('Ensure the fetched response matches the '
+                 'created transfer_accept')
+        self.assertExpected(transfer_accept, body, self.excluded_keys)
+
+        # E2E accept zone transfer is done, therefore Alt tenant
+        # should be able to "cleanup" a transferred zone.
+        self.addCleanup(
+            self.wait_zone_delete, self.alt_zone_client, zone['id'])
+
+
+class TransferAcceptTestNegative(BaseTransferAcceptTest):
+
+    credentials = ['primary', 'alt', 'admin']
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(TransferAcceptTestNegative, cls).setup_credentials()
+
+    @classmethod
+    def setup_clients(cls):
+        super(TransferAcceptTestNegative, cls).setup_clients()
+        cls.zone_client = cls.os_primary.zones_client
+        cls.request_client = cls.os_primary.transfer_request_client
+        cls.client = cls.os_primary.transfer_accept_client
+
+    @decorators.idempotent_id('324a3e80-a1cc-11eb-b534-74e5f9e2a801')
+    def test_create_transfer_accept_using_invalid_key(self):
+        LOG.info('Create a zone')
+        zone = self.zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+
+        LOG.info('Create a zone transfer_request')
+        transfer_request = self.request_client.create_transfer_request(
+                                  zone['id'])[1]
+
+        data = {"key": data_utils.rand_password(len(transfer_request['key'])),
+                "zone_transfer_request_id": transfer_request['id']}
+
+        LOG.info('Create a zone transfer_accept using invalid key')
+        self.assertRaises(
+            lib_exc.Forbidden, self.client.create_transfer_accept,
+            transfer_accept_data=data)
+
+    @decorators.idempotent_id('23afb948-a1ce-11eb-b534-74e5f9e2a801')
+    def test_create_transfer_accept_using_deleted_transfer_request_id(self):
+        LOG.info('Create a zone')
+        zone = self.zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+
+        LOG.info('Create a zone transfer_request')
+        transfer_request = self.request_client.create_transfer_request(
+                                  zone['id'])[1]
+
+        data = {
+                 "key": transfer_request['key'],
+                 "zone_transfer_request_id": transfer_request['id']
+        }
+
+        LOG.info('Delete transfer request')
+        self.request_client.delete_transfer_request(transfer_request['id'])
+
+        LOG.info('Ensure 404 when accepting non existing request ID')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.create_transfer_accept(data))

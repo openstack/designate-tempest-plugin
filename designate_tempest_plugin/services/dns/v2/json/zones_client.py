@@ -121,14 +121,16 @@ class ZonesClient(base.DnsClientV2Base):
         return self._list_request('zones', params=params, headers=headers)
 
     @base.handle_errors
-    def delete_zone(self, uuid, params=None):
+    def delete_zone(self, uuid, params=None, headers=None):
         """Deletes a zone having the specified UUID.
         :param uuid: The unique identifier of the zone.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the response body.
         """
-        resp, body = self._delete_request('zones', uuid, params=params)
+        resp, body = self._delete_request(
+            'zones', uuid, params=params, headers=headers)
 
         # Delete Zone should Return a HTTP 202
         self.expected_success(202, resp.status)
