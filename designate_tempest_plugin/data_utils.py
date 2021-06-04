@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 import random
+from string import ascii_lowercase
 
 import netaddr
 from oslo_log import log as logging
@@ -34,7 +35,7 @@ def rand_ipv6():
     return an.format(netaddr.ipv6_compact)
 
 
-def rand_zone_name(name='', prefix=None, suffix='.com.'):
+def rand_zone_name(name='', prefix='rand', suffix='.com.'):
     """Generate a random zone name
     :param str name: The name that you want to include
     :param prefix: the exact text to start the string. Defaults to "rand"
@@ -259,3 +260,22 @@ def make_rand_recordset(zone_name, record_type):
 
     func = globals()["rand_{}_recordset".format(record_type.lower())]
     return func(zone_name)
+
+
+def rand_string(size):
+    """Create random string of ASCII chars by size
+
+    :param int size - length os the string to be create
+    :return - random creates string of ASCII lover characters
+    """
+    return ''.join(random.choice(ascii_lowercase) for _ in range(size))
+
+
+def rand_domain_name(tld=None):
+    """Create random valid domain name
+
+    :param tld (optional) - TLD that will be used to random domain name
+    :return - valid domain name, for example: paka.zbabun.iuh
+    """
+    domain_tld = tld or rand_string(3)
+    return rand_string(4) + '.' + rand_string(6) + '.' + domain_tld + '.'

@@ -226,3 +226,35 @@ def wait_for_query(client, name, rdatatype, found=True):
                 message = "(%s) %s" % (caller, message)
 
             raise lib_exc.TimeoutException(message)
+
+
+def wait_for_ptr_status(client, fip_id, status):
+    """Waits for a PTR associated with FIP to reach given status."""
+    LOG.info('Waiting for PTR %s to reach %s', fip_id, status)
+
+    ptr = client.show_ptr_record(fip_id)
+    start = int(time.time())
+
+    while ptr['status'] != status:
+        time.sleep(client.build_interval)
+        ptr = client.show_ptr_record(fip_id)
+        status_curr = ptr['status']
+        if status_curr == status:
+            LOG.info('PTR %s reached %s', fip_id, status)
+            return
+
+        if int(time.time()) - start >= client.build_timeout:
+            message = ('PTR for FIP: %(fip_id)s failed to reach '
+                       'status=%(status)s within the required time '
+                       '(%(timeout)s s). Current status: %(status_curr)s' %
+                       {'fip_id': fip_id,
+                        'status': status,
+                        'status_curr': status_curr,
+                        'timeout': client.build_timeout})
+
+            caller = test_utils.find_test_caller()
+
+            if caller:
+                message = '(%s) %s' % (caller, message)
+
+            raise lib_exc.TimeoutException(message)

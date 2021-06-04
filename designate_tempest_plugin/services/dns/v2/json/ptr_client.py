@@ -24,7 +24,8 @@ class PtrClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def set_ptr_record(self, floatingip_id, ptr_name=None,
-                       ttl=None, description=None, headers=None):
+                       ttl=None, description=None, headers=None,
+                       tld=None):
         """Set a PTR record for the given FloatingIP
 
         :param floatingip_id: valid UUID of floating IP to be used.
@@ -32,13 +33,13 @@ class PtrClient(base.DnsClientV2Base):
         :param ttl TTL or random valid value if not provided.
         :param description Description or random if not provided.
         :param headers (dict): The headers to use for the request.
+        :param tld, the TLD to be used in ptrdname generated value.
         :return: created PTR dictionary.
         """
         ptr = {
-            'ptrdname': ptr_name or dns_data_utils.rand_zone_name(),
+            'ptrdname': ptr_name or dns_data_utils.rand_domain_name(tld),
             'ttl': ttl or dns_data_utils.rand_ttl(),
-            'description': description or data_utils.rand_name(
-                'test-ptr')}
+            'description': description or data_utils.rand_name('test-ptr')}
 
         return self._update_request(
             resource='reverse/floatingips/{}'.format(CONF.identity.region),
