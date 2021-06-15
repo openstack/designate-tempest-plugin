@@ -43,8 +43,14 @@ class TldAdminTest(BaseTldTest):
     @classmethod
     def resource_setup(cls):
         super(TldAdminTest, cls).resource_setup()
-        cls.tld = cls.admin_client.create_tld(tld_name='com',
-                      ignore_errors=lib_exc.Conflict)
+        cls.tld = cls.admin_client.create_tld(
+            tld_name='com', ignore_errors=lib_exc.Conflict
+        )
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_client.delete_tld(cls.tld[1]['id'])
+        super(TldAdminTest, cls).resource_cleanup()
 
     @decorators.idempotent_id('52a4bb4b-4eff-4591-9dd3-ad98316806c3')
     def test_create_tld(self):

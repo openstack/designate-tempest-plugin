@@ -26,7 +26,7 @@ CONF = config.CONF
 
 class BasePtrTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
-                    'status', 'action']
+                     'status', 'action']
 
 
 class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
@@ -45,10 +45,13 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
         cls.primary_floating_ip_client = cls.os_primary.floating_ips_client
 
     def _set_ptr(self):
-        fip_id = self.primary_floating_ip_client.create_floatingip(
-            floating_network_id=CONF.network.public_network_id)[
-            'floatingip']['id']
+        fip = self.primary_floating_ip_client.create_floatingip(
+            floating_network_id=CONF.network.public_network_id)['floatingip']
+        fip_id = fip['id']
+        self.addCleanup(self.primary_floating_ip_client.delete_floatingip,
+                        fip_id)
         ptr = self.primary_ptr_client.set_ptr_record(fip_id)
+        self.addCleanup(self.primary_ptr_client.unset_ptr_record, fip_id)
         self.assertEqual('CREATE', ptr['action'])
         self.assertEqual('PENDING', ptr['status'])
         return fip_id, ptr
@@ -102,12 +105,16 @@ class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
 
     def _set_ptr(self, ptr_name=None, ttl=None, description=None,
                  headers=None):
-        fip_id = self.primary_floating_ip_client.create_floatingip(
+        fip = self.primary_floating_ip_client.create_floatingip(
             floating_network_id=CONF.network.public_network_id)[
-            'floatingip']['id']
+            'floatingip']
+        fip_id = fip['id']
+        self.addCleanup(self.primary_floating_ip_client.delete_floatingip,
+                        fip_id)
         ptr = self.primary_ptr_client.set_ptr_record(
             fip_id, ptr_name=ptr_name, ttl=ttl, description=description,
             headers=headers)
+        self.addCleanup(self.primary_ptr_client.unset_ptr_record, fip_id)
         self.assertEqual('CREATE', ptr['action'])
         self.assertEqual('PENDING', ptr['status'])
         return fip_id, ptr

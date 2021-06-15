@@ -99,12 +99,16 @@ class BaseDnsTest(test.BaseTestCase):
             callable_(*args, **kwargs)
 
     def wait_zone_delete(self, zone_client, zone_id, **kwargs):
-        zone_client.delete_zone(zone_id, **kwargs)
+        self._delete_zone(zone_client, zone_id, **kwargs)
         utils.call_until_true(self._check_zone_deleted,
                               CONF.dns.build_timeout,
                               CONF.dns.build_interval,
                               zone_client,
                               zone_id)
+
+    def _delete_zone(self, zone_client, zone_id, **kwargs):
+        return utils.call_and_ignore_notfound_exc(zone_client.delete_zone,
+                                                  zone_id, **kwargs)
 
     def _check_zone_deleted(self, zone_client, zone_id):
         return utils.call_and_ignore_notfound_exc(zone_client.show_zone,

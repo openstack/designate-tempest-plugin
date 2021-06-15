@@ -59,7 +59,9 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone')
         _, zone = self.prm_zone_client.create_zone()
         self.addCleanup(
-            self.wait_zone_delete, self.prm_zone_client, zone['id'])
+            self.wait_zone_delete, self.admin_zone_client, zone['id'],
+            headers={'x-auth-all-projects': True},
+            ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone transfer_request')
         _, transfer_request = self.prm_request_client.create_transfer_request(
@@ -83,7 +85,9 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone')
         _, zone = self.prm_zone_client.create_zone()
         self.addCleanup(
-            self.wait_zone_delete, self.prm_zone_client, zone['id'])
+            self.wait_zone_delete, self.admin_zone_client, zone['id'],
+            headers={'x-auth-all-projects': True},
+            ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone transfer_request')
         _, transfer_request = self.prm_request_client.create_transfer_request(
@@ -113,8 +117,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
         LOG.info('Create a Primary zone')
         zone = self.prm_zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.prm_zone_client,
-                        zone['id'], ignore_errors=lib_exc.NotFound)
+        self.addCleanup(
+            self.wait_zone_delete, self.admin_zone_client, zone['id'],
+            headers={'x-auth-all-projects': True},
+            ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a Primary zone transfer_request')
         transfer_request = self.prm_request_client.create_transfer_request(
@@ -153,8 +159,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
             LOG.info('Create a Primary zone')
             zone = self.prm_zone_client.create_zone()[1]
-            self.addCleanup(self.wait_zone_delete, self.prm_zone_client,
-                            zone['id'], ignore_errors=lib_exc.NotFound)
+            self.addCleanup(
+                self.wait_zone_delete, self.admin_zone_client, zone['id'],
+                headers={'x-auth-all-projects': True},
+                ignore_errors=lib_exc.NotFound)
 
             LOG.info('Create a Primary zone transfer_request')
             transfer_request = self.prm_request_client.create_transfer_request(

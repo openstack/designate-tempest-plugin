@@ -62,7 +62,6 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
         self.addCleanup(self.clean_up_resources, zone_import['id'])
-
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual(const.PENDING, zone_import['status'])
 

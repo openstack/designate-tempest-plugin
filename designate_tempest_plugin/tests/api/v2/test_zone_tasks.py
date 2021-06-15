@@ -53,9 +53,10 @@ class ZoneTasks(BaseZonesTest):
 
     @decorators.idempotent_id('287e2cd0-a0e7-11eb-b962-74e5f9e2a801')
     def test_zone_abandon(self):
-
         LOG.info('Create a PRIMARY zone')
         pr_zone = self.client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
+        waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual('CREATE', pr_zone['action'])
@@ -85,6 +86,7 @@ class ZoneTasks(BaseZonesTest):
         LOG.info('Create a PRIMARY zone and add to the cleanup')
         pr_zone = self.client.create_zone()[1]
         self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
+        waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual('CREATE', pr_zone['action'])
@@ -138,6 +140,7 @@ class ZoneTasksNegative(BaseZonesTest):
         LOG.info('Create a PRIMARY zone')
         pr_zone = self.client.create_zone()[1]
         self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
+        waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual('CREATE', pr_zone['action'])

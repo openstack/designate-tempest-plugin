@@ -557,9 +557,8 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
         cls.alt_zone_client = cls.os_alt.zones_client
         cls.admin_client = cls.os_admin.recordset_client
 
-    def _create_client_recordset(self, clients_list=None):
+    def _create_client_recordset(self, clients_list):
         """Create a zone and asoociated recordset using given credentials
-
         :param clients_list: supported credentials are: 'primary' and 'alt'.
         :return: dictionary of created recordsets.
         """
