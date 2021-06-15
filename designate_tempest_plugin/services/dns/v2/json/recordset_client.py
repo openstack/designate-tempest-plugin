@@ -53,7 +53,8 @@ class RecordsetClient(base.DnsClientV2Base):
         self.expected_success(202, resp.status)
 
         if wait_until:
-            waiters.wait_for_recordset_status(self, body['id'], wait_until)
+            waiters.wait_for_recordset_status(
+                self, zone_uuid, body['id'], wait_until)
 
         return resp, body
 
