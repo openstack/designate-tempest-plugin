@@ -62,8 +62,9 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
         self.addCleanup(self.clean_up_resources, zone_import['id'])
-        LOG.info('Ensure we respond with PENDING')
-        self.assertEqual(const.PENDING, zone_import['status'])
+        # Make sure we complete the import and have the zone_id for cleanup
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.COMPLETE)
 
     @decorators.idempotent_id('31eaf25a-9532-11eb-a55d-74e5f9e2a801')
     def test_create_zone_import_invalid_ttl(self):
@@ -89,6 +90,9 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
         self.addCleanup(self.clean_up_resources, zone_import['id'])
+        # Make sure we complete the import and have the zone_id for cleanup
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.COMPLETE)
 
         LOG.info('Re-Fetch the zone import')
         resp, body = self.client.show_zone_import(zone_import['id'])
@@ -119,6 +123,9 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Create a zone import')
         _, zone_import = self.client.create_zone_import()
         self.addCleanup(self.clean_up_resources, zone_import['id'])
+        # Make sure we complete the import and have the zone_id for cleanup
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.COMPLETE)
 
         LOG.info('List zones imports')
         _, body = self.client.list_zone_imports()
@@ -132,8 +139,9 @@ class ZonesImportTest(BaseZonesImportTest):
         zone_import = self.client.create_zone_import()[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
 
-        LOG.info('Ensure we respond with PENDING')
-        self.assertEqual(const.PENDING, zone_import['status'])
+        # Make sure we complete the import and have the zone_id for cleanup
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.COMPLETE)
 
         LOG.info('Show a zone import for a Primary tenant, using Alt tenant. '
                  'Expected:404 NotFound')
@@ -172,6 +180,9 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Create import zone "A" using primary client')
         zone_import = self.client.create_zone_import()[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
+        # Make sure we complete the import and have the zone_id for cleanup
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.COMPLETE)
 
         LOG.info('As Alt user list import zones for a Primary tenant, '
                  'using "x-auth-sudo-project-id" HTTP header. '
