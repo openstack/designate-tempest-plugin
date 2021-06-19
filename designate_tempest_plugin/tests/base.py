@@ -98,6 +98,10 @@ class BaseDnsTest(test.BaseTestCase):
         with context:
             callable_(*args, **kwargs)
 
+    def transfer_request_delete(self, transfer_client, transfer_request_id):
+        return utils.call_and_ignore_notfound_exc(
+            transfer_client.delete_transfer_request, transfer_request_id)
+
     def wait_zone_delete(self, zone_client, zone_id, **kwargs):
         self._delete_zone(zone_client, zone_id, **kwargs)
         utils.call_until_true(self._check_zone_deleted,

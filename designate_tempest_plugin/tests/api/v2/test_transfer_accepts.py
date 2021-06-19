@@ -57,7 +57,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     @decorators.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
     def test_create_transfer_accept(self):
         LOG.info('Create a zone')
-        _, zone = self.prm_zone_client.create_zone()
+        _, zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers={'x-auth-all-projects': True},
@@ -66,8 +66,11 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone transfer_request')
         _, transfer_request = self.prm_request_client.create_transfer_request(
             zone['id'])
-        self.addCleanup(self.prm_request_client.delete_transfer_request,
-                        transfer_request['id'])
+        self.addCleanup(
+            self.transfer_request_delete,
+            self.prm_request_client,
+            transfer_request['id']
+        )
 
         data = {
                  "key": transfer_request['key'],
@@ -83,7 +86,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     @decorators.idempotent_id('37c6afbb-3ea3-4fd8-94ea-a426244f019a')
     def test_show_transfer_accept(self):
         LOG.info('Create a zone')
-        _, zone = self.prm_zone_client.create_zone()
+        _, zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers={'x-auth-all-projects': True},
@@ -92,8 +95,11 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone transfer_request')
         _, transfer_request = self.prm_request_client.create_transfer_request(
                                   zone['id'])
-        self.addCleanup(self.prm_request_client.delete_transfer_request,
-                        transfer_request['id'])
+        self.addCleanup(
+            self.transfer_request_delete,
+            self.prm_request_client,
+            transfer_request['id']
+        )
 
         data = {
             "key": transfer_request['key'],
@@ -116,7 +122,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     def test_ownership_transferred_zone(self):
 
         LOG.info('Create a Primary zone')
-        zone = self.prm_zone_client.create_zone()[1]
+        zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers={'x-auth-all-projects': True},
@@ -125,8 +131,11 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a Primary zone transfer_request')
         transfer_request = self.prm_request_client.create_transfer_request(
             zone['id'])[1]
-        self.addCleanup(self.prm_request_client.delete_transfer_request,
-                        transfer_request['id'])
+        self.addCleanup(
+            self.transfer_request_delete,
+            self.prm_request_client,
+            transfer_request['id']
+        )
 
         data = {
             "key": transfer_request['key'],
@@ -158,7 +167,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         for _ in range(number_of_zones_to_transfer):
 
             LOG.info('Create a Primary zone')
-            zone = self.prm_zone_client.create_zone()[1]
+            zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
             self.addCleanup(
                 self.wait_zone_delete, self.admin_zone_client, zone['id'],
                 headers={'x-auth-all-projects': True},
@@ -167,8 +176,11 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             LOG.info('Create a Primary zone transfer_request')
             transfer_request = self.prm_request_client.create_transfer_request(
                 zone['id'])[1]
-            self.addCleanup(self.prm_request_client.delete_transfer_request,
-                            transfer_request['id'])
+            self.addCleanup(
+                self.transfer_request_delete,
+                self.prm_request_client,
+                transfer_request['id']
+            )
 
             data = {
                 "key": transfer_request['key'],
@@ -229,7 +241,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     @decorators.idempotent_id('b6ac770e-a1d3-11eb-b534-74e5f9e2a801')
     def test_show_transfer_accept_impersonate_another_project(self):
         LOG.info('Create a zone as primary tenant')
-        zone = self.prm_zone_client.create_zone()[1]
+        zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
 
         # In case when something goes wrong with the test and E2E
         # scenario fails for some reason, we'll use Admin tenant
@@ -246,8 +258,11 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone transfer_request as primary tenant')
         transfer_request = self.prm_request_client.create_transfer_request(
                                   zone['id'])[1]
-        self.addCleanup(self.prm_request_client.delete_transfer_request,
-                        transfer_request['id'])
+        self.addCleanup(
+            self.transfer_request_delete,
+            self.prm_request_client,
+            transfer_request['id']
+        )
         data = {
             "key": transfer_request['key'],
             "zone_transfer_request_id": transfer_request['id']
@@ -294,12 +309,17 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
     @decorators.idempotent_id('324a3e80-a1cc-11eb-b534-74e5f9e2a801')
     def test_create_transfer_accept_using_invalid_key(self):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone = self.zone_client.create_zone(wait_until='ACTIVE')[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.request_client.create_transfer_request(
                                   zone['id'])[1]
+        self.addCleanup(
+            self.transfer_request_delete,
+            self.request_client,
+            transfer_request['id']
+        )
 
         data = {"key": data_utils.rand_password(len(transfer_request['key'])),
                 "zone_transfer_request_id": transfer_request['id']}
@@ -312,12 +332,17 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
     @decorators.idempotent_id('23afb948-a1ce-11eb-b534-74e5f9e2a801')
     def test_create_transfer_accept_using_deleted_transfer_request_id(self):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone = self.zone_client.create_zone(wait_until='ACTIVE')[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.request_client.create_transfer_request(
                                   zone['id'])[1]
+        self.addCleanup(
+            self.transfer_request_delete,
+            self.request_client,
+            transfer_request['id']
+        )
 
         data = {
                  "key": transfer_request['key'],
