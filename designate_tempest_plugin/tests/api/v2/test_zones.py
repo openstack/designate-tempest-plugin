@@ -270,8 +270,12 @@ class ZonesAdminTest(BaseZonesTest):
             self.admin_client, admin_zone['id'], 'ACTIVE')
 
         LOG.info('As admin user list all projects zones')
+        # Note: This is an all-projects list call, so other tests running
+        #       in parallel will impact the list result set. Since the default
+        #       pagination limit is only 20, we set a param limit of 1000 here.
         body = self.admin_client.list_zones(
-            headers={'x-auth-all-projects': True})[1]['zones']
+            headers={'x-auth-all-projects': True},
+            params={'limit': 1000})[1]['zones']
         listed_zone_ids = [item['id'] for item in body]
 
         LOG.info('Ensure the fetched response includes all zone '

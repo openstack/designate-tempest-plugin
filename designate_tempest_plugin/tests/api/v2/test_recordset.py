@@ -281,10 +281,14 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         LOG.info('Re-Fetch Recordsets as Admin tenant for a Primary project '
                  'using "x-auth-all-projects" HTTP header.')
+        # Note: This is an all-projects list call, so other tests running
+        #       in parallel will impact the list result set. Since the default
+        #       pagination limit is only 20, we set a param limit of 1000 here.
         primary_recordsets_ids = [
             item['id'] for item in self.admin_client.list_recordset(
                 self.zone['id'],
-                headers={'x-auth-all-projects': True})[1]['recordsets']]
+                headers={'x-auth-all-projects': True},
+                params={'limit': 1000})[1]['recordsets']]
 
         for recordset_id in [body_pr_1['id'], body_pr_2['id']]:
             self.assertIn(
@@ -702,8 +706,11 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
         project_ids_used = [
             item['project_id'] for item in self._create_client_recordset(
                 ['primary', 'alt']).values()]
+        # Note: This is an all-projects list call, so other tests running
+        #       in parallel will impact the list result set. Since the default
+        #       pagination limit is only 20, we set a param limit of 1000 here.
         recordsets = self.admin_client.list_owned_recordsets(
-            headers={'x-auth-all-projects': True})
+            headers={'x-auth-all-projects': True}, params={'limit': 1000})
         LOG.info('Received by API recordsets are {} '.format(recordsets))
         project_ids_api = set([item['project_id'] for item in recordsets])
         for prj_id in project_ids_used:

@@ -199,8 +199,12 @@ class ZonesImportTest(BaseZonesImportTest):
                 headers={'x-auth-all-projects': True}))
 
         LOG.info('As Admin tenant list import zones for all projects')
+        # Note: This is an all-projects list call, so other tests running
+        #       in parallel will impact the list result set. Since the default
+        #       pagination limit is only 20, we set a param limit of 1000 here.
         body = self.admin_client.list_zone_imports(headers={
-                'x-auth-all-projects': True})[1]['imports']
+                'x-auth-all-projects': True},
+                params={'limit': 1000})[1]['imports']
 
         LOG.info('Ensure the fetched response includes previously '
                  'created import ID')
