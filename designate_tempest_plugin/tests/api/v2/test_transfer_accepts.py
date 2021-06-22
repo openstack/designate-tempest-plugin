@@ -196,11 +196,14 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
         # As Admin list all accepted zone transfers, expected:
         # each previously transferred zone is listed.
+        # Note: This is an all-projects list call, so other tests running
+        #       in parallel will impact the list result set. Since the default
+        #       pagination limit is only 20, we set a param limit of 1000 here.
         LOG.info('Use Admin client to list all "accepted zone transfers"')
         admin_client_accept_ids = [
             item['id'] for item in
             self.admin_accept_client.list_transfer_accept(
-                headers={'x-auth-all-projects': True})]
+                headers={'x-auth-all-projects': True}, params={'limit': 1000})]
         for tr_id in transfer_request_ids:
             self.assertIn(
                 tr_id, admin_client_accept_ids,

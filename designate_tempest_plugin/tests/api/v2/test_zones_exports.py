@@ -146,9 +146,13 @@ class ZonesExportTest(BaseZoneExportsTest):
         self.addCleanup(self.alt_client.delete_zone_export, alt_export['id'])
 
         LOG.info('As admin user list zone exports for all projects')
+        # Note: This is an all-projects list call, so other tests running
+        #       in parallel will impact the list result set. Since the default
+        #       pagination limit is only 20, we set a param limit of 1000 here.
         listed_exports_ids = [
             item['id'] for item in self.admin_client.list_zone_exports(
-                headers={'x-auth-all-projects': True})[1]['exports']]
+                headers={'x-auth-all-projects': True},
+                params={'limit': 1000})[1]['exports']]
 
         LOG.info('Make sure that all previously created zone '
                  'export IDs are listed')
