@@ -163,7 +163,6 @@ class ZonesExportTest(BaseZoneExportsTest):
                 'listed IDs:{}'.format(id, listed_exports_ids))
 
     @decorators.idempotent_id('e4a11a14-9aaa-11eb-be59-74e5f9e2a801')
-    @decorators.skip_because(bug='1926058')
     def test_list_zone_exports_filter_results(self):
 
         LOG.info('Create a primary zone and its export')
@@ -213,9 +212,8 @@ class ZonesExportTest(BaseZoneExportsTest):
         self.assertEqual(
             [], self.admin_client.list_zone_exports(
                 headers={'x-auth-all-projects': True},
-                params={'zone_id': primary_zone['id']})[1]['exports'],
-            'Failed, filtered result should contain a single zone '
-            '(primary zone export)')
+                params={'zone_id': alt_zone['id']})[1]['exports'],
+            'Failed, filtered result should be empty.')
 
 
 class ZonesExportTestNegative(BaseZoneExportsTest):
