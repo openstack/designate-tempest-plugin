@@ -28,8 +28,9 @@ class TsigkeyClient(base.DnsClientV2Base):
         :param resource_id: Pool id or Zone id.
         :param name: name of the tsigkey.
         :param algorithm: TSIG algorithm e.g hmac-md5, hmac-sha256 etc.
-        :param secret: represents TSIG secret.
-        :param scope: represents TSIG scope.
+        :param secret: represents TSIG secret. If provided value is empty
+                       it will use empty string (Needed for negative testing)
+        :param scope: represents TSIG scope. Default is ZONE
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :return: A tuple with the server response and the created tsigkey.
@@ -38,8 +39,11 @@ class TsigkeyClient(base.DnsClientV2Base):
                  "name": name or data_utils.rand_name('test-tsig'),
                  "algorithm": algorithm or utils.rand_tsig_algorithm(),
                  "secret": secret or data_utils.rand_name("secret"),
-                 "scope": scope or utils.rand_tsig_scope(),
+                 "scope": scope or 'ZONE',
                  "resource_id": resource_id}
+
+        if secret == '':
+            tsig['secret'] = ''
 
         resp, body = self._create_request('tsigkeys', data=tsig,
                                           params=params)
@@ -49,23 +53,28 @@ class TsigkeyClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def list_tsigkeys(self, params=None):
+    def list_tsigkeys(self, params=None, headers=None):
         """Gets a list of tsigkeys.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized tsigkeys as a list.
         """
-        return self._list_request('tsigkeys', params=params)
+        return self._list_request('tsigkeys', params=params, headers=headers)
 
     @base.handle_errors
-    def show_tsigkey(self, uuid, params=None):
+    def show_tsigkey(self, uuid=None, params=None, headers=None):
         """Gets a specific tsigkey.
         :param uuid: Unique identifier of the tsigkey in UUID format.
+                     Default value is None (it's possible to use "marker" in
+                     URL query instead of UUID)
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized tsigkey as a dictionary.
         """
-        return self._show_request('tsigkeys', uuid, params=params)
+        return self._show_request(
+            'tsigkeys', uuid, params=params, headers=headers)
 
     @base.handle_errors
     def update_tsigkey(self, uuid, name=None, algorithm=None,
