@@ -36,6 +36,9 @@ class BlacklistsClient(base.DnsClientV2Base):
             'description': description or data_utils.rand_name(),
         }
 
+        if pattern == '':
+            blacklist['pattern'] = ''
+
         resp, body = self._create_request('blacklists', blacklist,
                                           params=params)
 
