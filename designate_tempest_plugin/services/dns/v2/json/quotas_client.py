@@ -88,3 +88,25 @@ class QuotasClient(base.DnsClientV2Base):
         self.expected_success(204, resp.status)
 
         return resp, body
+
+    @base.handle_errors
+    def set_quotas(self, project_id, quotas, params=None, headers=None):
+        """Set a specific quota to given project ID
+
+        :param project_id: Set the quotas of this project id.
+        :param quotas: Dictionary of quotas to set (POST payload)
+        :param params: A Python dict that represents the query paramaters to
+                       include in the request URI.
+        :param headers (dict): The headers to use for the request.
+        :return: Serialized quota as a dictionary.
+        """
+        if headers is None:
+            headers = {'content-type': 'application/json'}
+        if 'content-type' not in [header.lower() for header in headers]:
+            headers['content-type'] = 'application/json'
+
+        resp, body = self._update_request(
+            "quotas", project_id,
+            data=quotas, params=params, headers=headers)
+        self.expected_success(200, resp.status)
+        return resp, body
