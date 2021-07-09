@@ -16,11 +16,6 @@ from tempest import test
 from tempest import config
 from tempest.lib.common.utils import test_utils as utils
 
-# TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
-#               has been updated
-# https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
-from designate_tempest_plugin import clients
-
 from designate_tempest_plugin.services.dns.query.query_client import \
     QueryClient
 
@@ -140,11 +135,6 @@ class BaseDnsTest(test.BaseTestCase):
 
 class BaseDnsV2Test(BaseDnsTest):
     """Base class for DNS V2 API tests."""
-
-    # TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
-    #               has been updated
-    # https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
-    client_manager = clients.ManagerV2
 
     @classmethod
     def skip_checks(cls):
