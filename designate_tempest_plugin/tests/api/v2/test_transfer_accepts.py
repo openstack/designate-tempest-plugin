@@ -40,19 +40,19 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         super(TransferAcceptTest, cls).setup_clients()
 
         # Primary clients
-        cls.prm_zone_client = cls.os_primary.zones_client
-        cls.prm_request_client = cls.os_primary.transfer_request_client
-        cls.prm_accept_client = cls.os_primary.transfer_accept_client
+        cls.prm_zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.prm_request_client = cls.os_primary.dns_v2.TransferRequestClient()
+        cls.prm_accept_client = cls.os_primary.dns_v2.TransferAcceptClient()
 
         # Alt clients
-        cls.alt_zone_client = cls.os_alt.zones_client
-        cls.alt_request_client = cls.os_alt.transfer_request_client
-        cls.alt_accept_client = cls.os_alt.transfer_accept_client
+        cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
+        cls.alt_request_client = cls.os_alt.dns_v2.TransferRequestClient()
+        cls.alt_accept_client = cls.os_alt.dns_v2.TransferAcceptClient()
 
         # Admin clients
-        cls.admin_zone_client = cls.os_admin.zones_client
-        cls.admin_request_client = cls.os_admin.transfer_request_client
-        cls.admin_accept_client = cls.os_admin.transfer_accept_client
+        cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_request_client = cls.os_admin.dns_v2.TransferRequestClient()
+        cls.admin_accept_client = cls.os_admin.dns_v2.TransferAcceptClient()
 
     @decorators.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
     def test_create_transfer_accept(self):
@@ -305,9 +305,9 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
     @classmethod
     def setup_clients(cls):
         super(TransferAcceptTestNegative, cls).setup_clients()
-        cls.zone_client = cls.os_primary.zones_client
-        cls.request_client = cls.os_primary.transfer_request_client
-        cls.client = cls.os_primary.transfer_accept_client
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.request_client = cls.os_primary.dns_v2.TransferRequestClient()
+        cls.client = cls.os_primary.dns_v2.TransferAcceptClient()
 
     @decorators.idempotent_id('324a3e80-a1cc-11eb-b534-74e5f9e2a801')
     def test_create_transfer_accept_using_invalid_key(self):

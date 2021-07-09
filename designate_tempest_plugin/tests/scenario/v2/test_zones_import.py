@@ -28,8 +28,8 @@ class ZonesImportTest(BaseZonesImportTest):
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
 
-        cls.client = cls.os_primary.zone_imports_client
-        cls.zones_client = cls.os_primary.zones_client
+        cls.client = cls.os_primary.dns_v2.ZoneImportsClient()
+        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
 
     @decorators.attr(type='slow')
     @decorators.idempotent_id('679f38d0-2f2f-49c5-934e-8fe0c452f56e')

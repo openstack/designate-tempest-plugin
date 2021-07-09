@@ -52,7 +52,7 @@ class QuotasAdminTest(BaseQuotasTest):
     def setup_clients(cls):
         super(QuotasAdminTest, cls).setup_clients()
 
-        cls.admin_client = cls.os_admin.quotas_client
+        cls.admin_client = cls.os_admin.dns_admin.QuotasClient()
 
     @decorators.idempotent_id('ed42f367-e5ba-40d7-a08d-366ad787d21c')
     def test_show_quotas(self):

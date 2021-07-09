@@ -41,11 +41,10 @@ class ZonesImportTest(BaseZonesImportTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
-
-        cls.client = cls.os_primary.zone_imports_client
-        cls.alt_client = cls.os_alt.zone_imports_client
-        cls.admin_client = cls.os_admin.zone_imports_client
-        cls.zone_client = cls.os_primary.zones_client
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.client = cls.os_primary.dns_v2.ZoneImportsClient()
+        cls.alt_client = cls.os_alt.dns_v2.ZoneImportsClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZoneImportsClient()
 
     def clean_up_resources(self, zone_import_id):
         zone_import = self.client.show_zone_import(zone_import_id)[1]

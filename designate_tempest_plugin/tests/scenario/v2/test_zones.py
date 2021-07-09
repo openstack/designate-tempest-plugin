@@ -29,8 +29,7 @@ class ZonesTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
 
-        cls.client = cls.os_primary.zones_client
-        cls.query_client = cls.os_primary.query_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
 
     @decorators.attr(type='smoke')
     @decorators.attr(type='slow')

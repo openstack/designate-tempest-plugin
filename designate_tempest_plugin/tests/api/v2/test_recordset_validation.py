@@ -51,8 +51,8 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(RecordsetValidationTest, cls).setup_clients()
 
-        cls.recordset_client = cls.os_primary.recordset_client
-        cls.zones_client = cls.os_primary.zones_client
+        cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
+        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
 
     @property
     def zone(self):

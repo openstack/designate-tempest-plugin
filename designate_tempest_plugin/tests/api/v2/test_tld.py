@@ -38,7 +38,7 @@ class TldAdminTest(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TldAdminTest, cls).setup_clients()
-        cls.admin_client = cls.os_admin.tld_client
+        cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -140,7 +140,7 @@ class TestTldNotFoundAdmin(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TestTldNotFoundAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.tld_client
+        cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @decorators.idempotent_id('b237d5ee-0d76-4294-a3b6-c2f8bf4b0e30')
     def test_show_tld_404(self):
@@ -183,7 +183,7 @@ class TestTldInvalidIdAdmin(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TestTldInvalidIdAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.tld_client
+        cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @decorators.idempotent_id('f9ec0730-57ff-4720-8d06-e11d377c7cfc')
     def test_show_tld_invalid_uuid(self):

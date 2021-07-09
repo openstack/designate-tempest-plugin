@@ -16,7 +16,13 @@ from tempest import test
 from tempest import config
 from tempest.lib.common.utils import test_utils as utils
 
+# TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
+#               has been updated
+# https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
 from designate_tempest_plugin import clients
+
+from designate_tempest_plugin.services.dns.query.query_client import \
+    QueryClient
 
 
 CONF = config.CONF
@@ -76,6 +82,19 @@ class BaseDnsTest(test.BaseTestCase):
                         % cls.__name__)
             raise cls.skipException(skip_msg)
 
+    @classmethod
+    def setup_clients(cls):
+        super(BaseDnsTest, cls).setup_clients()
+        # The Query Client is not an OpenStack client which means
+        # we should not set it up through the tempest client manager.
+        # Set it up here so all tests have access to it.
+        cls.query_client = QueryClient(
+            nameservers=CONF.dns.nameservers,
+            query_timeout=CONF.dns.query_timeout,
+            build_interval=CONF.dns.build_interval,
+            build_timeout=CONF.dns.build_timeout,
+        )
+
     def assertExpected(self, expected, actual, excluded_keys):
         for key, value in six.iteritems(expected):
             if key not in excluded_keys:
@@ -122,7 +141,9 @@ class BaseDnsTest(test.BaseTestCase):
 class BaseDnsV2Test(BaseDnsTest):
     """Base class for DNS V2 API tests."""
 
-    # Use the Designate V2 Client Manager
+    # TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
+    #               has been updated
+    # https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
     client_manager = clients.ManagerV2
 
     @classmethod
@@ -137,9 +158,6 @@ class BaseDnsV2Test(BaseDnsTest):
 
 class BaseDnsAdminTest(BaseDnsTest):
     """Base class for DNS Admin API tests."""
-
-    # Use the Designate Admin Client Manager
-    client_manager = clients.ManagerAdmin
 
     @classmethod
     def skip_checks(cls):

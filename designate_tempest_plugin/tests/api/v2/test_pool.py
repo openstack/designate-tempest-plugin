@@ -45,8 +45,7 @@ class PoolAdminTest(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(PoolAdminTest, cls).setup_clients()
-
-        cls.admin_client = cls.os_admin.pool_client
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('69257f7c-b3d5-4e1b-998e-0677ad12f125')
     def test_create_pool(self):
@@ -136,7 +135,7 @@ class TestPoolNotFoundAdmin(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(TestPoolNotFoundAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.pool_client
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('56281b2f-dd5a-4376-8c32-aba771062fa5')
     def test_show_pool_404(self):
@@ -179,7 +178,7 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(TestPoolInvalidIdAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.pool_client
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('081d0188-42a7-4953-af0e-b022960715e2')
     def test_show_pool_invalid_uuid(self):
@@ -223,7 +222,7 @@ class TestPoolAdminNegative(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(TestPoolAdminNegative, cls).setup_clients()
-        cls.admin_client = cls.os_admin.pool_client
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('0a8cdc1e-ac02-11eb-ae06-74e5f9e2a801')
     def test_create_pool_invalid_name(self):

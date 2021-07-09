@@ -48,9 +48,9 @@ class QuotasV2Test(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(QuotasV2Test, cls).setup_clients()
 
-        cls.quotas_client = cls.os_primary.quotas_client
-        cls.admin_client = cls.os_admin.quotas_client
-        cls.alt_client = cls.os_alt.quotas_client
+        cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
+        cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
+        cls.alt_client = cls.os_alt.dns_v2.QuotasClient()
 
     def _store_quotas(self, project_id=None, cleanup=True):
         """Remember current quotas and reset them after the test"""
