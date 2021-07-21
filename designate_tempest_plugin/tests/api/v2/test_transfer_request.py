@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
@@ -19,6 +20,7 @@ from tempest.lib import exceptions as lib_exc
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -27,7 +29,7 @@ class BaseTransferRequestTest(base.BaseDnsV2Test):
 
 
 class TransferRequestTest(BaseTransferRequestTest):
-    credentials = ['primary', 'alt', 'admin']
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -39,11 +41,15 @@ class TransferRequestTest(BaseTransferRequestTest):
     def setup_clients(cls):
         super(TransferRequestTest, cls).setup_clients()
 
+        if CONF.enforce_scope.designate:
+            cls.admin_client = (cls.os_system_admin.dns_v2.
+                                TransferRequestClient())
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.TransferRequestClient()
         cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.TransferRequestClient()
         cls.alt_client = cls.os_alt.dns_v2.TransferRequestClient()
-        cls.admin_client = cls.os_admin.dns_v2.TransferRequestClient()
 
     @decorators.idempotent_id('2381d489-ad84-403d-b0a2-8b77e4e966bf')
     def test_create_transfer_request(self):
@@ -233,7 +239,7 @@ class TransferRequestTest(BaseTransferRequestTest):
         #       pagination limit is only 20, we set a param limit of 1000 here.
         request_ids = [
             item['id'] for item in self.admin_client.list_transfer_requests(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'limit': 1000})[1]['transfer_requests']]
 
         for request_id in [primary_transfer_request['id'],

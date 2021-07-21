@@ -13,12 +13,14 @@
 #    under the License.
 
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -27,7 +29,7 @@ class BaseTsigkeyTest(base.BaseDnsV2Test):
 
 
 class TsigkeyAdminTest(BaseTsigkeyTest):
-    credentials = ['primary', 'admin']
+    credentials = ["primary", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -38,8 +40,11 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TsigkeyAdminTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.TsigkeyClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
         cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
-        cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
 
     @decorators.idempotent_id('e7b484e3-7ed5-4840-89d7-1e696986f8e4')
     def test_create_tsigkey(self):
@@ -140,7 +145,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
 class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
 
-    credentials = ["admin"]
+    credentials = ["admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -151,7 +156,10 @@ class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TestTsigkeyNotFoundAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.TsigkeyClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
 
     @decorators.idempotent_id('824c9b49-edc5-4282-929e-467a158d23e4')
     def test_show_tsigkey_404(self):
@@ -183,7 +191,7 @@ class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
 
 class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
 
-    credentials = ["admin"]
+    credentials = ["admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -194,7 +202,10 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TestTsigkeyInvalidIdAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.TsigkeyClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
 
     @decorators.idempotent_id('2a8dfc75-9884-4b1c-8f1f-ed835d96f2fe')
     def test_show_tsigkey_invalid_uuid(self):

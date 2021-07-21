@@ -13,12 +13,14 @@
 #    under the License.
 
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils
 
 from designate_tempest_plugin.tests import base
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -27,7 +29,7 @@ class BaseTldTest(base.BaseDnsV2Test):
 
 
 class TldAdminTest(BaseTldTest):
-    credentials = ['admin']
+    credentials = ["admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -38,7 +40,10 @@ class TldAdminTest(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TldAdminTest, cls).setup_clients()
-        cls.admin_client = cls.os_admin.dns_v2.TldClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -129,7 +134,7 @@ class TldAdminTest(BaseTldTest):
 
 class TestTldNotFoundAdmin(BaseTldTest):
 
-    credentials = ["admin"]
+    credentials = ["admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -140,7 +145,10 @@ class TestTldNotFoundAdmin(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TestTldNotFoundAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.dns_v2.TldClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @decorators.idempotent_id('b237d5ee-0d76-4294-a3b6-c2f8bf4b0e30')
     def test_show_tld_404(self):
@@ -172,7 +180,7 @@ class TestTldNotFoundAdmin(BaseTldTest):
 
 class TestTldInvalidIdAdmin(BaseTldTest):
 
-    credentials = ["admin"]
+    credentials = ["admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -183,7 +191,10 @@ class TestTldInvalidIdAdmin(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TestTldInvalidIdAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.dns_v2.TldClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @decorators.idempotent_id('f9ec0730-57ff-4720-8d06-e11d377c7cfc')
     def test_show_tld_invalid_uuid(self):

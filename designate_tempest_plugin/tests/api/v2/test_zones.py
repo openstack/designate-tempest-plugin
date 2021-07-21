@@ -13,6 +13,7 @@
 # under the License.
 import uuid
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 from tempest.lib.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
@@ -24,6 +25,8 @@ from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 
 from designate_tempest_plugin.common import waiters
+
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -33,7 +36,7 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 
 class ZonesTest(BaseZonesTest):
-    credentials = ['admin', 'primary']
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -44,8 +47,11 @@ class ZonesTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.pool_client = cls.os_system_admin.dns_v2.PoolClient()
+        else:
+            cls.pool_client = cls.os_admin.dns_v2.PoolClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
-        cls.pool_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
     def test_create_zones(self):
@@ -192,7 +198,7 @@ class ZonesTest(BaseZonesTest):
 
 
 class ZonesAdminTest(BaseZonesTest):
-    credentials = ['primary', 'admin', 'alt']
+    credentials = ["primary", "admin", "system_admin", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -203,8 +209,11 @@ class ZonesAdminTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesAdminTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
-        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('f6fe8cce-8b04-11eb-a861-74e5f9e2a801')
@@ -261,19 +270,22 @@ class ZonesAdminTest(BaseZonesTest):
             self.alt_client, alt_zone['id'], 'ACTIVE')
 
         LOG.info('Create zone "C" using Admin client')
-        admin_zone = self.admin_client.create_zone()[1]
+        admin_zone = self.admin_client.create_zone(
+            project_id="FakeProjectID")[1]
         self.addCleanup(
-            self.wait_zone_delete, self.admin_client, admin_zone['id'])
+            self.wait_zone_delete, self.admin_client, admin_zone['id'],
+            headers=self.all_projects_header)
         LOG.info('Wait till the zone is ACTIVE')
         waiters.wait_for_zone_status(
-            self.admin_client, admin_zone['id'], 'ACTIVE')
+            self.admin_client, admin_zone['id'], 'ACTIVE',
+            headers=self.all_projects_header)
 
         LOG.info('As admin user list all projects zones')
         # Note: This is an all-projects list call, so other tests running
         #       in parallel will impact the list result set. Since the default
         #       pagination limit is only 20, we set a param limit of 1000 here.
         body = self.admin_client.list_zones(
-            headers={'x-auth-all-projects': True},
+            headers=self.all_projects_header,
             params={'limit': 1000})[1]['zones']
         listed_zone_ids = [item['id'] for item in body]
 
@@ -288,7 +300,7 @@ class ZonesAdminTest(BaseZonesTest):
 
 
 class ZoneOwnershipTest(BaseZonesTest):
-    credentials = ['primary', 'alt']
+    credentials = ["primary", "alt"]
 
     @classmethod
     def setup_credentials(cls):

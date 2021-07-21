@@ -15,6 +15,7 @@
 from socket import gaierror
 
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -25,6 +26,7 @@ from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.services.dns.query.query_client \
     import SingleQueryClient
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -34,7 +36,7 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 
 class ZoneTasks(BaseZonesTest):
-    credentials = ['primary', 'alt', 'admin']
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -45,8 +47,11 @@ class ZoneTasks(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneTasks, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
-        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('287e2cd0-a0e7-11eb-b962-74e5f9e2a801')
@@ -104,7 +109,7 @@ class ZoneTasks(BaseZonesTest):
 
 
 class ZoneTasksNegative(BaseZonesTest):
-    credentials = ['primary', 'alt', 'admin']
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -115,8 +120,11 @@ class ZoneTasksNegative(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneTasksNegative, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
-        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     def _query_nameserver(self, nameserver, query_timeout,

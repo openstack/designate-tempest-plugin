@@ -12,15 +12,17 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
 class DesignateLimit(base.BaseDnsV2Test):
-    credentials = ['admin']
+    credentials = ["admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -31,7 +33,11 @@ class DesignateLimit(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(DesignateLimit, cls).setup_clients()
-        cls.admin_client = cls.os_admin.dns_v2.DesignateLimitClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = (cls.os_system_admin.dns_v2.
+                                DesignateLimitClient())
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.DesignateLimitClient()
 
     @decorators.idempotent_id('828572be-8662-11eb-8ff2-74e5f9e2a801')
     def test_list_designate_limits(self):

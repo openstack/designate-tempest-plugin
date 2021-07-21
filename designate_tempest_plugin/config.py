@@ -79,4 +79,24 @@ DnsFeatureGroup = [
                 default=True,
                 help="Is https://bugs.launchpad.net/designate/+bug/1573141 "
                 "fixed"),
+    # Note: Also see the enforce_scope section (from tempest) for Designate API
+    #       scope checking setting.
+    cfg.BoolOpt('enforce_new_defaults',
+                default=False,
+                help='Does the dns service API policies enforce '
+                     'the new keystone default roles? This configuration '
+                     'value should be same as designate.conf: '
+                     '[oslo_policy].enforce_new_defaults option.'),
+]
+
+# Extending this enforce_scope group defined in tempest
+enforce_scope_group = cfg.OptGroup(name="enforce_scope",
+                                   title="OpenStack Services with "
+                                         "enforce scope")
+EnforceScopeGroup = [
+    cfg.BoolOpt('designate',
+                default=False,
+                help='Does the dns service API policies enforce '
+                     'scope? This configuration value should be same as '
+                     'designate.conf: [oslo_policy].enforce_scope option.'),
 ]

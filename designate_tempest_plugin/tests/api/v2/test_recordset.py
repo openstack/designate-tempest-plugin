@@ -22,9 +22,8 @@ from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin import data_utils
 
-LOG = logging.getLogger(__name__)
-
 CONF = config.CONF
+LOG = logging.getLogger(__name__)
 
 
 class BaseRecordsetsTest(base.BaseDnsV2Test):
@@ -50,7 +49,7 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
 @ddt.ddt
 class RecordsetsTest(BaseRecordsetsTest):
 
-    credentials = ["admin", 'primary', 'alt']
+    credentials = ["admin", "system_admin", "primary", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -61,12 +60,16 @@ class RecordsetsTest(BaseRecordsetsTest):
     @classmethod
     def setup_clients(cls):
         super(RecordsetsTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
+            cls.admin_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+            cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
-        cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
-        cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
@@ -276,7 +279,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         self.assertRaises(lib_exc.Forbidden,
             lambda: self.alt_client.list_recordset(
                 self.zone['id'],
-                headers={'x-auth-all-projects': True}))
+                headers=self.all_projects_header))
 
         LOG.info('Re-Fetch Recordsets as Admin tenant for a Primary project '
                  'using "x-auth-all-projects" HTTP header.')
@@ -286,7 +289,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         primary_recordsets_ids = [
             item['id'] for item in self.admin_client.list_recordset(
                 self.zone['id'],
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'limit': 1000})[1]['recordsets']]
 
         for recordset_id in [body_pr_1['id'], body_pr_2['id']]:
@@ -299,7 +302,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 @ddt.ddt
 class RecordsetsNegativeTest(BaseRecordsetsTest):
 
-    credentials = ['primary', 'alt']
+    credentials = ["primary", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -540,7 +543,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
 class RecordsetOwnershipTest(BaseRecordsetsTest):
 
-    credentials = ['primary', 'alt', 'admin']
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -551,9 +554,12 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
     @classmethod
     def setup_clients(cls):
         super(RecordsetOwnershipTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
-        cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
 
@@ -706,7 +712,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
         #       in parallel will impact the list result set. Since the default
         #       pagination limit is only 20, we set a param limit of 1000 here.
         recordsets = self.admin_client.list_owned_recordsets(
-            headers={'x-auth-all-projects': True}, params={'limit': 1000})
+            headers=self.all_projects_header, params={'limit': 1000})
         LOG.info('Received by API recordsets are {} '.format(recordsets))
         project_ids_api = set([item['project_id'] for item in recordsets])
         for prj_id in project_ids_used:

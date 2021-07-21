@@ -58,6 +58,8 @@ class DesignateTempestPlugin(plugins.TempestPlugin):
                                   project_config.DnsGroup)
         config.register_opt_group(conf, project_config.dns_feature_group,
                                   project_config.DnsFeatureGroup)
+        config.register_opt_group(conf, project_config.enforce_scope_group,
+                                  project_config.EnforceScopeGroup)
 
     def get_opt_lists(self):
         """

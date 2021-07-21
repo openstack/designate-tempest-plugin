@@ -136,6 +136,8 @@ class BaseDnsTest(test.BaseTestCase):
 class BaseDnsV2Test(BaseDnsTest):
     """Base class for DNS V2 API tests."""
 
+    all_projects_header = {'X-Auth-All-Projects': True}
+
     @classmethod
     def skip_checks(cls):
         super(BaseDnsV2Test, cls).skip_checks()
