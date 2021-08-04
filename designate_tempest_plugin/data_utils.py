@@ -141,10 +141,12 @@ def rand_recordset_data(record_type, zone_name, name=None, records=None,
         'ttl': ttl}
 
 
-def rand_a_recordset(zone_name, ip=None, **kwargs):
-    if ip is None:
-        ip = rand_ip()
-    return rand_recordset_data('A', zone_name, records=[ip], **kwargs)
+def rand_a_recordset(zone_name, ips=None, **kwargs):
+    if ips is None:
+        return rand_recordset_data(
+            'A', zone_name, records=[rand_ip()], **kwargs)
+    else:
+        return rand_recordset_data('A', zone_name, records=ips, **kwargs)
 
 
 def rand_aaaa_recordset(zone_name, ip=None, **kwargs):

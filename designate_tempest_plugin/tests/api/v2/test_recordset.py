@@ -19,6 +19,8 @@ from tempest.lib.common.utils import data_utils as lib_data_utils
 import ddt
 
 from designate_tempest_plugin.tests import base
+from designate_tempest_plugin.common import constants as const
+
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin import data_utils
 
@@ -80,9 +82,12 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
 
         LOG.info('Ensure we respond with PENDING')
-        self.assertEqual('PENDING', body['status'])
+        self.assertEqual(const.PENDING, body['status'])
 
     @decorators.idempotent_id('d03b69a5-5052-43bc-a38a-b511b6b34304')
     @ddt.file_data("recordset_data.json")
@@ -102,9 +107,12 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
 
         LOG.info('Ensure we respond with PENDING')
-        self.assertEqual('PENDING', body['status'])
+        self.assertEqual(const.PENDING, body['status'])
 
     @decorators.idempotent_id('69f002e5-6511-43d3-abae-7abdd45ae03e')
     @ddt.file_data("recordset_wildcard_data.json")
@@ -124,9 +132,12 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
 
         LOG.info('Ensure we respond with PENDING')
-        self.assertEqual('PENDING', body['status'])
+        self.assertEqual(const.PENDING, body['status'])
 
     @decorators.idempotent_id('5964f730-5546-46e6-9105-5030e9c492b2')
     def test_list_recordsets(self):
@@ -136,6 +147,9 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
 
         LOG.info('List zone recordsets')
         _, body = self.client.list_recordset(self.zone['id'])
@@ -150,6 +164,9 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
 
         LOG.info('Re-Fetch the Recordset')
         _, record = self.client.show_recordset(self.zone['id'], body['id'])
@@ -165,6 +182,9 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         _, record = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], record['id'])
 
         LOG.info('Delete a Recordset')
         _, body = self.client.delete_recordset(self.zone['id'], record['id'])
@@ -181,6 +201,9 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a recordset')
         _, record = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], record['id'])
 
         recordset_data = data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'], name=record['name'])
@@ -200,6 +223,9 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a recordset')
         _, record = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], record['id'])
 
         recordset_data = {
             'ttl': data_utils.rand_ttl(start=record['ttl'] + 1)
@@ -222,12 +248,15 @@ class RecordsetsTest(BaseRecordsetsTest):
             record_type='A', zone_name=self.zone['name'])
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
-        self.assertEqual('PENDING', body['status'],
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
+        self.assertEqual(const.PENDING, body['status'],
                          'Failed, expected status is PENDING')
         LOG.info('Wait until the recordset is active')
         waiters.wait_for_recordset_status(
             self.client, self.zone['id'],
-            body['id'], 'ACTIVE')
+            body['id'], const.ACTIVE)
 
         LOG.info('Re-Fetch the Recordset as Alt tenant with '
                  '"x-auth-sudo-project-id" HTTP header included in request. '
@@ -259,13 +288,19 @@ class RecordsetsTest(BaseRecordsetsTest):
             record_type='A', zone_name=self.zone['name'])
         body_pr_1 = self.client.create_recordset(
             self.zone['id'], recordset_data_primary_1)[1]
-        self.assertEqual('PENDING', body_pr_1['status'],
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body_pr_1['id'])
+        self.assertEqual(const.PENDING, body_pr_1['status'],
                          'Failed, expected status is PENDING')
         recordset_data_primary_2 = data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
         body_pr_2 = self.client.create_recordset(
             self.zone['id'], recordset_data_primary_2)[1]
-        self.assertEqual('PENDING', body_pr_2['status'],
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body_pr_2['id'])
+        self.assertEqual(const.PENDING, body_pr_2['status'],
                          'Failed, expected status is PENDING')
 
         LOG.info('Re-Fetch Recordsets as Alt tenant for a Primary project. '
@@ -297,6 +332,24 @@ class RecordsetsTest(BaseRecordsetsTest):
                 recordset_id, primary_recordsets_ids,
                 'Failed, recordset ID:{} was not found in listed '
                 'recordsets: {}'.format(recordset_id, primary_recordsets_ids))
+
+    @decorators.idempotent_id('48013b7c-f526-11eb-b04f-74e5f9e2a801')
+    def test_create_A_recordset_multiply_ips(self):
+        LOG.info('Create A type Recordset using a list of random IPs')
+        recordset_data = data_utils.rand_a_recordset(
+            zone_name=self.zone['name'],
+            ips=[data_utils.rand_ip() for _ in range(10)])
+        resp, body = self.client.create_recordset(
+            self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
+        LOG.info('Ensure we respond with PENDING')
+        self.assertEqual(const.PENDING, body['status'])
+        LOG.info('Wait until the recordset is active')
+        waiters.wait_for_recordset_status(
+            self.client, self.zone['id'],
+            body['id'], const.ACTIVE)
 
 
 @ddt.ddt
@@ -415,12 +468,15 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
             record_type='A', zone_name=self.zone['name'])
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
-        self.assertEqual('PENDING', body['status'],
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], body['id'])
+        self.assertEqual(const.PENDING, body['status'],
                          'Failed, expected status is PENDING')
         LOG.info('Wait until the recordset is active')
         waiters.wait_for_recordset_status(
             self.client, self.zone['id'],
-            body['id'], 'ACTIVE')
+            body['id'], const.ACTIVE)
 
         LOG.info('Ensure 404 NotFound status code is received if '
                  'recordset ID is invalid.')
@@ -485,6 +541,9 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, zone_recordset = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], zone_recordset['id'])
 
         self.client.show_zones_recordset(zone_recordset['id'])
 
@@ -496,6 +555,9 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, zone_recordset = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], zone_recordset['id'])
 
         LOG.info('Create another zone')
         _, zone2 = self.zone_client.create_zone()
@@ -507,6 +569,9 @@ class RootRecordsetsTests(BaseRecordsetsTest):
             records=['10.0.1.3'])
         resp, zone_recordset2 = self.client.create_recordset(
             zone2['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], zone_recordset2['id'])
 
         LOG.info('List recordsets')
         _, body = self.client.list_zones_recordsets(params={"data": "10.0.*"})
@@ -577,19 +642,22 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                                 self.zone_client,
                                 zone['id'])
                 waiters.wait_for_zone_status(
-                    self.zone_client, zone['id'], 'ACTIVE')
+                    self.zone_client, zone['id'], const.ACTIVE)
 
                 # Create a recordset and wait till it's ACTIVE
                 recordset_data = data_utils.rand_recordset_data(
                     record_type='A', zone_name=zone['name'])
                 resp, body = self.client.create_recordset(
                     zone['id'], recordset_data)
-                self.assertEqual('PENDING', body['status'],
+                self.addCleanup(
+                    self.wait_recordset_delete, self.client,
+                    self.zone['id'], body['id'])
+                self.assertEqual(const.PENDING, body['status'],
                                  'Failed, expected status is PENDING')
                 LOG.info('Wait until the recordset is active')
                 waiters.wait_for_recordset_status(
                     self.client, zone['id'],
-                    body['id'], 'ACTIVE')
+                    body['id'], const.ACTIVE)
 
                 # Add "project_id" into the recordset_data
                 recordset_data['project_id'] = zone['project_id']
@@ -602,19 +670,22 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                                 self.alt_zone_client,
                                 alt_zone['id'])
                 waiters.wait_for_zone_status(
-                    self.alt_zone_client, alt_zone['id'], 'ACTIVE')
+                    self.alt_zone_client, alt_zone['id'], const.ACTIVE)
 
                 # Create a recordset and wait till it's ACTIVE
                 recordset_data = data_utils.rand_recordset_data(
                     record_type='A', zone_name=alt_zone['name'])
                 resp, body = self.alt_client.create_recordset(
                     alt_zone['id'], recordset_data)
-                self.assertEqual('PENDING', body['status'],
+                self.addCleanup(
+                    self.wait_recordset_delete, self.client,
+                    self.zone['id'], body['id'])
+                self.assertEqual(const.PENDING, body['status'],
                                  'Failed, expected status is PENDING')
                 LOG.info('Wait until the recordset is active')
                 waiters.wait_for_recordset_status(
                     self.alt_client, alt_zone['id'],
-                    body['id'], 'ACTIVE')
+                    body['id'], const.ACTIVE)
 
                 # Add "project_id" into the recordset_data
                 recordset_data['project_id'] = alt_zone['project_id']
@@ -629,6 +700,9 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
             record_type='A', zone_name=self.zone['name'])
         resp, rrset = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], rrset['id'])
         self.assertRaises(
             lib_exc.RestClientException,
             lambda: self.alt_client.create_recordset(
