@@ -52,6 +52,7 @@ class ZonesTest(BaseZonesTest):
         else:
             cls.pool_client = cls.os_admin.dns_v2.PoolClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
     def test_create_zones(self):
@@ -77,6 +78,31 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual('CREATE', zone['action'])
         self.assertEqual('PENDING', zone['status'])
+
+    @decorators.idempotent_id('ec150c22-f52e-11eb-b09b-74e5f9e2a801')
+    def test_create_zone_validate_recordsets_created(self):
+        # Create a PRIMARY zone and wait till it's Active
+        LOG.info('Create a PRIMARY zone')
+        zone = self.client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual('CREATE', zone['action'])
+        self.assertEqual('PENDING', zone['status'])
+
+        LOG.info('Wait till the zone is Active')
+        waiters.wait_for_zone_status(self.client, zone['id'], 'ACTIVE')
+
+        LOG.info('Ensure that SOA and NS recordsets types has been created.')
+        recordsets = self.recordset_client.list_recordset(
+            zone['id'])[1]['recordsets']
+        types = [rec['type'] for rec in recordsets]
+        expected_types = ['SOA', 'NS']
+        for exp_type in expected_types:
+            self.assertIn(
+                exp_type, types,
+                'Failed, expected recordset type:{} was'
+                ' not created'.format(exp_type))
 
     @decorators.idempotent_id('02ca5d6a-86ce-4f02-9d94-9e5db55c3055')
     def test_show_zone(self):
