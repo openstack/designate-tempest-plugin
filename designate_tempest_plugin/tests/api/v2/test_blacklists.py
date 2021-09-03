@@ -63,7 +63,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
             expected_allowed = ['os_system_admin']
 
         self.check_CUD_RBAC_enforcement('BlacklistsClient', 'create_blacklist',
-                                        expected_allowed)
+                                        expected_allowed, False)
 
     @decorators.idempotent_id('ea608152-da3c-11eb-b8b8-74e5f9e2a801')
     @decorators.skip_because(bug="1934252")
@@ -106,7 +106,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
             expected_allowed = ['os_system_admin', 'os_system_reader']
 
         self.check_list_show_RBAC_enforcement(
-            'BlacklistsClient', 'show_blacklist', expected_allowed,
+            'BlacklistsClient', 'show_blacklist', expected_allowed, False,
             blacklist['id'])
 
     @decorators.idempotent_id('dcea40d9-8d36-43cb-8440-4a842faaef0d')
@@ -126,8 +126,9 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         if CONF.dns_feature_enabled.enforce_new_defaults:
             expected_allowed = ['os_system_admin']
 
-        self.check_CUD_RBAC_enforcement('BlacklistsClient', 'delete_blacklist',
-                                        expected_allowed, blacklist['id'])
+        self.check_CUD_RBAC_enforcement(
+            'BlacklistsClient', 'delete_blacklist', expected_allowed, False,
+            blacklist['id'])
 
     @decorators.idempotent_id('3a2a1e6c-8176-428c-b5dd-d85217c0209d')
     def test_list_blacklists(self):
@@ -173,7 +174,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
             expected_allowed = ['os_system_admin']
 
         self.check_CUD_RBAC_enforcement(
-            'BlacklistsClient', 'update_blacklist', expected_allowed,
+            'BlacklistsClient', 'update_blacklist', expected_allowed, False,
             uuid=blacklist['id'], pattern=pattern, description=description)
 
 

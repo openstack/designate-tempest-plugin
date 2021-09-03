@@ -75,9 +75,13 @@ class RBACTestsMixin(test.BaseTestCase):
                 self.fail('Method {}.{} failed to allow access via RBAC using '
                           'credential {}. Error: {}'.format(
                               client_str, method_str, cred, str(e)))
+            except exceptions.NotFound as e:
+                self.fail('Method {}.{} failed to allow access via RBAC using '
+                          'credential {}. Error: {}'.format(
+                              client_str, method_str, cred, str(e)))
 
     def _check_disallowed(self, client_str, method_str, allowed_list,
-                          *args, **kwargs):
+                          expect_404, *args, **kwargs):
         """Test an API call disallowed RBAC enforcement.
 
         :param client_str: The service client to use for the test, without the
@@ -86,6 +90,7 @@ class RBACTestsMixin(test.BaseTestCase):
                            Example: 'list_zones'
         :param allowed_list: The list of credentials expected to be
                              allowed.  Example: ['primary'].
+        :param expect_404: When True, 404 responses are considered ok.
         :param args: Any positional parameters needed by the method.
         :param kwargs: Any named parameters needed by the method.
         :raises AssertionError: Raised if the RBAC tests fail.
@@ -118,11 +123,18 @@ class RBACTestsMixin(test.BaseTestCase):
                 method(*args, **kwargs)
             except exceptions.Forbidden:
                 continue
+            except exceptions.NotFound:
+                # Some APIs hide that the resource exists by returning 404
+                # on permission denied.
+                if expect_404:
+                    continue
+                raise
             self.fail('Method {}.{} failed to deny access via RBAC using '
                       'credential {}.'.format(client_str, method_str, cred))
 
     def check_list_show_RBAC_enforcement(self, client_str, method_str,
-                                   expected_allowed, *args, **kwargs):
+                                         expected_allowed, expect_404,
+                                         *args, **kwargs):
         """Test list or show API call RBAC enforcement.
 
         :param client_str: The service client to use for the test, without the
@@ -131,6 +143,7 @@ class RBACTestsMixin(test.BaseTestCase):
                            Example: 'list_zones'
         :param expected_allowed: The list of credentials expected to be
                                  allowed.  Example: ['primary'].
+        :param expect_404: When True, 404 responses are considered ok.
         :param args: Any positional parameters needed by the method.
         :param kwargs: Any named parameters needed by the method.
         :raises AssertionError: Raised if the RBAC tests fail.
@@ -145,7 +158,7 @@ class RBACTestsMixin(test.BaseTestCase):
 
         # #### Test that disallowed credentials cannot access the API.
         self._check_disallowed(client_str, method_str, allowed_list,
-                               *args, **kwargs)
+                               expect_404, *args, **kwargs)
 
         # #### Test that allowed credentials can access the API.
         self._check_allowed(client_str, method_str, allowed_list,

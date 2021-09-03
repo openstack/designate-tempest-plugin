@@ -57,7 +57,6 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 
 class ZonesTest(BaseZonesTest):
-    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -105,6 +104,24 @@ class ZonesTest(BaseZonesTest):
         self.assertEqual(const.CREATE, zone['action'])
         self.assertEqual(const.PENDING, zone['status'])
 
+        # Test with no extra header overrides (sudo-project-id)
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+            expected_allowed.append('os_project_member')
+
+        self.check_CUD_RBAC_enforcement('ZonesClient', 'create_zone',
+                                        expected_allowed, False)
+
+        # Test with x-auth-sudo-project-id header
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZonesClient', 'create_zone', expected_allowed, False,
+            project_id=self.client.project_id)
+
     @decorators.idempotent_id('ec150c22-f52e-11eb-b09b-74e5f9e2a801')
     def test_create_zone_validate_recordsets_created(self):
         # Create a PRIMARY zone and wait till it's Active
@@ -144,6 +161,27 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Ensure the fetched response matches the created zone')
         self.assertExpected(zone, body, self.excluded_keys)
 
+        # TODO(johnsom) Test reader roles once this bug is fixed.
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test with no extra header overrides (all_projects, sudo-project-id)
+        expected_allowed = ['os_primary']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZonesClient', 'show_zone', expected_allowed, True, zone['id'])
+
+        # Test with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZonesClient', 'show_zone', expected_allowed, False, zone['id'],
+            headers=self.all_projects_header)
+        self.check_list_show_RBAC_enforcement(
+            'ZonesClient', 'show_zone', expected_allowed, False, zone['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
+
     @decorators.idempotent_id('49268b24-92de-11eb-9d02-74e5f9e2a801')
     def test_show_not_existing_zone(self):
         LOG.info('Fetch non existing zone')
@@ -165,6 +203,26 @@ class ZonesTest(BaseZonesTest):
         zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement('ZonesClient', 'delete_zone',
+                                        expected_allowed, True, zone['id'])
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement('ZonesClient', 'delete_zone',
+                                        expected_allowed, False, zone['id'],
+                                        headers=self.all_projects_header)
+        self.check_CUD_RBAC_enforcement(
+            'ZonesClient', 'delete_zone', expected_allowed, False, zone['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
         LOG.info('Delete the zone')
         body = self.client.delete_zone(zone['id'])[1]
@@ -194,6 +252,39 @@ class ZonesTest(BaseZonesTest):
         #              present in the response.
         self.assertGreater(len(body['zones']), 0)
 
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC - Users that are allowed to call list, but should get
+        #             zero zones.
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader',
+                                'os_admin', 'os_project_member',
+                                'os_project_reader']
+        else:
+            expected_allowed = ['os_alt']
+
+        self.check_list_RBAC_enforcement_count(
+            'ZonesClient', 'list_zones', expected_allowed, 0)
+
+        # Test that users who should see the zone, can see it.
+        expected_allowed = ['os_primary']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZonesClient', 'list_zones', expected_allowed, [zone['id']])
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZonesClient', 'list_zones', expected_allowed, [zone['id']],
+            headers=self.all_projects_header)
+        self.check_list_IDs_RBAC_enforcement(
+            'ZonesClient', 'list_zones', expected_allowed, [zone['id']],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
+
     @decorators.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')
     def test_update_zone(self):
         LOG.info('Create a zone')
@@ -215,6 +306,29 @@ class ZonesTest(BaseZonesTest):
 
         LOG.info('Ensure we respond with updated values')
         self.assertEqual(description, zone['description'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZonesClient', 'update_zone', expected_allowed, True,
+            zone['id'], description=description)
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZonesClient', 'update_zone', expected_allowed, False,
+            zone['id'], description=description,
+            headers=self.all_projects_header)
+        self.check_CUD_RBAC_enforcement(
+            'ZonesClient', 'update_zone', expected_allowed, False,
+            zone['id'], description=description,
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
     @decorators.idempotent_id('3acddc86-62cc-4bfa-8589-b99e5d239bf2')
     @decorators.skip_because(bug="1960487")
@@ -301,6 +415,29 @@ class ZonesTest(BaseZonesTest):
         self.assertCountEqual(
             pool_nameservers, zone_nameservers,
             'Failed - Pool and Zone nameservers should be the same')
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        expected_allowed = ['os_primary']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZonesClient', 'show_zone_nameservers', expected_allowed,
+            True, zone['id'])
+
+        # Test with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZonesClient', 'show_zone_nameservers', expected_allowed,
+            False, zone['id'], headers=self.all_projects_header)
+        self.check_list_show_RBAC_enforcement(
+            'ZonesClient', 'show_zone_nameservers', expected_allowed,
+            False, zone['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
 
 class ZonesAdminTest(BaseZonesTest):
