@@ -13,6 +13,7 @@
 # under the License.
 
 from socket import gaierror
+from unittest import expectedFailure
 
 from oslo_log import log as logging
 from tempest.lib import decorators
@@ -134,6 +135,7 @@ class ZoneTasksNegative(BaseZonesTest):
             LOG.info('Function "_query_nameserver" failed with:{} '.format(e))
         return query_succeeded
 
+    @expectedFailure
     @decorators.idempotent_id('ca250d92-8a2b-11eb-b49b-74e5f9e2a801')
     def test_manually_trigger_update_secondary_zone_negative(self):
         # Create a PRIMARY zone
