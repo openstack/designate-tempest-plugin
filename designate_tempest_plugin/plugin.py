@@ -18,6 +18,7 @@ from tempest import config
 from tempest.test_discover import plugins
 
 from designate_tempest_plugin import config as project_config
+from designate_tempest_plugin.services.dns import v2 as dns_v2_services
 
 
 class DesignateTempestPlugin(plugins.TempestPlugin):
@@ -87,11 +88,7 @@ class DesignateTempestPlugin(plugins.TempestPlugin):
             'name': 'dns_v2',
             'service_version': 'dns.v2',
             'module_path': 'designate_tempest_plugin.services.dns.v2',
-            'client_names': ['BlacklistsClient', 'PoolClient', 'QuotasClient',
-                             'RecordsetClient', 'TldClient',
-                             'TransferAcceptClient', 'TransferRequestClient',
-                             'TsigkeyClient', 'ZoneExportsClient',
-                             'ZoneImportsClient', 'ZonesClient']
+            'client_names': dns_v2_services.__all__
         }
         admin_params.update(dns_config)
         v2_params.update(dns_config)

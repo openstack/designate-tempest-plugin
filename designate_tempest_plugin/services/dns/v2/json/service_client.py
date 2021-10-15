@@ -14,7 +14,7 @@
 from designate_tempest_plugin.services.dns.v2.json import base
 
 
-class SevriceClient(base.DnsClientV2Base):
+class ServiceClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def list_statuses(self, headers=None):

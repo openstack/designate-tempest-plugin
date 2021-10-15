@@ -41,7 +41,7 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
     @classmethod
     def setup_clients(cls):
         super(DesignatePtrRecord, cls).setup_clients()
-        cls.primary_ptr_client = cls.os_primary.ptr_client
+        cls.primary_ptr_client = cls.os_primary.dns_v2.PtrClient()
         cls.primary_floating_ip_client = cls.os_primary.floating_ips_client
 
     def _set_ptr(self):
@@ -100,7 +100,7 @@ class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
     @classmethod
     def setup_clients(cls):
         super(DesignatePtrRecordNegative, cls).setup_clients()
-        cls.primary_ptr_client = cls.os_primary.ptr_client
+        cls.primary_ptr_client = cls.os_primary.dns_v2.PtrClient()
         cls.primary_floating_ip_client = cls.os_primary.floating_ips_client
 
     def _set_ptr(self, ptr_name=None, ttl=None, description=None,

@@ -31,9 +31,8 @@ class RecordsetsTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(RecordsetsTest, cls).setup_clients()
 
-        cls.client = cls.os_primary.zones_client
-        cls.recordset_client = cls.os_primary.recordset_client
-        cls.query_client = cls.os_primary.query_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @classmethod
     def resource_setup(cls):

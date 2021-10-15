@@ -46,11 +46,9 @@ class ZoneTasks(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneTasks, cls).setup_clients()
-
-        cls.client = cls.os_primary.zones_client
-        cls.alt_client = cls.os_alt.zones_client
-        cls.admin_client = cls.os_admin.zones_client
-        cls.query_client = cls.os_primary.query_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('287e2cd0-a0e7-11eb-b962-74e5f9e2a801')
     def test_zone_abandon(self):
@@ -118,11 +116,9 @@ class ZoneTasksNegative(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneTasksNegative, cls).setup_clients()
-
-        cls.client = cls.os_primary.zones_client
-        cls.alt_client = cls.os_alt.zones_client
-        cls.admin_client = cls.os_admin.zones_client
-        cls.query_client = cls.os_primary.query_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     def _query_nameserver(self, nameserver, query_timeout,
                           zone_name, zone_type='SOA'):

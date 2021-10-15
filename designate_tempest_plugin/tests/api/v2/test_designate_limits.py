@@ -31,8 +31,7 @@ class DesignateLimit(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(DesignateLimit, cls).setup_clients()
-
-        cls.admin_client = cls.os_admin.designate_limit_client
+        cls.admin_client = cls.os_admin.dns_v2.DesignateLimitClient()
 
     @decorators.idempotent_id('828572be-8662-11eb-8ff2-74e5f9e2a801')
     def test_list_designate_limits(self):

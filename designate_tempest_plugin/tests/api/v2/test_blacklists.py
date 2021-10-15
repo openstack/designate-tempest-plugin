@@ -39,7 +39,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
     @classmethod
     def setup_clients(cls):
         super(BlacklistsAdminTest, cls).setup_clients()
-        cls.admin_client = cls.os_admin.blacklists_client
+        cls.admin_client = cls.os_admin.dns_v2.BlacklistsClient()
 
     @decorators.idempotent_id('3a7f7564-6bdd-446e-addc-a3475b4c3f71')
     def test_create_blacklist(self):
@@ -123,7 +123,7 @@ class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
     @classmethod
     def setup_clients(cls):
         super(TestBlacklistNotFoundAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.blacklists_client
+        cls.admin_client = cls.os_admin.dns_v2.BlacklistsClient()
 
     @decorators.idempotent_id('9d65b638-fe98-47a8-853f-fa9244d144cc')
     def test_show_blacklist_404(self):
@@ -166,7 +166,7 @@ class TestBlacklistInvalidIdAdmin(BaseBlacklistsTest):
     @classmethod
     def setup_clients(cls):
         super(TestBlacklistInvalidIdAdmin, cls).setup_clients()
-        cls.admin_client = cls.os_admin.blacklists_client
+        cls.admin_client = cls.os_admin.dns_v2.BlacklistsClient()
 
     @decorators.idempotent_id('c7bae53f-2edc-45d8-b254-8a81482728c1')
     def test_show_blacklist_invalid_uuid(self):

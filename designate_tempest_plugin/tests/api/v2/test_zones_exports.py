@@ -38,12 +38,11 @@ class ZonesExportTest(BaseZoneExportsTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesExportTest, cls).setup_clients()
-
-        cls.zone_client = cls.os_primary.zones_client
-        cls.alt_zone_client = cls.os_alt.zones_client
-        cls.client = cls.os_primary.zone_exports_client
-        cls.alt_client = cls.os_alt.zone_exports_client
-        cls.admin_client = cls.os_admin.zone_exports_client
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
+        cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
+        cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
 
     @decorators.idempotent_id('2dd8a9a0-98a2-4bf6-bb51-286583b30f40')
     def test_create_zone_export(self):
@@ -228,10 +227,9 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesExportTestNegative, cls).setup_clients()
-
-        cls.zone_client = cls.os_primary.zones_client
-        cls.client = cls.os_primary.zone_exports_client
-        cls.alt_client = cls.os_alt.zone_exports_client
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
+        cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
 
     @decorators.idempotent_id('76ab8ec4-95fd-11eb-b1cd-74e5f9e2a801')
     def test_create_zone_export_using_invalid_zone_id(self):

@@ -38,8 +38,8 @@ class ServiceStatus(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(ServiceStatus, cls).setup_clients()
 
-        cls.client = cls.os_primary.service_client
-        cls.admin_client = cls.os_admin.service_client
+        cls.client = cls.os_primary.dns_v2.ServiceClient()
+        cls.admin_client = cls.os_admin.dns_v2.ServiceClient()
 
     @decorators.idempotent_id('bf277a76-8583-11eb-a557-74e5f9e2a801')
     def test_list_service_statuses(self):

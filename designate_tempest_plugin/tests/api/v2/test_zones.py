@@ -34,6 +34,7 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 class ZonesTest(BaseZonesTest):
     credentials = ['admin', 'primary']
+
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -43,9 +44,8 @@ class ZonesTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
-
-        cls.client = cls.os_primary.zones_client
-        cls.pool_client = cls.os_admin.pool_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.pool_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
     def test_create_zones(self):
@@ -203,10 +203,9 @@ class ZonesAdminTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesAdminTest, cls).setup_clients()
-
-        cls.client = cls.os_primary.zones_client
-        cls.admin_client = cls.os_admin.zones_client
-        cls.alt_client = cls.os_alt.zones_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('f6fe8cce-8b04-11eb-a861-74e5f9e2a801')
     def test_show_zone_impersonate_another_project(self):
@@ -300,9 +299,8 @@ class ZoneOwnershipTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneOwnershipTest, cls).setup_clients()
-
-        cls.client = cls.os_primary.zones_client
-        cls.alt_client = cls.os_alt.zones_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('5d28580a-a012-4b57-b211-e077b1a01340')
     def test_no_create_duplicate_domain(self):
@@ -353,7 +351,7 @@ class ZonesNegativeTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesNegativeTest, cls).setup_clients()
-        cls.client = cls.os_primary.zones_client
+        cls.client = cls.os_primary.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
     def test_no_valid_zone_name(self):

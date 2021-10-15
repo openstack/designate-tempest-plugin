@@ -15,41 +15,28 @@ from tempest import clients
 from tempest import config
 from tempest.lib import auth
 
-from designate_tempest_plugin.services.dns.v2.json.zones_client import \
-    ZonesClient
-from designate_tempest_plugin.services.dns.v2.json.zone_imports_client import \
-    ZoneImportsClient
 from designate_tempest_plugin.services.dns.v2.json.blacklists_client import \
     BlacklistsClient
-from designate_tempest_plugin.services.dns.v2.json.quotas_client import \
-    QuotasClient
-from designate_tempest_plugin.services.dns.v2.json.zone_exports_client import \
-    ZoneExportsClient
-from designate_tempest_plugin.services.dns.v2.json.recordset_client import \
-    RecordsetClient
 from designate_tempest_plugin.services.dns.v2.json.pool_client import \
     PoolClient
+from designate_tempest_plugin.services.dns.v2.json.recordset_client import \
+    RecordsetClient
 from designate_tempest_plugin.services.dns.v2.json.tld_client import \
     TldClient
-from designate_tempest_plugin.services.dns.admin.json.quotas_client import \
-    QuotasClient as AdminQuotaClient
+from designate_tempest_plugin.services.dns.v2.json.zones_client import \
+    ZonesClient
+# TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
+#               has been updated
+# https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
 from designate_tempest_plugin.services.dns.query.query_client import \
     QueryClient
-from designate_tempest_plugin.services.dns.v2.json.transfer_request_client \
-    import TransferRequestClient
-from designate_tempest_plugin.services.dns.v2.json.transfer_accepts_client \
-    import TransferAcceptClient
-from designate_tempest_plugin.services.dns.v2.json.tsigkey_client \
-    import TsigkeyClient
-from designate_tempest_plugin.services.dns.v2.json.service_client \
-    import SevriceClient
-from designate_tempest_plugin.services.dns.v2.json.designate_limit_client \
-    import DesignateLimitClient
-from designate_tempest_plugin.services.dns.v2.json.ptr_client import PtrClient
 
 CONF = config.CONF
 
 
+# TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
+#               has been updated
+# https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
 class ManagerV2(clients.Manager):
 
     def __init__(self, credentials=None):
@@ -58,19 +45,6 @@ class ManagerV2(clients.Manager):
 
     def _init_clients(self, params):
         self.zones_client = ZonesClient(**params)
-        self.zone_imports_client = ZoneImportsClient(**params)
-        self.blacklists_client = BlacklistsClient(**params)
-        self.quotas_client = QuotasClient(**params)
-        self.zone_exports_client = ZoneExportsClient(**params)
-        self.recordset_client = RecordsetClient(**params)
-        self.pool_client = PoolClient(**params)
-        self.tld_client = TldClient(**params)
-        self.transfer_request_client = TransferRequestClient(**params)
-        self.transfer_accept_client = TransferAcceptClient(**params)
-        self.tsigkey_client = TsigkeyClient(**params)
-        self.service_client = SevriceClient(**params)
-        self.designate_limit_client = DesignateLimitClient(**params)
-        self.ptr_client = PtrClient(**params)
 
         self.query_client = QueryClient(
             nameservers=CONF.dns.nameservers,
@@ -92,29 +66,7 @@ class ManagerV2(clients.Manager):
         return params
 
 
-class ManagerAdmin(clients.Manager):
-
-    def __init__(self, credentials=None):
-        super(ManagerAdmin, self).__init__(credentials)
-        self._init_clients(self._get_params())
-
-    def _init_clients(self, params):
-        self.quotas_client = AdminQuotaClient(**params)
-
-    def _get_params(self):
-        params = dict(self.default_params)
-        params.update({
-            'auth_provider': self.auth_provider,
-            'service': CONF.dns.catalog_type,
-            'region': CONF.identity.region,
-            'endpoint_type': CONF.dns.endpoint_type,
-            'build_interval': CONF.dns.build_interval,
-            'build_timeout': CONF.dns.build_timeout
-        })
-        return params
-
-
-class ManagerV2Unauthed(ManagerV2):
+class ManagerV2Unauthed(clients.Manager):
 
     def __init__(self, credentials=None):
         super(ManagerV2Unauthed, self).__init__(credentials)
@@ -127,11 +79,30 @@ class ManagerV2Unauthed(ManagerV2):
         )
         self._init_clients(self._get_params())
 
+    def _init_clients(self, params):
+        self.zones_client = ZonesClient(**params)
+        self.blacklists_client = BlacklistsClient(**params)
+        self.recordset_client = RecordsetClient(**params)
+        self.pool_client = PoolClient(**params)
+        self.tld_client = TldClient(**params)
+
     def _auth_provider_class(self):
         if CONF.identity.auth_version == 'v3':
             return KeystoneV3UnauthedProvider
         else:
             return KeystoneV2UnauthedProvider
+
+    def _get_params(self):
+        params = dict(self.default_params)
+        params.update({
+            'auth_provider': self.auth_provider,
+            'service': CONF.dns.catalog_type,
+            'region': CONF.identity.region,
+            'endpoint_type': CONF.dns.endpoint_type,
+            'build_interval': CONF.dns.build_interval,
+            'build_timeout': CONF.dns.build_timeout
+        })
+        return params
 
 
 class BaseUnauthedProvider(auth.KeystoneAuthProvider):

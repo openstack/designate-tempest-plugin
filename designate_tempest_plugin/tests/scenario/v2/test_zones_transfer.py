@@ -27,14 +27,14 @@ class ZonesTransferTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(ZonesTransferTest, cls).setup_clients()
-        cls.zones_client = cls.os_primary.zones_client
-        cls.alt_zones_client = cls.os_alt.zones_client
-        cls.admin_zones_client = cls.os_admin.zones_client
-        cls.request_client = cls.os_primary.transfer_request_client
-        cls.alt_request_client = cls.os_alt.transfer_request_client
-        cls.accept_client = cls.os_primary.transfer_accept_client
-        cls.alt_accept_client = cls.os_alt.transfer_accept_client
-        cls.admin_accept_client = cls.os_admin.transfer_accept_client
+        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.alt_zones_client = cls.os_alt.dns_v2.ZonesClient()
+        cls.admin_zones_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.request_client = cls.os_primary.dns_v2.TransferRequestClient()
+        cls.alt_request_client = cls.os_alt.dns_v2.TransferRequestClient()
+        cls.accept_client = cls.os_primary.dns_v2.TransferAcceptClient()
+        cls.alt_accept_client = cls.os_alt.dns_v2.TransferAcceptClient()
+        cls.admin_accept_client = cls.os_admin.dns_v2.TransferAcceptClient()
 
     @decorators.idempotent_id('60bd80ac-c979-4686-9a03-f2f775f272ab')
     def test_zone_transfer(self):

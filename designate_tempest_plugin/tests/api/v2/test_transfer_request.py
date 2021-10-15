@@ -39,11 +39,11 @@ class TransferRequestTest(BaseTransferRequestTest):
     def setup_clients(cls):
         super(TransferRequestTest, cls).setup_clients()
 
-        cls.zone_client = cls.os_primary.zones_client
-        cls.alt_zone_client = cls.os_alt.zones_client
-        cls.client = cls.os_primary.transfer_request_client
-        cls.alt_client = cls.os_alt.transfer_request_client
-        cls.admin_client = cls.os_admin.transfer_request_client
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
+        cls.client = cls.os_primary.dns_v2.TransferRequestClient()
+        cls.alt_client = cls.os_alt.dns_v2.TransferRequestClient()
+        cls.admin_client = cls.os_admin.dns_v2.TransferRequestClient()
 
     @decorators.idempotent_id('2381d489-ad84-403d-b0a2-8b77e4e966bf')
     def test_create_transfer_request(self):
@@ -282,7 +282,7 @@ class TestTransferRequestNotFound(BaseTransferRequestTest):
     @classmethod
     def setup_clients(cls):
         super(TestTransferRequestNotFound, cls).setup_clients()
-        cls.client = cls.os_primary.transfer_request_client
+        cls.client = cls.os_primary.dns_v2.TransferRequestClient()
 
     @decorators.idempotent_id('d255f72f-ba24-43df-9dba-011ed7f4625d')
     def test_show_transfer_request_404(self):
@@ -324,7 +324,7 @@ class TestTransferRequestInvalidId(BaseTransferRequestTest):
     @classmethod
     def setup_clients(cls):
         super(TestTransferRequestInvalidId, cls).setup_clients()
-        cls.client = cls.os_primary.transfer_request_client
+        cls.client = cls.os_primary.dns_v2.TransferRequestClient()
 
     @decorators.idempotent_id('2205dd19-ecc7-4c68-9e89-63c47d642b07')
     def test_show_transfer_request_invalid_uuid(self):
