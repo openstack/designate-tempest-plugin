@@ -25,45 +25,9 @@ from designate_tempest_plugin.services.dns.v2.json.tld_client import \
     TldClient
 from designate_tempest_plugin.services.dns.v2.json.zones_client import \
     ZonesClient
-# TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
-#               has been updated
-# https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
-from designate_tempest_plugin.services.dns.query.query_client import \
-    QueryClient
+
 
 CONF = config.CONF
-
-
-# TODO(johnsom) remove once neutron-tempest-plugin test_dns_integration
-#               has been updated
-# https://review.opendev.org/c/openstack/neutron-tempest-plugin/+/800291
-class ManagerV2(clients.Manager):
-
-    def __init__(self, credentials=None):
-        super(ManagerV2, self).__init__(credentials)
-        self._init_clients(self._get_params())
-
-    def _init_clients(self, params):
-        self.zones_client = ZonesClient(**params)
-
-        self.query_client = QueryClient(
-            nameservers=CONF.dns.nameservers,
-            query_timeout=CONF.dns.query_timeout,
-            build_interval=CONF.dns.build_interval,
-            build_timeout=CONF.dns.build_timeout,
-        )
-
-    def _get_params(self):
-        params = dict(self.default_params)
-        params.update({
-            'auth_provider': self.auth_provider,
-            'service': CONF.dns.catalog_type,
-            'region': CONF.identity.region,
-            'endpoint_type': CONF.dns.endpoint_type,
-            'build_interval': CONF.dns.build_interval,
-            'build_timeout': CONF.dns.build_timeout
-        })
-        return params
 
 
 class ManagerV2Unauthed(clients.Manager):
