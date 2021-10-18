@@ -81,9 +81,9 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', body['status'])
 
-    @decorators.idempotent_id('d03b69a5-5052-43bc-a38a-b511b6b34304')
-    @ddt.file_data("recordset_data.json")
-    def test_create_all_recordset_types(self, name, type, records):
+    # We cannot use DDT here as these tests are part of the refstack
+    # interoperability test suite and need to be unique for traceability.
+    def _test_create_recordset_type(self, name, type, records):
         if name is not None:
             recordset_name = name + "." + self.zone['name']
 
@@ -102,6 +102,55 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', body['status'])
+
+    @decorators.idempotent_id('d03b69a5-5052-43bc-a38a-b511b6b34304')
+    def test_create_recordset_type_A(self):
+        self._test_create_recordset_type(
+            "www", "A", ["192.0.2.1", "192.0.2.2", "192.0.2.3"])
+
+    @decorators.idempotent_id('ac110198-d58a-4a18-aceb-414d7e513d49')
+    def test_create_recordset_type_AAAA(self):
+        self._test_create_recordset_type(
+            "www", "AAAA", ["2001:db8::1", "2001:db8::1", "2001:db8::"])
+
+    @decorators.idempotent_id('6c22a3f9-3f4d-4b32-bdf2-5237851ed25e')
+    def test_create_recordset_type_SRV_TCP(self):
+        self._test_create_recordset_type(
+            "_sip._tcp", "SRV", ["10 60 5060 server1.example.com.",
+                                 "20 60 5060 server2.example.com.",
+                                 "20 30 5060 server3.example.com."])
+
+    @decorators.idempotent_id('59c1aa42-278e-4f7b-a6a1-4320d5daf1fd')
+    def test_create_recordset_type_SRV_UDP(self):
+        self._test_create_recordset_type(
+            "_sip._udp", "SRV", ["10 60 5060 server1.example.com.",
+                                 "10 60 5060 server2.example.com.",
+                                 "20 30 5060 server3.example.com."])
+
+    @decorators.idempotent_id('1ac46f94-f03a-4f85-b84f-826a2660b927')
+    def test_create_recordset_type_CNAME(self):
+        self._test_create_recordset_type(
+            "alias-of-target", "CNAME", ["target.example.org."])
+
+    @decorators.idempotent_id('bf872487-7975-4a96-bb03-d24e393a0ce8')
+    def test_create_recordset_type_MX_at_APEX(self):
+        self._test_create_recordset_type(
+            None, "MX", ["10 mail1.example.org.", "20 mail2.example.org."])
+
+    @decorators.idempotent_id('96fe72a4-a81c-4a01-a81f-39ebafad115c')
+    def test_create_recordset_type_MX_under_APEX(self):
+        self._test_create_recordset_type(
+            "under", "MX", ["10 mail.example.org."])
+
+    @decorators.idempotent_id('481496f1-917a-40d5-89fd-4a3794c24215')
+    def test_create_recordset_type_SSHFP(self):
+        self._test_create_recordset_type(
+            "www", "SSHFP", ["2 1 123456789abcdef67890123456789abcdef67890"])
+
+    @decorators.idempotent_id('8e7ecedb-5c35-46f8-ae0e-39e4aaabc97d')
+    def test_create_recordset_type_TXT(self):
+        self._test_create_recordset_type(
+            "www", "TXT", ["\"Any Old Text Goes Here\""])
 
     @decorators.idempotent_id('69f002e5-6511-43d3-abae-7abdd45ae03e')
     @ddt.file_data("recordset_wildcard_data.json")
