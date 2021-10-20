@@ -13,11 +13,13 @@
 #    under the License.
 
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -27,7 +29,7 @@ class BaseZoneExportsTest(base.BaseDnsV2Test):
 
 
 class ZonesExportTest(BaseZoneExportsTest):
-    credentials = ['primary', 'admin', 'alt']
+    credentials = ["primary", "admin", "system_admin", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -38,11 +40,14 @@ class ZonesExportTest(BaseZoneExportsTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesExportTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.ZoneExportsClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
         cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
-        cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
 
     @decorators.idempotent_id('2dd8a9a0-98a2-4bf6-bb51-286583b30f40')
     def test_create_zone_export(self):
@@ -150,7 +155,7 @@ class ZonesExportTest(BaseZoneExportsTest):
         #       pagination limit is only 20, we set a param limit of 1000 here.
         listed_exports_ids = [
             item['id'] for item in self.admin_client.list_zone_exports(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'limit': 1000})[1]['exports']]
 
         LOG.info('Make sure that all previously created zone '
@@ -185,7 +190,7 @@ class ZonesExportTest(BaseZoneExportsTest):
                  ' expected: empty list')
         self.assertEqual(
             [], self.admin_client.list_zone_exports(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'status': 'ZAHLABUT'})[1]['exports'],
             'Failed, filtered result is expected to be empty.')
 
@@ -193,7 +198,7 @@ class ZonesExportTest(BaseZoneExportsTest):
                  ' expected: empty list')
         self.assertEqual(
             [], self.admin_client.list_zone_exports(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'message': 'ZABABUN'})[1]['exports'],
             'Failed, filtered result is expected to be empty.')
 
@@ -201,7 +206,7 @@ class ZonesExportTest(BaseZoneExportsTest):
                  'a primary zone. Expected: single zone export is listed')
         self.assertEqual(
             1, len(self.admin_client.list_zone_exports(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'zone_id': primary_zone['id']})[1]['exports']),
             'Failed, filtered result should contain a single zone '
             '(primary zone export)')
@@ -210,13 +215,13 @@ class ZonesExportTest(BaseZoneExportsTest):
                  'an alt zone expected: empty list (it was deleted)')
         self.assertEqual(
             [], self.admin_client.list_zone_exports(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'zone_id': alt_zone['id']})[1]['exports'],
             'Failed, filtered result should be empty.')
 
 
 class ZonesExportTestNegative(BaseZoneExportsTest):
-    credentials = ['primary', 'alt']
+    credentials = ["primary", "alt"]
 
     @classmethod
     def setup_credentials(cls):

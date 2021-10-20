@@ -18,15 +18,13 @@ from tempest.lib import decorators
 
 from designate_tempest_plugin.tests import base
 
-LOG = logging.getLogger(__name__)
-
-
 CONF = config.CONF
+LOG = logging.getLogger(__name__)
 
 
 class ServiceStatus(base.BaseDnsV2Test):
 
-    credentials = ['primary', 'admin']
+    credentials = ["primary", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -37,9 +35,11 @@ class ServiceStatus(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(ServiceStatus, cls).setup_clients()
-
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.ServiceClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.ServiceClient()
         cls.client = cls.os_primary.dns_v2.ServiceClient()
-        cls.admin_client = cls.os_admin.dns_v2.ServiceClient()
 
     @decorators.idempotent_id('bf277a76-8583-11eb-a557-74e5f9e2a801')
     def test_list_service_statuses(self):

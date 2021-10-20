@@ -27,7 +27,7 @@ class ZonesClient(base.DnsClientV2Base):
     def create_zone(self, name=None, email=None, ttl=None, description=None,
                     attributes=None, wait_until=False,
                     zone_type=const.PRIMARY_ZONE_TYPE,
-                    primaries=None, params=None):
+                    primaries=None, params=None, project_id=None):
 
         """Create a zone with the specified parameters.
 
@@ -50,6 +50,8 @@ class ZonesClient(base.DnsClientV2Base):
             Default: None
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param project_id: When specified, overrides the project ID the zone
+                           will be associated with.
         :return: A tuple with the server response and the created zone.
         """
 
@@ -76,13 +78,23 @@ class ZonesClient(base.DnsClientV2Base):
                     ' for a SECONDARY zone type')
 
             zone['masters'] = primaries
-        resp, body = self._create_request('zones', zone, params=params)
+
+        headers = None
+        extra_headers = False
+        if project_id:
+            headers = {'x-auth-sudo-project-id': project_id}
+            extra_headers = True
+
+        resp, body = self._create_request('zones', zone, params=params,
+                                          headers=headers,
+                                          extra_headers=extra_headers)
 
         # Create Zone should Return a HTTP 202
         self.expected_success(202, resp.status)
 
         if wait_until:
-            waiters.wait_for_zone_status(self, body['id'], wait_until)
+            waiters.wait_for_zone_status(self, body['id'], wait_until,
+                                         headers=headers)
 
         return resp, body
 

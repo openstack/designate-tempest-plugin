@@ -13,6 +13,7 @@
 #    under the License.
 
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
@@ -21,6 +22,7 @@ from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -30,7 +32,7 @@ class BaseZonesImportTest(base.BaseDnsV2Test):
 
 
 class ZonesImportTest(BaseZonesImportTest):
-    credentials = ['primary', 'admin', 'alt']
+    credentials = ["primary", "admin", "system_admin", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -41,10 +43,13 @@ class ZonesImportTest(BaseZonesImportTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.ZoneImportsClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.ZoneImportsClient()
         cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZoneImportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneImportsClient()
-        cls.admin_client = cls.os_admin.dns_v2.ZoneImportsClient()
 
     def clean_up_resources(self, zone_import_id):
         zone_import = self.client.show_zone_import(zone_import_id)[1]
@@ -195,15 +200,15 @@ class ZonesImportTest(BaseZonesImportTest):
                  '"x-auth-all-projects" HTTP header, Expected: 403 Forbidden')
         self.assertRaises(
             lib_exc.Forbidden, lambda: self.alt_client.list_zone_imports(
-                headers={'x-auth-all-projects': True}))
+                headers=self.all_projects_header))
 
         LOG.info('As Admin tenant list import zones for all projects')
         # Note: This is an all-projects list call, so other tests running
         #       in parallel will impact the list result set. Since the default
         #       pagination limit is only 20, we set a param limit of 1000 here.
-        body = self.admin_client.list_zone_imports(headers={
-                'x-auth-all-projects': True},
-                params={'limit': 1000})[1]['imports']
+        body = self.admin_client.list_zone_imports(
+            headers=self.all_projects_header,
+            params={'limit': 1000})[1]['imports']
 
         LOG.info('Ensure the fetched response includes previously '
                  'created import ID')

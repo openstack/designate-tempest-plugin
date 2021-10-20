@@ -12,12 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -27,7 +29,7 @@ class BaseTransferAcceptTest(base.BaseDnsV2Test):
 
 
 class TransferAcceptTest(BaseTransferAcceptTest):
-    credentials = ['primary', 'alt', 'admin']
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -50,9 +52,18 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         cls.alt_accept_client = cls.os_alt.dns_v2.TransferAcceptClient()
 
         # Admin clients
-        cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
-        cls.admin_request_client = cls.os_admin.dns_v2.TransferRequestClient()
-        cls.admin_accept_client = cls.os_admin.dns_v2.TransferAcceptClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
+            cls.admin_request_client = (cls.os_system_admin.dns_v2.
+                                        TransferRequestClient())
+            cls.admin_accept_client = (cls.os_system_admin.dns_v2.
+                                       TransferAcceptClient())
+        else:
+            cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
+            cls.admin_request_client = (cls.os_admin.dns_v2.
+                                        TransferRequestClient())
+            cls.admin_accept_client = (cls.os_admin.dns_v2.
+                                       TransferAcceptClient())
 
     @decorators.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
     def test_create_transfer_accept(self):
@@ -60,7 +71,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         _, zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
-            headers={'x-auth-all-projects': True},
+            headers=self.all_projects_header,
             ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone transfer_request')
@@ -89,7 +100,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         _, zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
-            headers={'x-auth-all-projects': True},
+            headers=self.all_projects_header,
             ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone transfer_request')
@@ -125,7 +136,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
-            headers={'x-auth-all-projects': True},
+            headers=self.all_projects_header,
             ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a Primary zone transfer_request')
@@ -170,7 +181,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
             self.addCleanup(
                 self.wait_zone_delete, self.admin_zone_client, zone['id'],
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 ignore_errors=lib_exc.NotFound)
 
             LOG.info('Create a Primary zone transfer_request')
@@ -203,7 +214,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         admin_client_accept_ids = [
             item['id'] for item in
             self.admin_accept_client.list_transfer_accept(
-                headers={'x-auth-all-projects': True}, params={'limit': 1000})]
+                headers=self.all_projects_header, params={'limit': 1000})]
         for tr_id in transfer_request_ids:
             self.assertIn(
                 tr_id, admin_client_accept_ids,
@@ -217,7 +228,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         admin_client_accept_ids = [
             item['id'] for item in
             self.admin_accept_client.list_transfer_accept(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'status': 'COMPLETE'})]
         for tr_id in transfer_request_ids:
             self.assertIn(
@@ -234,7 +245,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         admin_client_accept_ids = [
             item['id'] for item in
             self.admin_accept_client.list_transfer_accept(
-                headers={'x-auth-all-projects': True},
+                headers=self.all_projects_header,
                 params={'status': not_existing_status})]
         self.assertEmpty(
             admin_client_accept_ids,
@@ -255,7 +266,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         # for a zone.
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
-            headers={'x-auth-all-projects': True},
+            headers=self.all_projects_header,
             ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone transfer_request as primary tenant')
@@ -294,7 +305,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
 class TransferAcceptTestNegative(BaseTransferAcceptTest):
 
-    credentials = ['primary', 'alt', 'admin']
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):

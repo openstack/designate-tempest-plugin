@@ -19,9 +19,8 @@ from tempest.lib import exceptions as lib_exc
 from designate_tempest_plugin.tests import base
 import tempest.test
 
-LOG = logging.getLogger(__name__)
-
 CONF = config.CONF
+LOG = logging.getLogger(__name__)
 
 
 class BasePtrTest(base.BaseDnsV2Test):
@@ -30,7 +29,7 @@ class BasePtrTest(base.BaseDnsV2Test):
 
 
 class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
-    credentials = ['primary']
+    credentials = ["primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -89,7 +88,7 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
 
 
 class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
-    credentials = ['primary']
+    credentials = ["primary"]
 
     @classmethod
     def setup_credentials(cls):
