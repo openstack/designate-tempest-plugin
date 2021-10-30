@@ -15,6 +15,7 @@ from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+from tempest.lib.common.utils import data_utils as tempest_data_utils
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
@@ -52,6 +53,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
             cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
         cls.alt_client = cls.os_alt.dns_v2.QuotasClient()
+        cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
 
     def _store_quotas(self, project_id, cleanup=True):
         """Remember current quotas and reset them after the test"""
@@ -172,11 +174,11 @@ class QuotasV2Test(base.BaseDnsV2Test):
         if not CONF.dns_feature_enabled.api_v2_quotas_verify_project:
             raise self.skipException("Project ID in quotas "
                                      "is not being verified.")
-
+        original_quotas = self.quotas_client.show_quotas(
+            project_id=self.quotas_client.project_id)[1]
         project_id = 'project-that-does-not-exist'
 
         LOG.info("Updating quotas for non-existing %s ", project_id)
-
         quotas = dns_data_utils.rand_quotas()
         request = quotas.copy()
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_project', 400):
@@ -184,3 +186,75 @@ class QuotasV2Test(base.BaseDnsV2Test):
                 project_id=project_id,
                 headers=self.all_projects_header,
                 **request)
+
+        LOG.info("Make sure that the quotas weren't changed")
+        _, client_body = self.quotas_client.show_quotas(
+            project_id=self.quotas_client.project_id)
+        self.assertExpected(original_quotas, client_body, [])
+
+    @decorators.idempotent_id('ae82a0ba-da60-11eb-bf12-74e5f9e2a801')
+    def test_admin_sets_quota_for_a_project(self):
+
+        primary_project_id = self.quotas_client.project_id
+        http_headers_to_use = [
+            {'X-Auth-All-Projects': True},
+            {'x-auth-sudo-project-id': primary_project_id}]
+
+        for http_header in http_headers_to_use:
+            LOG.info('As Admin user set Zones quota for a Primary user and {} '
+                     'HTTP header'.format(http_header))
+            quotas = dns_data_utils.rand_quotas()
+            self.admin_client.set_quotas(
+                project_id=primary_project_id,
+                quotas=quotas, headers=http_header)
+            self.addCleanup(self.admin_client.delete_quotas,
+                            project_id=primary_project_id)
+
+            LOG.info("As Admin fetch the quotas for a Primary user")
+            body = self.admin_client.show_quotas(
+                project_id=primary_project_id, headers=http_header)[1]
+            LOG.info('Ensuring that the "set" and "shown" quotas are same')
+            self.assertExpected(quotas, body, [])
+
+    @decorators.idempotent_id('40b9d7ac-da5f-11eb-bf12-74e5f9e2a801')
+    def test_primary_fails_to_set_quota(self):
+
+        primary_project_id = self.quotas_client.project_id
+        LOG.info('Try to set quota as Primary user')
+        self.assertRaises(
+            lib_exc.Forbidden, self.quotas_client.set_quotas,
+            project_id=primary_project_id,
+            quotas=dns_data_utils.rand_quotas())
+
+        LOG.info('Try to set quota as Primary user using '
+                 '"x-auth-sudo-project-id" HTTP header')
+        self.assertRaises(
+            lib_exc.Forbidden, self.quotas_client.set_quotas,
+            project_id=self.quotas_client.project_id,
+            quotas=dns_data_utils.rand_quotas(),
+            headers={'x-auth-sudo-project-id': primary_project_id})
+
+        LOG.info('Try to set quota as Primary user using '
+                 '"x-auth-all-projects" HTTP header')
+        self.assertRaises(
+            lib_exc.Forbidden, self.quotas_client.set_quotas,
+            project_id=self.quotas_client.project_id,
+            quotas=dns_data_utils.rand_quotas(),
+            headers={'x-auth-all-projects': True})
+
+    @decorators.idempotent_id('a6ce5b46-dcce-11eb-903e-74e5f9e2a801')
+    @decorators.skip_because(bug="1934596")
+    def test_admin_sets_invalid_quota_values(self):
+
+        primary_project_id = self.quotas_client.project_id
+        http_header = {'X-Auth-All-Projects': True}
+
+        for item in ['zones', 'zone_records',
+                     'zone_recordsets', 'recordset_records']:
+            quota = dns_data_utils.rand_quotas()
+            quota[item] = tempest_data_utils.rand_name()
+            self.assertRaises(
+                lib_exc.BadRequest, self.admin_client.set_quotas,
+                project_id=primary_project_id,
+                quotas=quota,
+                headers=http_header)
