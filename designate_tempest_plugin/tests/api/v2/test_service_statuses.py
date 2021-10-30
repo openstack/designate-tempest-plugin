@@ -15,6 +15,8 @@ from oslo_log import log as logging
 from designate_tempest_plugin.common import constants as const
 from tempest import config
 from tempest.lib import decorators
+from tempest.lib import exceptions as lib_exc
+
 
 from designate_tempest_plugin.tests import base
 
@@ -24,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 class ServiceStatus(base.BaseDnsV2Test):
 
-    credentials = ["primary", "admin", "system_admin"]
+    credentials = ["primary", "admin", "system_admin", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -41,8 +43,11 @@ class ServiceStatus(base.BaseDnsV2Test):
             cls.admin_client = cls.os_admin.dns_v2.ServiceClient()
         cls.client = cls.os_primary.dns_v2.ServiceClient()
 
+        cls.primary_client = cls.os_primary.dns_v2.ServiceClient()
+        cls.alt_client = cls.os_alt.dns_v2.ServiceClient()
+
     @decorators.idempotent_id('bf277a76-8583-11eb-a557-74e5f9e2a801')
-    def test_list_service_statuses(self):
+    def test_admin_list_service_statuses(self):
 
         services_statuses_tup = [
             (item['service_name'],
@@ -64,3 +69,19 @@ class ServiceStatus(base.BaseDnsV2Test):
             {const.UP}, set([item[1] for item in services_statuses_tup]),
             "Failed, not all listed services are in UP status, "
             "services: {}".format(services_statuses_tup))
+
+    @decorators.idempotent_id('d4753f76-de43-11eb-91d1-74e5f9e2a801')
+    def test_primary_is_forbidden_to_list_service_statuses(self):
+
+        LOG.info('Try to "list service statuses" as Primary user')
+        self.assertRaises(
+            lib_exc.Forbidden, self.primary_client.list_statuses)
+
+        headers = [{'x-auth-all-projects': True},
+                   {'x-auth-sudo-project-id': self.alt_client.project_id}]
+        for header in headers:
+            LOG.info('Try to "list service statuses" using {} '
+                     'HTTP header'.format(header))
+            self.assertRaises(
+                lib_exc.Forbidden, self.primary_client.list_statuses,
+                headers=header)
