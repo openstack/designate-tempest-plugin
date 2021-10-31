@@ -30,8 +30,7 @@ class BaseBlacklistsTest(base.BaseDnsV2Test):
 
 class BlacklistsAdminTest(BaseBlacklistsTest):
 
-    credentials = ["admin", "system_admin"]
-
+    credentials = ["admin", "system_admin", "primary"]
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -41,10 +40,12 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
     @classmethod
     def setup_clients(cls):
         super(BlacklistsAdminTest, cls).setup_clients()
+
         if CONF.enforce_scope.designate:
             cls.admin_client = cls.os_system_admin.dns_v2.BlacklistsClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.BlacklistsClient()
+        cls.primary_client = cls.os_primary.dns_v2.BlacklistsClient()
 
     @decorators.idempotent_id('3a7f7564-6bdd-446e-addc-a3475b4c3f71')
     def test_create_blacklist(self):
@@ -57,6 +58,30 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         self.addCleanup(self.admin_client.delete_blacklist, body['id'])
 
         self.assertExpected(blacklist, body, self.excluded_keys)
+
+    @decorators.idempotent_id('ea608152-da3c-11eb-b8b8-74e5f9e2a801')
+    @decorators.skip_because(bug="1934252")
+    def test_create_blacklist_invalid_pattern(self):
+        patterns = ['', '#(*&^%$%$#@$', 'a' * 1000]
+        for pattern in patterns:
+            LOG.info(
+                'Try to create a blacklist using pattern:{}'.format(pattern))
+            self.assertRaises(
+                lib_exc.BadRequest, self.admin_client.create_blacklist,
+                pattern=pattern)
+
+    @decorators.idempotent_id('664bdaa0-da47-11eb-b8b8-74e5f9e2a801')
+    def test_create_blacklist_huge_size_description(self):
+        LOG.info('Try to create a blacklist using huge size description')
+        self.assertRaises(
+            lib_exc.BadRequest, self.admin_client.create_blacklist,
+            description='a' * 1000)
+
+    @decorators.idempotent_id('fe9de464-d8d1-11eb-bcdc-74e5f9e2a801')
+    def test_create_blacklist_as_primary_fails(self):
+        LOG.info('As Primary user, try to create a blacklist')
+        self.assertRaises(
+            lib_exc.Forbidden, self.primary_client.create_blacklist)
 
     @decorators.idempotent_id('5bc02942-6225-4619-8f49-2105581a8dd6')
     def test_show_blacklist(self):
