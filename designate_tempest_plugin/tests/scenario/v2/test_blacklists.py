@@ -47,22 +47,23 @@ class BlacklistE2E(BaseBlacklistsTest):
     def test_primary_fails_to_create_zone_matches_blacklist_regex(self):
         LOG.info('Create a blacklist using regex')
         blacklist = {
-            'pattern': '^a.*',
-            'description': 'Zone starts with "a" char'}
+            'pattern': '^blacklistregextest.*',
+            'description': 'Zone starts with "blacklistregextest" char'}
         body = self.admin_blacklist_client.create_blacklist(**blacklist)[1]
         self.addCleanup(
             self.admin_blacklist_client.delete_blacklist, body['id'])
 
-        LOG.info('Try to create a zone that is starts with "a" character')
+        LOG.info('Try to create a zone that is starts with '
+                 '"blacklistregextest".')
         self.assertRaisesDns(
             lib_exc.BadRequest, 'invalid_zone_name', 400,
             self.primary_zone_client.create_zone,
-            name='a' + dns_data_utils.rand_zone_name())
+            name='blacklistregextest' + dns_data_utils.rand_zone_name())
 
     @decorators.idempotent_id('6956f20c-d8d5-11eb-bcdc-74e5f9e2a801')
     def test_primary_fails_to_create_zone_matches_blacklist_name(self):
         LOG.info('Create a blacklist using the exact name(string)')
-        zone_name = dns_data_utils.rand_zone_name()
+        zone_name = 'blacklistnametest' + dns_data_utils.rand_zone_name()
         blacklist = {
             'pattern': zone_name,
             'description': 'Zone named:{} '.format(zone_name)}
@@ -78,9 +79,10 @@ class BlacklistE2E(BaseBlacklistsTest):
     @decorators.idempotent_id('de030088-d97e-11eb-8ab8-74e5f9e2a801')
     def test_admin_creates_zone_matches_blacklist_name_or_regex(self):
         LOG.info('Create a blacklists using: regex and exact string(name)')
-        zone_name = dns_data_utils.rand_zone_name()
+        zone_name = 'blacklistnameregextest1' + dns_data_utils.rand_zone_name()
         blacklists = [
-            {'pattern': '^a.*', 'description': 'Zone starts with "a" char'},
+            {'pattern': '^blacklistnameregextest2.*',
+             'description': 'Zone starts with "a" char'},
             {'pattern': zone_name,
              'description': 'Deny if Zone named:{} '.format(zone_name)}]
         for blacklist in blacklists:
@@ -91,7 +93,8 @@ class BlacklistE2E(BaseBlacklistsTest):
         LOG.info('As Admin user try to create zones that are '
                  'supposed to be blocked')
         zone = self.admin_zone_client.create_zone(
-            name='a' + dns_data_utils.rand_zone_name())[1]
+            name='blacklistnameregextest2' +
+                 dns_data_utils.rand_zone_name())[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'])
         zone = self.admin_zone_client.create_zone(name=zone_name)[1]
