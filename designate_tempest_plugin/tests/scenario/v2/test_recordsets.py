@@ -56,7 +56,7 @@ class RecordsetsTest(base.BaseDnsV2Test):
 
     @decorators.attr(type='slow')
     @decorators.idempotent_id('4664ed66-9ff1-45f2-9e60-d4913195c505')
-    @ddt.file_data("../../api/v2/recordset_data.json")
+    @ddt.file_data("recordset_data.json")
     def test_create_and_delete_records_on_existing_zone(self, name,
                                                         type, records):
         if name is not None:
