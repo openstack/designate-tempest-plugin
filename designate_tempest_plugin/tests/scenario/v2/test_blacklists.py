@@ -13,12 +13,14 @@
 # under the License.
 
 from oslo_log import log as logging
+from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -28,7 +30,7 @@ class BaseBlacklistsTest(base.BaseDnsV2Test):
 
 class BlacklistE2E(BaseBlacklistsTest):
 
-    credentials = ["admin", 'primary']
+    credentials = ["admin", 'primary', 'system_admin']
 
     @classmethod
     def setup_credentials(cls):
@@ -39,8 +41,13 @@ class BlacklistE2E(BaseBlacklistsTest):
     @classmethod
     def setup_clients(cls):
         super(BlacklistE2E, cls).setup_clients()
-        cls.admin_blacklist_client = cls.os_admin.dns_v2.BlacklistsClient()
-        cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
+        if CONF.enforce_scope.designate:
+            cls.admin_blacklist_client = (
+                cls.os_system_admin.dns_v2.BlacklistsClient())
+            cls.admin_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
+        else:
+            cls.admin_blacklist_client = cls.os_admin.dns_v2.BlacklistsClient()
+            cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
         cls.primary_zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('22b1ee72-d8d2-11eb-bcdc-74e5f9e2a801')
@@ -94,9 +101,11 @@ class BlacklistE2E(BaseBlacklistsTest):
                  'supposed to be blocked')
         zone = self.admin_zone_client.create_zone(
             name='blacklistnameregextest2' +
-                 dns_data_utils.rand_zone_name())[1]
+                 dns_data_utils.rand_zone_name(),
+            project_id=self.primary_zone_client.project_id)[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'])
-        zone = self.admin_zone_client.create_zone(name=zone_name)[1]
+        zone = self.admin_zone_client.create_zone(
+            name=zone_name, project_id=self.primary_zone_client.project_id)[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'])
