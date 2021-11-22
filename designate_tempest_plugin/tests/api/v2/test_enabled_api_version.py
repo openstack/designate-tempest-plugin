@@ -51,8 +51,8 @@ class DesignateApiVersion(base.BaseDnsV2Test, service_base.DnsClientV2Base):
                 versions = self.primary_client.list_enabled_api_versions()[1][
                     'versions']['values']
             if user == 'not_auth_user':
-                uri = CONF.identity.uri.split('identity')[0] + 'dns'
-                response = requests.get(uri, verify=False)
+                response = requests.get(self.primary_client.base_url,
+                                        verify=False)
                 headers = {
                     k.lower(): v.lower() for k, v in response.headers.items()}
                 versions = self.deserialize(
