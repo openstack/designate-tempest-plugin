@@ -15,16 +15,16 @@ from tempest import clients
 from tempest import config
 from tempest.lib import auth
 
-from designate_tempest_plugin.services.dns.v2.json.blacklists_client import \
-    BlacklistsClient
-from designate_tempest_plugin.services.dns.v2.json.pool_client import \
-    PoolClient
-from designate_tempest_plugin.services.dns.v2.json.recordset_client import \
-    RecordsetClient
-from designate_tempest_plugin.services.dns.v2.json.tld_client import \
-    TldClient
-from designate_tempest_plugin.services.dns.v2.json.zones_client import \
-    ZonesClient
+from designate_tempest_plugin.services.dns.v2.json.blacklists_client import (
+    BlacklistsClient)
+from designate_tempest_plugin.services.dns.v2.json.pool_client import (
+    PoolClient)
+from designate_tempest_plugin.services.dns.v2.json.recordset_client import (
+    RecordsetClient)
+from designate_tempest_plugin.services.dns.v2.json.tld_client import (
+    TldClient)
+from designate_tempest_plugin.services.dns.v2.json.zones_client import (
+    ZonesClient)
 
 
 CONF = config.CONF

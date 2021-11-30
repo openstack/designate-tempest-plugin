@@ -23,8 +23,8 @@ from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.common import waiters
-from designate_tempest_plugin.services.dns.query.query_client \
-    import SingleQueryClient
+from designate_tempest_plugin.services.dns.query.query_client import (
+    SingleQueryClient)
 
 LOG = logging.getLogger(__name__)
 

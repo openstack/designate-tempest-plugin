@@ -95,8 +95,8 @@ def rand_quotas(zones=None, zone_records=None, zone_recordsets=None,
     }
 
     if CONF.dns_feature_enabled.bug_1573141_fixed:
-        quotas_dict['api_export_size'] = \
-            api_export_size or data_utils.rand_int_id(100, 999999)
+        quotas_dict['api_export_size'] = (
+            api_export_size or data_utils.rand_int_id(100, 999999))
     else:
         LOG.warning("Leaving `api_export_size` out of quota data due to: "
                     "https://bugs.launchpad.net/designate/+bug/1573141")
@@ -190,8 +190,7 @@ def rand_sshfp_recordset(zone_name, algorithm_number=None,
                          **kwargs):
     algorithm_number = algorithm_number or 2
     fingerprint_type = fingerprint_type or 1
-    fingerprint = fingerprint or \
-        "123456789abcdef67890123456789abcdef67890"
+    fingerprint = fingerprint or "123456789abcdef67890123456789abcdef67890"
 
     data = "%s %s %s" % (algorithm_number, fingerprint_type, fingerprint)
     return rand_recordset_data('SSHFP', zone_name, records=[data], **kwargs)

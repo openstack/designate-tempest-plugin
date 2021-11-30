@@ -17,8 +17,8 @@ from tempest.lib import decorators
 from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin import data_utils as dns_data_utils
-from designate_tempest_plugin.tests.api.v2.test_zones_imports import \
-    BaseZonesImportTest
+from designate_tempest_plugin.tests.api.v2.test_zones_imports import (
+    BaseZonesImportTest)
 
 LOG = logging.getLogger(__name__)
 

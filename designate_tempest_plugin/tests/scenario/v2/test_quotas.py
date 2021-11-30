@@ -92,8 +92,8 @@ class QuotasV2Test(base.BaseDnsV2Test):
     def _reach_quota_limit(
             self, limit_threshold, quota_type, zone=None):
         attempt_number = 0
-        not_raised_msg = "Failed, expected '413 over_quota' response of " \
-                         "type:{} wasn't received.".format(quota_type)
+        not_raised_msg = ("Failed, expected '413 over_quota' response of "
+                          "type:{} wasn't received.".format(quota_type))
         while attempt_number <= limit_threshold + 1:
             try:
                 attempt_number += 1
@@ -136,8 +136,8 @@ class QuotasV2Test(base.BaseDnsV2Test):
                 raised_err = str(e).replace(' ', '')
                 if not_raised_msg in str(e):
                     raise AssertionError(not_raised_msg)
-                elif "'code':413" in raised_err and \
-                        "'type':'over_quota'" in raised_err:
+                elif ("'code':413" in raised_err and
+                      "'type':'over_quota'" in raised_err):
                     LOG.info("OK, type':'over_quota' was raised")
                     break
                 else:
@@ -309,10 +309,9 @@ class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
             cls.quota_client = cls.os_system_admin.dns_v2.QuotasClient()
             cls.project_client = cls.os_system_admin.projects_client
             cls.zone_client = cls.os_system_admin.dns_v2.ZonesClient()
-            cls.recordset_client = \
-                cls.os_system_admin.dns_v2.RecordsetClient()
-            cls.export_zone_client = \
-                cls.os_system_admin.dns_v2.ZoneExportsClient()
+            cls.recordset_client = cls.os_system_admin.dns_v2.RecordsetClient()
+            cls.export_zone_client = (
+                cls.os_system_admin.dns_v2.ZoneExportsClient())
         else:
             cls.quota_client = cls.os_admin.dns_v2.QuotasClient()
             cls.project_client = cls.os_admin.projects_client

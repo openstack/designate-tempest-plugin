@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-from designate_tempest_plugin.services.dns.admin.json.quotas_client import \
-    QuotasClient
+from designate_tempest_plugin.services.dns.admin.json.quotas_client import (
+    QuotasClient)
 
 __all__ = ['QuotasClient']

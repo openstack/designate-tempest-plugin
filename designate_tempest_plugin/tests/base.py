@@ -15,8 +15,8 @@ from tempest import test
 from tempest import config
 from tempest.lib.common.utils import test_utils as utils
 
-from designate_tempest_plugin.services.dns.query.query_client import \
-    QueryClient
+from designate_tempest_plugin.services.dns.query.query_client import (
+    QueryClient)
 from designate_tempest_plugin.tests import rbac_utils
 
 
