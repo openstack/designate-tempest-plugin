@@ -96,8 +96,8 @@ def rand_quotas(zones=None, zone_records=None, zone_recordsets=None,
         quotas_dict['api_export_size'] = \
             api_export_size or data_utils.rand_int_id(100, 999999)
     else:
-        LOG.warn("Leaving `api_export_size` out of quota data due to: "
-                 "https://bugs.launchpad.net/designate/+bug/1573141")
+        LOG.warning("Leaving `api_export_size` out of quota data due to: "
+                    "https://bugs.launchpad.net/designate/+bug/1573141")
 
     return quotas_dict
 
