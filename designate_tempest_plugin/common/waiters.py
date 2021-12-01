@@ -18,6 +18,9 @@ from oslo_log import log as logging
 from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 
+from designate_tempest_plugin.common import constants as const
+from designate_tempest_plugin.common import exceptions
+
 LOG = logging.getLogger(__name__)
 
 
@@ -34,6 +37,10 @@ def wait_for_zone_404(client, zone_id):
         except lib_exc.NotFound:
             LOG.info('Zone %s is 404ing', zone_id)
             return
+
+        if zone['status'] == const.ERROR:
+            raise exceptions.InvalidStatusError('Zone', zone_id,
+                                                zone['status'])
 
         if int(time.time()) - start >= client.build_timeout:
             message = ('Zone %(zone_id)s failed to 404 within the required '
