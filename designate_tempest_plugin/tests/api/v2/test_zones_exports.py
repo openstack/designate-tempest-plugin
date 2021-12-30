@@ -16,8 +16,11 @@ from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+from tempest.lib.common.utils import data_utils
 
 from designate_tempest_plugin.tests import base
+from designate_tempest_plugin.common import waiters
+from designate_tempest_plugin.common import constants as const
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -49,32 +52,32 @@ class ZonesExportTest(BaseZoneExportsTest):
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
 
-    @decorators.idempotent_id('2dd8a9a0-98a2-4bf6-bb51-286583b30f40')
-    def test_create_zone_export(self):
+    def _create_zone_export(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone = self.zone_client.create_zone()[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone export')
-        _, zone_export = self.client.create_zone_export(zone['id'])
+        zone_export = self.client.create_zone_export(zone['id'])[1]
         self.addCleanup(self.client.delete_zone_export, zone_export['id'])
+        waiters.wait_for_zone_export_status(
+            self.client, zone_export['id'], const.COMPLETE)
+        return zone, zone_export
+
+    @decorators.idempotent_id('2dd8a9a0-98a2-4bf6-bb51-286583b30f40')
+    def test_create_zone_export(self):
+        zone_export = self._create_zone_export()[1]
 
         LOG.info('Ensure we respond with PENDING')
-        self.assertEqual('PENDING', zone_export['status'])
+        self.assertEqual(const.PENDING, zone_export['status'])
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('2d29a2a9-1941-4b7e-9d8a-ad6c2140ea68')
     def test_show_zone_export(self):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
-        LOG.info('Create a zone export')
-        resp, zone_export = self.client.create_zone_export(zone['id'])
-        self.addCleanup(self.client.delete_zone_export, zone_export['id'])
+        zone_export = self._create_zone_export()[1]
 
         LOG.info('Re-Fetch the zone export')
-        _, body = self.client.show_zone_export(zone_export['id'])
+        body = self.client.show_zone_export(zone_export['id'])[1]
 
         LOG.info('Ensure the fetched response matches the zone export')
         self.assertExpected(zone_export, body, self.excluded_keys)
@@ -116,20 +119,16 @@ class ZonesExportTest(BaseZoneExportsTest):
         _, body = self.client.delete_zone_export(zone_export['id'])
 
         LOG.info('Ensure the zone export has been successfully deleted')
-        self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.show_zone_export(zone_export['id']))
+        self.assertRaises(
+            lib_exc.NotFound,
+            self.client.show_zone_export, zone_export['id'])
 
     @decorators.idempotent_id('476bfdfe-58c8-46e2-b376-8403c0fff440')
     def test_list_zone_exports(self):
-        LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
-        _, export = self.client.create_zone_export(zone['id'])
-        self.addCleanup(self.client.delete_zone_export, export['id'])
+        self._create_zone_export()[1]
 
         LOG.info('List zone exports')
-        _, body = self.client.list_zone_exports()
+        body = self.client.list_zone_exports()[1]
 
         self.assertGreater(len(body['exports']), 0)
 
@@ -183,8 +182,10 @@ class ZonesExportTest(BaseZoneExportsTest):
         alt_export = self.alt_client.create_zone_export(alt_zone['id'])[1]
         self.alt_client.delete_zone_export(alt_export['id'])
         LOG.info('Ensure the zone export has been successfully deleted')
-        self.assertRaises(lib_exc.NotFound,
-            lambda: self.alt_client.show_zone_export(alt_export['id']))
+        self.assertRaises(
+            lib_exc.NotFound,
+            self.alt_client.show_zone_export,
+            alt_export['id'])
 
         LOG.info('Filter out "export zones" in status:ZAHLABUT,'
                  ' expected: empty list')
@@ -236,6 +237,18 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
 
+    def _create_zone_export(self):
+        LOG.info('Create a zone')
+        zone = self.zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+
+        LOG.info('Create a zone export')
+        zone_export = self.client.create_zone_export(zone['id'])[1]
+        self.addCleanup(self.client.delete_zone_export, zone_export['id'])
+        waiters.wait_for_zone_export_status(
+            self.client, zone_export['id'], const.COMPLETE)
+        return zone, zone_export
+
     @decorators.idempotent_id('76ab8ec4-95fd-11eb-b1cd-74e5f9e2a801')
     def test_create_zone_export_using_invalid_zone_id(self):
         self.assertRaises(
@@ -260,7 +273,6 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
         zone = self.zone_client.create_zone()[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
-
         LOG.info("Delete the zone and wait till it's done.")
         self.zone_client.delete_zone(zone['id'])[1]
         self.wait_zone_delete(self.zone_client, zone['id'])
@@ -268,3 +280,21 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
         LOG.info('Ensure we respond with NotFound exception')
         self.assertRaises(
             lib_exc.NotFound, self.client.create_zone_export, zone['id'])
+
+    @decorators.idempotent_id('9a878646-f66b-4fa4-ae95-f3ac3f8e3d31')
+    def test_show_zonefile_using_not_existing_zone_export_id(self):
+        LOG.info('Expected: 404 Not Found zone export')
+        self.assertRaises(lib_exc.NotFound,
+                          self.client.show_exported_zonefile,
+                          data_utils.rand_uuid())
+
+    @decorators.idempotent_id('52a1fee0-c338-4ed9-b9f9-41ee7fd73375')
+    def test_show_zonefile_not_supported_accept_value(self):
+        zone, zone_export = self._create_zone_export()
+        # Tempest-lib _error_checker will raise UnexpectedResponseCode
+        e = self.assertRaises(
+            lib_exc.UnexpectedResponseCode, self.client.show_exported_zonefile,
+            zone_export['id'], headers={'Accept': 'image/jpeg'})
+        self.assertEqual(406, e.resp.status,
+                         "Failed, actual response code is:{0}"
+                         "but expected is: 406".format(e.resp.status))
