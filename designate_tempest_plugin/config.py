@@ -79,6 +79,10 @@ DnsFeatureGroup = [
                 default=True,
                 help="Is https://bugs.launchpad.net/designate/+bug/1573141 "
                 "fixed"),
+    cfg.BoolOpt('bug_1932026_fixed',
+                default=False,
+                help="Is https://bugs.launchpad.net/designate/+bug/1932026 "
+                     "fixed"),
     # Note: Also see the enforce_scope section (from tempest) for Designate API
     #       scope checking setting.
     cfg.BoolOpt('enforce_new_defaults',

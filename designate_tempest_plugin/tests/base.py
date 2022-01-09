@@ -135,6 +135,10 @@ class BaseDnsTest(test.BaseTestCase):
                               zone_id,
                               recordset_id)
 
+    def unset_ptr(self, ptr_client, fip_id, **kwargs):
+        return utils.call_and_ignore_notfound_exc(
+            ptr_client.unset_ptr_record, fip_id, **kwargs)
+
     def _delete_zone(self, zone_client, zone_id, **kwargs):
         return utils.call_and_ignore_notfound_exc(zone_client.delete_zone,
                                                   zone_id, **kwargs)

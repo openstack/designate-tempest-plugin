@@ -16,6 +16,7 @@ from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+import testtools
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
@@ -67,7 +68,8 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
         ptr = self.primary_ptr_client.set_ptr_record(
             fip_id, ptr_name=ptr_name, ttl=ttl, description=description,
             headers=headers, tld=tld)
-        self.addCleanup(self.primary_ptr_client.unset_ptr_record, fip_id)
+        self.addCleanup(self.unset_ptr, self.primary_ptr_client, fip_id)
+
         self.assertEqual('CREATE', ptr['action'])
         self.assertEqual('PENDING', ptr['status'])
         waiters.wait_for_ptr_status(
@@ -77,7 +79,7 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
     def _unset_ptr(self, fip_id):
         self.primary_ptr_client.unset_ptr_record(fip_id)
         waiters.wait_for_ptr_status(
-            self.primary_ptr_client, fip_id=fip_id, status=const.DELETED)
+            self.primary_ptr_client, fip_id=fip_id, status=const.INACTIVE)
 
     @decorators.idempotent_id('2fb9d6ea-871d-11eb-9f9a-74e5f9e2a801')
     def test_set_floatingip_ptr(self):
@@ -137,7 +139,8 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
             'Failed, expected ID was not found in "received_ptr_ids" list.')
 
     @decorators.idempotent_id('499b5a7e-87e1-11eb-b412-74e5f9e2a801')
-    @decorators.skip_because(bug="1932026")
+    @testtools.skipUnless(config.CONF.dns_feature_enabled.bug_1932026_fixed,
+                          'Skip unless bug 1932026 has been fixed.')
     def test_unset_floatingip_ptr(self):
         fip_id, ptr = self._set_ptr()
         self._unset_ptr(fip_id)
@@ -172,7 +175,7 @@ class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
         ptr = self.primary_ptr_client.set_ptr_record(
             fip_id, ptr_name=ptr_name, ttl=ttl, description=description,
             headers=headers, tld=tld)
-        self.addCleanup(self.primary_ptr_client.unset_ptr_record, fip_id)
+        self.addCleanup(self.unset_ptr, self.primary_ptr_client, fip_id)
         self.assertEqual('CREATE', ptr['action'])
         self.assertEqual('PENDING', ptr['status'])
         waiters.wait_for_ptr_status(
