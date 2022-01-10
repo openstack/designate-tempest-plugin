@@ -27,10 +27,16 @@ CONF = config.CONF
 
 @ddt.ddt
 class RecordsetsTest(base.BaseDnsV2Test):
+
+    credentials = ["admin", "system_admin", "primary"]
+
     @classmethod
     def setup_clients(cls):
         super(RecordsetsTest, cls).setup_clients()
-
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
@@ -98,3 +104,21 @@ class RecordsetsTest(base.BaseDnsV2Test):
         self.assertRaises(lib_exc.NotFound,
                           lambda: self.recordset_client.show_recordset(
                               self.zone['id'], recordset['id']))
+
+    @decorators.idempotent_id('1e78a742-66ee-11ec-8dc3-201e8823901f')
+    def test_create_soa_record_not_permitted(self):
+        # SOA record is automatically created for a zone, no user
+        # should be able to create a SOA record.
+        soa_record = ("s1.devstack.org. admin.example.net. 1510721487 3510"
+                      " 600 86400 3600")
+        LOG.info('Primary tries to create a Recordset on '
+                 'the existing zone')
+        self.assertRaises(
+            lib_exc.BadRequest,
+            self.recordset_client.create_recordset,
+            self.zone['id'], soa_record)
+        LOG.info('Admin tries to create a Recordset on the existing zone')
+        self.assertRaises(
+            lib_exc.BadRequest,
+            self.admin_client.create_recordset,
+            self.zone['id'], soa_record)

@@ -48,5 +48,37 @@
         "name": "www",
         "type": "TXT",
         "records": ["\"Any Old Text Goes Here\""]
+    },
+    "SPF": {
+        "name": "*.sub",
+        "type": "SPF",
+        "records": ["\"v=spf1; a -all\""]
+    },
+    "NS": {
+        "name": "NS_Record",
+        "type": "NS",
+        "records": ["ns1.example.org."]
+    },
+    "PTR_IPV4": {
+        "name": "PTR_Record_IPV4",
+        "type": "PTR",
+        "records": ["34.216.184.93.in-addr.arpa."]
+    },
+   "PTR_IPV6":{
+       "name":"PTR_Record_IPV6",
+       "type":"PTR",
+       "records":[
+           "6.4.9.1.8.c.5.2.3.9.8.1.8.4.2.0.1.0.0.0.0.2.2.0.0.0.8.2.6.0.6.2.ip6.arpa."
+      ]
+   },
+   "CAA_Record": {
+       "name": "CAA_Record",
+       "type": "CAA",
+       "records": ["0 issue letsencrypt.org"]
+    },
+   "NAPTR_Record": {
+       "name": "NAPTR_Record",
+       "type": "NAPTR",
+       "records": ["0 0 S SIP+D2U !^.*$!sip:customer-service@example.com! _sip._udp.example.com."]
     }
 }
