@@ -248,6 +248,37 @@ class TransferRequestTest(BaseTransferRequestTest):
                           "Failed, transfer request ID:{} wasn't found in "
                           "listed IDs{}".format(request_id, request_ids))
 
+    @decorators.idempotent_id('bee42f38-e666-4b85-a710-01f40ea1e56a')
+    def test_list_transfer_requests_impersonate_another_project(self):
+        LOG.info('Create a Primary zone')
+        primary_zone = self.zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete,
+                        self.zone_client, primary_zone['id'])
+
+        LOG.info('Create an Alt zone')
+        alt_zone = self.alt_zone_client.create_zone()[1]
+        self.addCleanup(self.wait_zone_delete,
+                        self.alt_zone_client, alt_zone['id'])
+
+        LOG.info('Create a zone transfer_request using Primary client')
+        primary_transfer_request = self.client.create_transfer_request(
+            primary_zone['id'])[1]
+        self.addCleanup(self.client.delete_transfer_request,
+                        primary_transfer_request['id'])
+
+        LOG.info('Create a zone transfer_request using Alt client')
+        alt_transfer_request = self.alt_client.create_transfer_request(
+            alt_zone['id'])[1]
+        self.addCleanup(self.alt_client.delete_transfer_request,
+                        alt_transfer_request['id'])
+
+        request_ids = [
+            item['id'] for item in self.admin_client.list_transfer_requests(
+                headers={'x-auth-sudo-project-id': self.alt_client.project_id},
+                params={'limit': 1000})[1]['transfer_requests']]
+
+        self.assertEqual([alt_transfer_request['id']], request_ids)
+
     @decorators.idempotent_id('de5e9d32-c723-4518-84e5-58da9722cc13')
     def test_update_transfer_request(self):
         LOG.info('Create a zone')
