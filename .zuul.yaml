@@ -1,3 +1,23 @@
+- job:
+    name: designate-bind9-stable-xena
+    parent: designate-bind9
+    override-checkout: stable/xena
+
+- job:
+    name: designate-bind9-stable-wallaby
+    parent: designate-bind9
+    override-checkout: stable/wallaby
+
+- job:
+    name: designate-bind9-stable-victoria
+    parent: designate-bind9
+    override-checkout: stable/victoria
+
+- job:
+    name: designate-bind9-stable-ussuri
+    parent: designate-bind9
+    override-checkout: stable/ussuri
+
 - project:
     templates:
       - designate-devstack-jobs
@@ -7,6 +27,10 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - designate-bind9-stable-xena
+        - designate-bind9-stable-wallaby
+        - designate-bind9-stable-victoria
+        - designate-bind9-stable-ussuri
         - neutron-tempest-plugin-designate-scenario
     gate:
       queue: designate
