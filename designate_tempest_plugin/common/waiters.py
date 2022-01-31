@@ -73,6 +73,10 @@ def wait_for_zone_status(client, zone_id, status, headers=None):
             LOG.info('Zone %s reached %s', zone_id, status)
             return
 
+        if zone['status'] == const.ERROR:
+            raise exceptions.InvalidStatusError('Zone', zone_id,
+                                                zone['status'])
+
         if int(time.time()) - start >= client.build_timeout:
             message = ('Zone %(zone_id)s failed to reach status=%(status)s '
                        'within the required time (%(timeout)s s). Current '
@@ -104,6 +108,10 @@ def wait_for_zone_import_status(client, zone_import_id, status):
         if status_curr == status:
             LOG.info('Zone import %s reached %s', zone_import_id, status)
             return
+
+        if zone_import['status'] == const.ERROR:
+            raise exceptions.InvalidStatusError('Zone Import', zone_import_id,
+                                                zone_import['status'])
 
         if int(time.time()) - start >= client.build_timeout:
             message = ('Zone import %(zone_import_id)s failed to reach '
@@ -138,6 +146,10 @@ def wait_for_zone_export_status(client, zone_export_id, status):
             LOG.info('Zone export %s reached %s', zone_export_id, status)
             return
 
+        if zone_export['status'] == const.ERROR:
+            raise exceptions.InvalidStatusError('Zone Export', zone_export_id,
+                                                zone_export['status'])
+
         if int(time.time()) - start >= client.build_timeout:
             message = ('Zone export %(zone_export_id)s failed to reach '
                        'status=%(status)s within the required time '
@@ -171,6 +183,10 @@ def wait_for_recordset_status(client, zone_id, recordset_id, status):
         if status_curr == status:
             LOG.info('Recordset %s reached %s', recordset_id, status)
             return
+
+        if recordset['status'] == const.ERROR:
+            raise exceptions.InvalidStatusError('Recordset', recordset_id,
+                                                recordset['status'])
 
         if int(time.time()) - start >= client.build_timeout:
             message = ('Recordset %(recordset_id)s failed to reach '
@@ -249,6 +265,10 @@ def wait_for_ptr_status(client, fip_id, status):
         if status_curr == status:
             LOG.info('PTR %s reached %s', fip_id, status)
             return
+
+        if ptr['status'] == const.ERROR:
+            raise exceptions.InvalidStatusError('PTR', fip_id,
+                                                ptr['status'])
 
         if int(time.time()) - start >= client.build_timeout:
             message = ('PTR for FIP: %(fip_id)s failed to reach '
