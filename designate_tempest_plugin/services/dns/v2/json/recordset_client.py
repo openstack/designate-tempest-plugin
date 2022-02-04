@@ -35,27 +35,24 @@ class RecordsetClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def create_recordset(self, zone_uuid, recordset_data,
-                         params=None, wait_until=False):
+                         params=None, wait_until=False, headers=None):
         """Create a recordset for the specified zone.
-
         :param zone_uuid: Unique identifier of the zone in UUID format..
         :param recordset_data: A dictionary that represents the recordset
                                data.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the created zone.
         """
         resp, body = self._create_request(
             "/zones/{0}/recordsets".format(zone_uuid), params=params,
-            data=recordset_data)
-
+            data=recordset_data, headers=headers)
         # Create Recordset should Return a HTTP 202
         self.expected_success(202, resp.status)
-
         if wait_until:
             waiters.wait_for_recordset_status(
-                self, zone_uuid, body['id'], wait_until)
-
+                self, zone_uuid, body['id'], wait_until, headers=headers)
         return resp, body
 
     @base.handle_errors
