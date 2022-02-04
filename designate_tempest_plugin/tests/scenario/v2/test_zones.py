@@ -11,6 +11,10 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+import time
+import math
+
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
@@ -21,6 +25,10 @@ from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
+from designate_tempest_plugin.services.dns.query.query_client \
+    import SingleQueryClient
+
+CONF = config.CONF
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -34,14 +42,16 @@ class ZonesTest(base.BaseDnsV2Test):
         super(ZonesTest, cls).setup_clients()
         if CONF.enforce_scope.designate:
             cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+            cls.rec_client = cls.os_system_admin.dns_v2.RecordsetClient()
         else:
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+            cls.rec_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
+        cls.primary_client = cls.os_primary.dns_v2.BlacklistsClient()
 
     @classmethod
     def resource_setup(cls):
         super(ZonesTest, cls).resource_setup()
-
         # Make sure we have an allowed TLD available
         tld_name = dns_data_utils.rand_zone_name(name="ZonesTest")
         cls.tld_name = f".{tld_name}"
@@ -183,3 +193,66 @@ class ZonesTest(base.BaseDnsV2Test):
         waiters.wait_for_zone_404(self.client, zone['id'])
         waiters.wait_for_query(self.query_client, zone['name'], const.SOA,
                                found=False)
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('ff9b9fc4-85b4-11ec-bcf5-201e8823901f')
+    @testtools.skipUnless(
+        config.CONF.dns.nameservers,
+        "Config option dns.nameservers is missing or empty")
+    def test_notify_msg_sent_to_nameservers(self):
+
+        # Test will only run when the SOA record Refresh is close to one hour,
+        # otherwise skipped.
+        # This implies that the only reason "A" record was propagated is as a
+        # result of successfully sent NOTIFY message.
+
+        LOG.info('Create a zone, wait until ACTIVE and get the Serial'
+                 ' and SOA Refresh values')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="test_notify_msg_sent_to_nameservers", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name, wait_until='ACTIVE')[1]
+
+        org_serial = zone['serial']
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        try:
+            soa = [
+                rec['records'] for rec in self.rec_client.list_recordset(
+                    zone['id'], headers=self.all_projects_header)[1][
+                    'recordsets'] if rec['type'] == 'SOA'][0]
+            refresh = int(soa[0].split(' ')[3])
+            if math.isclose(3600, refresh, rel_tol=0.1) is False:
+                raise self.skipException(
+                    'Test is skipped, actual SOA REFRESH is:{} unlike test'
+                    ' prerequisites that requires a value close to 3600'
+                    ' (one hour)'.format(refresh))
+        except Exception as e:
+            raise self.skipException(
+                'Test is skipped, something went wrong on getting SOA REFRESH'
+                ' value, the error was:{}'.format(e))
+
+        LOG.info("Update Zone's TTL, wait until ACTIVE and"
+                 " ensure Zone's Serial has changed")
+        updated_zone = self.client.update_zone(
+            zone['id'], ttl=dns_data_utils.rand_ttl(), wait_until='ACTIVE')[1]
+        new_serial = updated_zone['serial']
+        self.assertNotEqual(
+            new_serial, org_serial,
+            "Failed, expected behaviour is that the Designate DNS changes the"
+            " Serial after updating Zone's TTL value")
+        waiters.wait_for_query(self.query_client, zone['name'], "SOA")
+
+        LOG.info('Per Nameserver "dig" for a SOA record until either:'
+                 ' updated Serial is detected or build timeout has reached')
+        for ns in config.CONF.dns.nameservers:
+            start = time.time()
+            while True:
+                ns_obj = SingleQueryClient(ns, config.CONF.dns.query_timeout)
+                ns_soa_record = ns_obj.query(zone['name'], rdatatype='SOA')
+                if str(new_serial) in str(ns_soa_record):
+                    return
+                if time.time() - start >= config.CONF.dns.build_timeout:
+                    raise lib_exc.TimeoutException(
+                        'Failed, expected Serial:{} for a Zone was not'
+                        ' detected on Nameserver:{} within a timeout of:{}'
+                        ' seconds.'.format(
+                            new_serial, ns, config.CONF.dns.build_timeout))
