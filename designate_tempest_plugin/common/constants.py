@@ -12,14 +12,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Designate statuses strings
+# Designate statuses/actions strings
 PENDING = 'PENDING'
 COMPLETE = 'COMPLETE'
 ERROR = 'ERROR'
 DELETED = 'DELETED'
+DELETE = 'DELETE'
 ACTIVE = 'ACTIVE'
 UP = 'UP'
 CREATE = 'CREATE'
+UPDATE = 'UPDATE'
 
 # Zone types
 PRIMARY_ZONE_TYPE = 'PRIMARY'
