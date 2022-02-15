@@ -860,3 +860,59 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
             {primary_project_id}, project_ids_api,
             'Failed, unique project_ids {} are not as expected {}'.format(
                 project_ids_api, primary_project_id))
+
+
+class AdminManagedRecordsetTest(BaseRecordsetsTest):
+
+    credentials = ["primary", "admin", "system_admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(AdminManagedRecordsetTest, cls).setup_credentials()
+
+    @classmethod
+    def setup_clients(cls):
+        super(AdminManagedRecordsetTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.client = cls.os_primary.dns_v2.RecordsetClient()
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+
+    @decorators.idempotent_id('84164ff4-8e68-11ec-983f-201e8823901f')
+    def test_admin_updates_soa_and_ns_recordsets(self):
+        # HTTP headers to be used in the test
+        sudo_header = {'X-Auth-All-Projects': True}
+        managed_records_header = {'X-Designate-Edit-Managed-Records': True}
+        sudo_managed_headers = sudo_header.copy()
+        sudo_managed_headers.update(managed_records_header)
+
+        LOG.info('Primary user creates a Zone')
+        zone = self.zone_client.create_zone(
+            description='Zone for "managed recordsets update" test',
+            wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        recordsets = self.admin_client.list_recordset(
+            zone['id'], headers=sudo_header)[1]['recordsets']
+
+        LOG.info('As Admin try to update SOA and NS recordsets,'
+                 ' Expected not allowed')
+        for recordset in recordsets:
+            if recordset['type'] == 'NS':
+                self.assertRaisesDns(
+                    lib_exc.BadRequest, 'bad_request', 400,
+                    self.admin_client.update_recordset,
+                    zone['id'], recordset['id'],
+                    recordet_data=data_utils.rand_ns_records(),
+                    headers=sudo_managed_headers, extra_headers=True)
+
+            if recordset['type'] == 'SOA':
+                self.assertRaisesDns(
+                    lib_exc.BadRequest, 'bad_request', 400,
+                    self.admin_client.update_recordset,
+                    zone['id'], recordset['id'],
+                    recordet_data=data_utils.rand_soa_recordset(zone['name']),
+                    headers=sudo_managed_headers, extra_headers=True)
