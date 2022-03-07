@@ -14,6 +14,7 @@
 from oslo_log import log as logging
 from tempest.lib import decorators
 
+from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests.api.v2.test_zones_imports import \
@@ -41,29 +42,26 @@ class ZonesImportTest(BaseZonesImportTest):
         zonefile = dns_data_utils.rand_zonefile_data(name=zone_name)
 
         LOG.info('Import zone %r', zone_name)
-        _, zone_import = self.client.create_zone_import(zonefile)
+        zone_import = self.client.create_zone_import(
+            zonefile, wait_until=const.COMPLETE)[1]
         self.addCleanup(self.client.delete_zone_import, zone_import['id'])
 
-        LOG.info('Wait for the zone import to COMPLETE')
-        waiters.wait_for_zone_import_status(self.client, zone_import['id'],
-                                            "COMPLETE")
-
         LOG.info('Check the zone import looks good')
-        _, zone_import = self.client.show_zone_import(zone_import['id'])
+        zone_import = self.client.show_zone_import(zone_import['id'])[1]
         self.addCleanup(self.wait_zone_delete,
                         self.zones_client,
                         zone_import['zone_id'])
 
-        self.assertEqual('COMPLETE', zone_import['status'])
+        self.assertEqual(const.COMPLETE, zone_import['status'])
         self.assertIsNotNone(zone_import['zone_id'])
         self.assertIsNotNone(zone_import['links'].get('zone'))
 
         LOG.info('Wait for the imported zone to go to ACTIVE')
-        waiters.wait_for_zone_status(self.zones_client, zone_import['zone_id'],
-                                     "ACTIVE")
+        waiters.wait_for_zone_status(
+            self.zones_client, zone_import['zone_id'], const.ACTIVE)
 
         LOG.info('Check the imported zone looks good')
-        _, zone = self.zones_client.show_zone(zone_import['zone_id'])
-        self.assertEqual('NONE', zone['action'])
-        self.assertEqual('ACTIVE', zone['status'])
+        zone = self.zones_client.show_zone(zone_import['zone_id'])[1]
+        self.assertEqual(const.NONE, zone['action'])
+        self.assertEqual(const.ACTIVE, zone['status'])
         self.assertEqual(zone_name, zone['name'])

@@ -373,3 +373,83 @@ class ZonesImportTest(BaseZonesImportTest):
         self.check_list_IDs_RBAC_enforcement(
             'ZoneImportsClient', 'list_zone_imports', expected_allowed,
             [zone_import['id']], headers=self.all_projects_header)
+
+
+class ZonesImportTestNegative(BaseZonesImportTest):
+    credentials = ["primary", "admin", "system_admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ZonesImportTestNegative, cls).setup_credentials()
+
+    @classmethod
+    def setup_clients(cls):
+        super(ZonesImportTestNegative, cls).setup_clients()
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.client = cls.os_primary.dns_v2.ZoneImportsClient()
+
+    def _clean_up_resources(self, zone_import_id):
+        zone_import = self.client.show_zone_import(zone_import_id)[1]
+        if zone_import['zone_id']:  # A zone was actually created.
+            waiters.wait_for_zone_import_status(
+                self.client, zone_import_id, const.COMPLETE)
+            self.client.delete_zone_import(zone_import['id'])
+            self.wait_zone_delete(self.zone_client, zone_import['zone_id'])
+        else:  # Import has failed and zone wasn't created.
+            self.client.delete_zone_import(zone_import['id'])
+
+    @decorators.idempotent_id('31eaf25a-9532-11eb-a55d-74e5f9e2a801')
+    def test_create_zone_import_invalid_ttl(self):
+        LOG.info('Try to create a zone import using invalid TTL value')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_zone_import_invalid_ttl", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name,
+                                                      ttl='zahlabut')
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zone_data, wait_until=const.ERROR)[1]
+        self.addCleanup(self._clean_up_resources, zone_import['id'])
+
+    @decorators.idempotent_id('31eaf25a-9532-11eb-a55d-74e5f9e2a801')
+    def test_create_zone_import_invalid_name(self):
+        LOG.info('Try to create a zone import using invalid name')
+        zone_import = self.client.create_zone_import(
+            zonefile_data=dns_data_utils.rand_zonefile_data(
+                name='@@@'), wait_until=const.ERROR)[1]
+        self.addCleanup(self._clean_up_resources, zone_import['id'])
+
+    @decorators.idempotent_id('8fd744d2-9dff-11ec-9fb6-201e8823901f')
+    def test_create_zone_import_invalid_file_data(self):
+        LOG.info('Try to create a zone import using random generated'
+                 ' import file data')
+        zone_file_data = dns_data_utils.rand_string(size=100)
+        zone_import = self.client.create_zone_import(zone_file_data)[1]
+        self.addCleanup(self.client.delete_zone_import, zone_import['id'])
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.ERROR)
+
+    @decorators.idempotent_id('4fb9494e-9e23-11ec-8378-201e8823901f')
+    def test_zone_cannot_be_update_by_import(self):
+        LOG.info('Create a Zone named: "...zone_to_update..."')
+        zone_name = dns_data_utils.rand_zone_name(
+            name='zone_to_update', suffix=self.tld_name)
+        zone = self.zone_client.create_zone(
+            name=zone_name, wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        LOG.info('Use zone import to update an existing zone, expected: zone'
+                 ' import gets into the ERROR status ')
+        zone_import_data = dns_data_utils.rand_zonefile_data(name=zone_name)
+        zone_import = self.client.create_zone_import(zone_import_data)[1]
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.ERROR)
+        self.addCleanup(self._clean_up_resources, zone_import['id'])
+
+    @decorators.idempotent_id('5fa8016e-6ed1-11ec-9bd7-201e8823901f')
+    def test_create_zone_import_invalid_content_type(self):
+        LOG.info('Try to create a zone import using: "Content-Type:Zahlabut"'
+                 ' HTTP header in POST request')
+        with self.assertRaisesDns(
+                lib_exc.InvalidContentType, 'unsupported_content_type', 415):
+            self.client.create_zone_import(
+                headers={'Content-Type': 'Zahlabut'})
