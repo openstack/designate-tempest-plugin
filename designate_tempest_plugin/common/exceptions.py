@@ -15,7 +15,7 @@
 
 class InvalidStatusError(Exception):
     """
-    Exception raise when an entity changes to an unexpected status.
+    Exception raised when an entity changes to an unexpected status.
     """
 
     def __init__(self, entity, entity_id, status, expected_status=None):
