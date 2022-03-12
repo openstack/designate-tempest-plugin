@@ -61,7 +61,8 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 
 class ZoneTasks(BaseZonesTest):
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin", "system_admin", "system_reader",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -98,6 +99,17 @@ class ZoneTasks(BaseZonesTest):
         LOG.info('Check that the zone was created on Nameserver/BIND')
         waiters.wait_for_query(self.query_client, pr_zone['name'], "SOA")
 
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZonesClient', 'abandon_zone', expected_allowed, False,
+            pr_zone['id'],
+            headers={'x-auth-sudo-project-id': pr_zone['project_id']})
+
+        # Test abandoning the zone
         LOG.info('Abandon a zone')
         self.admin_client.abandon_zone(
             pr_zone['id'],
