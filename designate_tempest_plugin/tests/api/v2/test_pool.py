@@ -36,7 +36,8 @@ class BasePoolTest(base.BaseDnsV2Test):
 
 
 class PoolAdminTest(BasePoolTest):
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "primary", "system_admin", "system_reader",
+                   "project_member", "project_reader", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -72,6 +73,16 @@ class PoolAdminTest(BasePoolTest):
         self.assertEqual(pool_data["name"], pool['name'])
         self.assertExpected(pool_data, pool, self.excluded_keys)
 
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'PoolClient', 'create_pool', expected_allowed, False,
+            pool_name=pool_data["name"], ns_records=pool_data["ns_records"],
+            project_id=pool_data["project_id"])
+
     @decorators.idempotent_id('e80eb70a-8ee5-40eb-b06e-599597a8ab7e')
     def test_show_pool(self):
         LOG.info('Create a pool')
@@ -87,6 +98,20 @@ class PoolAdminTest(BasePoolTest):
         self.assertExpected(pool, body, self.excluded_keys)
         self._assertExpectedNSRecords(pool["ns_records"], body["ns_records"],
                                 expected_key="priority")
+
+        # TODO(johnsom) Test reader roles once this bug is fixed.
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        # TODO(johnsom) The pools API seems inconsistent with the requirement
+        #               of the all-projects header.
+        self.check_list_show_RBAC_enforcement(
+            'PoolClient', 'show_pool', expected_allowed, True, pool['id'],
+            headers=self.all_projects_header)
 
     @decorators.idempotent_id('d8c4c377-5d88-452d-a4d2-c004d72e1abe')
     def test_delete_pool(self):
@@ -104,6 +129,14 @@ class PoolAdminTest(BasePoolTest):
            lambda: self.admin_client.show_pool(
                pool['id'], headers=self.all_projects_header))
 
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'PoolClient', 'delete_pool', expected_allowed, False, pool['id'])
+
     @decorators.idempotent_id('77c85b40-83b2-4c17-9fbf-e6d516cfce90')
     def test_list_pools(self):
         LOG.info('Create a pool')
@@ -116,6 +149,18 @@ class PoolAdminTest(BasePoolTest):
             headers=self.all_projects_header)
 
         self.assertGreater(len(body['pools']), 0)
+
+        # TODO(johnsom) Test reader roles once this bug is fixed.
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'PoolClient', 'list_pools', expected_allowed, [pool['id']],
+            headers=self.all_projects_header)
 
     @decorators.idempotent_id('fdcc84ce-af65-4af6-a5fc-6c50acbea0f0')
     def test_update_pool(self):
@@ -130,6 +175,15 @@ class PoolAdminTest(BasePoolTest):
             extra_headers=True)
 
         self.assertEqual("foo", patch_pool["name"])
+
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'PoolClient', 'update_pool', expected_allowed, True,
+            pool['id'], pool_name="test-name")
 
     @decorators.idempotent_id('41ad6a84-00ce-4a04-9fd5-b7c15c31e2db')
     def test_list_pools_dot_json_fails(self):
