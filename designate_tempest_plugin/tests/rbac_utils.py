@@ -33,8 +33,15 @@ class RBACTestsMixin(test.BaseTestCase):
         method = getattr(client_obj, method_str)
         return method
 
+    def _get_client_project_id(self, cred_obj, client_str):
+        """Get project ID for the credential."""
+        dns_clients = getattr(cred_obj, 'dns_v2')
+        client = getattr(dns_clients, client_str)
+        client_obj = client()
+        return client_obj.project_id
+
     def _check_allowed(self, client_str, method_str, allowed_list,
-                       *args, **kwargs):
+                       with_project, *args, **kwargs):
         """Test an API call allowed RBAC enforcement.
 
         :param client_str: The service client to use for the test, without the
@@ -43,6 +50,7 @@ class RBACTestsMixin(test.BaseTestCase):
                            Example: 'list_zones'
         :param allowed_list: The list of credentials expected to be
                              allowed.  Example: ['primary'].
+        :param with_project: When true, pass the project ID to the call.
         :param args: Any positional parameters needed by the method.
         :param kwargs: Any named parameters needed by the method.
         :raises AssertionError: Raised if the RBAC tests fail.
@@ -69,8 +77,12 @@ class RBACTestsMixin(test.BaseTestCase):
                               'credentials setup. This is likely a bug in the '
                               'test.'.format(cred))
             method = self._get_client_method(cred_obj, client_str, method_str)
+            project_id = self._get_client_project_id(cred_obj, client_str)
             try:
-                method(*args, **kwargs)
+                if with_project:
+                    method(project_id, *args, **kwargs)
+                else:
+                    method(*args, **kwargs)
             except exceptions.Forbidden as e:
                 self.fail('Method {}.{} failed to allow access via RBAC using '
                           'credential {}. Error: {}'.format(
@@ -81,7 +93,7 @@ class RBACTestsMixin(test.BaseTestCase):
                               client_str, method_str, cred, str(e)))
 
     def _check_disallowed(self, client_str, method_str, allowed_list,
-                          expect_404, *args, **kwargs):
+                          expect_404, with_project, *args, **kwargs):
         """Test an API call disallowed RBAC enforcement.
 
         :param client_str: The service client to use for the test, without the
@@ -91,6 +103,7 @@ class RBACTestsMixin(test.BaseTestCase):
         :param allowed_list: The list of credentials expected to be
                              allowed.  Example: ['primary'].
         :param expect_404: When True, 404 responses are considered ok.
+        :param with_project: When true, pass the project ID to the call.
         :param args: Any positional parameters needed by the method.
         :param kwargs: Any named parameters needed by the method.
         :raises AssertionError: Raised if the RBAC tests fail.
@@ -105,6 +118,7 @@ class RBACTestsMixin(test.BaseTestCase):
         for cred in expected_disallowed:
             cred_obj = getattr(self, cred)
             method = self._get_client_method(cred_obj, client_str, method_str)
+            project_id = self._get_client_project_id(cred_obj, client_str)
 
             # Unfortunately tempest uses testtools assertRaises[1] which means
             # we cannot use the unittest assertRaises context[2] with msg= to
@@ -120,7 +134,10 @@ class RBACTestsMixin(test.BaseTestCase):
             #     unittest.html#unittest.TestCase.assertRaises
             # [3] https://github.com/testing-cabal/testtools/issues/235
             try:
-                method(*args, **kwargs)
+                if with_project:
+                    method(project_id, *args, **kwargs)
+                else:
+                    method(*args, **kwargs)
             except exceptions.Forbidden:
                 continue
             except exceptions.NotFound:
@@ -158,15 +175,16 @@ class RBACTestsMixin(test.BaseTestCase):
 
         # #### Test that disallowed credentials cannot access the API.
         self._check_disallowed(client_str, method_str, allowed_list,
-                               expect_404, *args, **kwargs)
+                               expect_404, False, *args, **kwargs)
 
         # #### Test that allowed credentials can access the API.
-        self._check_allowed(client_str, method_str, allowed_list,
+        self._check_allowed(client_str, method_str, allowed_list, False,
                             *args, **kwargs)
 
-    def check_CUD_RBAC_enforcement(self, client_str, method_str,
-                                   expected_allowed, *args, **kwargs):
-        """Test an API create/update/delete call RBAC enforcement.
+    def check_list_show_with_ID_RBAC_enforcement(self, client_str, method_str,
+                                                 expected_allowed, expect_404,
+                                                 *args, **kwargs):
+        """Test list or show API call passing the project ID RBAC enforcement.
 
         :param client_str: The service client to use for the test, without the
                            credential.  Example: 'ZonesClient'
@@ -174,6 +192,7 @@ class RBACTestsMixin(test.BaseTestCase):
                            Example: 'list_zones'
         :param expected_allowed: The list of credentials expected to be
                                  allowed.  Example: ['primary'].
+        :param expect_404: When True, 404 responses are considered ok.
         :param args: Any positional parameters needed by the method.
         :param kwargs: Any named parameters needed by the method.
         :raises AssertionError: Raised if the RBAC tests fail.
@@ -188,7 +207,39 @@ class RBACTestsMixin(test.BaseTestCase):
 
         # #### Test that disallowed credentials cannot access the API.
         self._check_disallowed(client_str, method_str, allowed_list,
-                               *args, **kwargs)
+                               expect_404, True, *args, **kwargs)
+
+        # #### Test that allowed credentials can access the API.
+        self._check_allowed(client_str, method_str, allowed_list, True,
+                            *args, **kwargs)
+
+    def check_CUD_RBAC_enforcement(self, client_str, method_str,
+                                   expected_allowed, expect_404,
+                                   *args, **kwargs):
+        """Test an API create/update/delete call RBAC enforcement.
+
+        :param client_str: The service client to use for the test, without the
+                           credential.  Example: 'ZonesClient'
+        :param method_str: The method on the client to call for the test.
+                           Example: 'list_zones'
+        :param expected_allowed: The list of credentials expected to be
+                                 allowed.  Example: ['primary'].
+        :param expect_404: When True, 404 responses are considered ok.
+        :param args: Any positional parameters needed by the method.
+        :param kwargs: Any named parameters needed by the method.
+        :raises AssertionError: Raised if the RBAC tests fail.
+        :raises Forbidden: Raised if a credential that should have access does
+                           not and is denied.
+        :raises InvalidScope: Raised if a credential that should have the
+                              correct scope for access is denied.
+        :returns: None on success
+        """
+
+        allowed_list = copy.deepcopy(expected_allowed)
+
+        # #### Test that disallowed credentials cannot access the API.
+        self._check_disallowed(client_str, method_str, allowed_list,
+                               expect_404, False, *args, **kwargs)
 
     def check_list_RBAC_enforcement_count(
             self, client_str, method_str, expected_allowed, expected_count,
