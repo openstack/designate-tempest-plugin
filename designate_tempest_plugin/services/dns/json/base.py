@@ -199,6 +199,7 @@ class DnsClientBase(rest_client.RestClient):
         :param data: A Python dict that represents an object of the
                      specified type (to be serialized) or a plain string which
                      is sent as-is.
+        :param headers (dict): The headers to use for the request.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
