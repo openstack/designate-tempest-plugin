@@ -53,7 +53,8 @@ class BaseTsigkeyTest(base.BaseDnsV2Test):
 
 
 class TsigkeyAdminTest(BaseTsigkeyTest):
-    credentials = ["primary", "admin", "system_admin"]
+    credentials = ["primary", "admin", "system_admin", "system_reader",
+                   "project_member", "project_reader", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -120,6 +121,17 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertEqual(tsigkey_data["name"], tsigkey['name'])
         self.assertEqual(tsigkey_data["scope"], 'POOL')
 
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'TsigkeyClient', 'create_tsigkey', expected_allowed, False,
+            tsigkey_data['resource_id'],
+            tsigkey_data['name'], tsigkey_data['algorithm'],
+            tsigkey_data['secret'], tsigkey_data['scope'])
+
     @decorators.idempotent_id('d46e5e86-a18c-4315-aa0c-95a00e816fbf')
     def test_list_tsigkey(self):
         LOG.info('Create a resource')
@@ -132,6 +144,14 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.addCleanup(self.admin_client.delete_tsigkey, tsigkey['id'])
         body = self.admin_client.list_tsigkeys()[1]
         self.assertGreater(len(body['tsigkeys']), 0)
+
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        self.check_list_IDs_RBAC_enforcement(
+            'TsigkeyClient', 'list_tsigkeys', expected_allowed,
+            [tsigkey['id']])
 
     @decorators.idempotent_id('d46e5e86-a18c-4315-aa0c-95a00e816fbf')
     def test_list_tsigkeys_limit_results(self):
@@ -389,6 +409,15 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Ensure the fetched response matches the created tsigkey')
         self.assertExpected(tsigkey, body, self.excluded_keys)
 
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+
+        self.check_list_show_RBAC_enforcement(
+            'TsigkeyClient', 'show_tsigkey', expected_allowed, True,
+            tsigkey['id'])
+
     @decorators.idempotent_id('d09dc0dd-dd72-41ee-9085-2afb2bf35459')
     def test_update_tsigkey(self):
         LOG.info('Create a resource')
@@ -413,6 +442,16 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertEqual(tsigkey_data['name'], patch_tsigkey['name'])
         self.assertEqual(tsigkey_data['secret'], patch_tsigkey['secret'])
 
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'TsigkeyClient', 'update_tsigkey', expected_allowed, False,
+            tsigkey['id'], name=tsigkey_data['name'],
+            secret=tsigkey_data['secret'])
+
     @decorators.idempotent_id('9cdffbd2-bc67-4a25-8eb7-4be8635c88a3')
     def test_delete_tsigkey(self):
         LOG.info('Create a resource')
@@ -423,6 +462,15 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
         LOG.info('Create a tsigkey')
         tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])[1]
+
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'TsigkeyClient', 'delete_tsigkey', expected_allowed, False,
+            tsigkey['id'])
 
         LOG.info('Delete the tsigkey')
         self.admin_client.delete_tsigkey(tsigkey['id'])
