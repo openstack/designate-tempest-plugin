@@ -53,7 +53,8 @@ class BaseTransferRequestTest(base.BaseDnsV2Test):
 
 
 class TransferRequestTest(BaseTransferRequestTest):
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin", "system_admin", "system_reader",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -82,6 +83,16 @@ class TransferRequestTest(BaseTransferRequestTest):
             name="create_transfer_request", suffix=self.tld_name)
         zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+            expected_allowed.append('os_project_member')
+
+        self.check_CUD_RBAC_enforcement(
+            'TransferRequestClient', 'create_transfer_request',
+            expected_allowed, True, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.client.create_transfer_request(zone['id'])[1]
@@ -147,6 +158,36 @@ class TransferRequestTest(BaseTransferRequestTest):
                  'created transfer_request')
         self.assertExpected(transfer_request, body, self.excluded_keys)
 
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        # Note: The create service client does not define a target project
+        #       ID, so everyone should be able to see it.
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_system_admin', 'os_system_reader',
+                                     'os_project_member', 'os_project_reader'])
+
+        self.check_list_show_RBAC_enforcement(
+            'TransferRequestClient', 'show_transfer_request', expected_allowed,
+            True, transfer_request['id'])
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'TransferRequestClient', 'show_transfer_request', expected_allowed,
+            True, transfer_request['id'], headers=self.all_projects_header)
+        # TODO(johnsom) Move this down to the impersonate test below when the
+        #               bug is resolved and the test is not skipped.
+        self.check_list_show_RBAC_enforcement(
+            'TransferRequestClient', 'show_transfer_request', expected_allowed,
+            True, transfer_request['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
+
     @decorators.idempotent_id('5bed4582-9cfb-11eb-a160-74e5f9e2a801')
     @decorators.skip_because(bug="1926572")
     def test_show_transfer_request_impersonate_another_project(self):
@@ -205,6 +246,19 @@ class TransferRequestTest(BaseTransferRequestTest):
                                               "project_id"]
         self.assertExpected(transfer_request, body, excluded_keys)
 
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC when a transfer target project is specified.
+        expected_allowed = ['os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+        else:
+            expected_allowed.append('os_admin')
+
+        self.check_list_show_RBAC_enforcement(
+            'TransferRequestClient', 'show_transfer_request', expected_allowed,
+            True, transfer_request['id'])
+
     @decorators.idempotent_id('7d81c487-aa15-44c4-b3e5-424ab9e6a3e5')
     def test_delete_transfer_request(self):
         LOG.info('Create a zone')
@@ -218,6 +272,16 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'],
                         ignore_errors=lib_exc.NotFound)
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+            expected_allowed.append('os_project_member')
+
+        self.check_CUD_RBAC_enforcement(
+            'TransferRequestClient', 'delete_transfer_request',
+            expected_allowed, True, transfer_request['id'])
 
         LOG.info('Delete the transfer_request')
         self.client.delete_transfer_request(transfer_request['id'])
@@ -241,6 +305,28 @@ class TransferRequestTest(BaseTransferRequestTest):
         _, body = self.client.list_transfer_requests()
 
         self.assertGreater(len(body['transfer_requests']), 0)
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC - Users that are allowed to call list, but should get
+        #             zero zones.
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader',
+                                'os_admin', 'os_project_member',
+                                'os_project_reader']
+        else:
+            expected_allowed = ['os_alt']
+
+        self.check_list_RBAC_enforcement_count(
+            'TransferRequestClient', 'list_transfer_requests',
+            expected_allowed, 0)
+
+        # Test that users who should see the zone, can see it.
+        expected_allowed = ['os_primary']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'TransferRequestClient', 'list_transfer_requests',
+            expected_allowed, [transfer_request['id']])
 
     @decorators.idempotent_id('db985892-9d02-11eb-a160-74e5f9e2a801')
     def test_list_transfer_requests_all_projects(self):
@@ -293,6 +379,17 @@ class TransferRequestTest(BaseTransferRequestTest):
                           "Failed, transfer request ID:{} wasn't found in "
                           "listed IDs{}".format(request_id, request_ids))
 
+        # Test RBAC with x-auth-all-projects
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'TransferRequestClient', 'list_transfer_requests',
+            expected_allowed, [primary_transfer_request['id']],
+            headers=self.all_projects_header)
+
     @decorators.idempotent_id('bee42f38-e666-4b85-a710-01f40ea1e56a')
     def test_list_transfer_requests_impersonate_another_project(self):
         LOG.info('Create a Primary zone')
@@ -328,6 +425,17 @@ class TransferRequestTest(BaseTransferRequestTest):
 
         self.assertEqual([alt_transfer_request['id']], request_ids)
 
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'TransferRequestClient', 'list_transfer_requests',
+            expected_allowed, [primary_transfer_request['id']],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
+
     @decorators.idempotent_id('de5e9d32-c723-4518-84e5-58da9722cc13')
     def test_update_transfer_request(self):
         LOG.info('Create a zone')
@@ -350,6 +458,32 @@ class TransferRequestTest(BaseTransferRequestTest):
 
         self.assertEqual(data['description'],
                          transfer_request_patch['description'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'TransferRequestClient', 'update_transfer_request',
+            expected_allowed, True,
+            transfer_request['id'], transfer_request_data=data)
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'TransferRequestClient', 'update_transfer_request',
+            expected_allowed, False,
+            transfer_request['id'], transfer_request_data=data,
+            headers=self.all_projects_header)
+        self.check_CUD_RBAC_enforcement(
+            'TransferRequestClient', 'update_transfer_request',
+            expected_allowed, False,
+            transfer_request['id'], transfer_request_data=data,
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
     @decorators.idempotent_id('73b754a9-e856-4fd6-80ba-e8d1b80f5dfa')
     def test_list_transfer_requests_dot_json_fails(self):
