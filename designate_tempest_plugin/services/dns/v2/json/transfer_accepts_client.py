@@ -66,5 +66,4 @@ class TransferAcceptClient(base.DnsClientV2Base):
         :return: List of accepted zone transfers
         """
         return self._list_request(
-            'zones/tasks/transfer_accepts', params=params,
-            headers=headers)[1]['transfer_accepts']
+            'zones/tasks/transfer_accepts', params=params, headers=headers)
