@@ -55,7 +55,8 @@ class BaseZonesImportTest(base.BaseDnsV2Test):
 
 
 class ZonesImportTest(BaseZonesImportTest):
-    credentials = ["primary", "admin", "system_admin", "alt"]
+    credentials = ["primary", "admin", "system_admin", "system_reader", "alt",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -96,6 +97,15 @@ class ZonesImportTest(BaseZonesImportTest):
         # Make sure we complete the import and have the zone_id for cleanup
         waiters.wait_for_zone_import_status(
             self.client, zone_import['id'], const.COMPLETE)
+
+        # Test with no extra header overrides (sudo-project-id)
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+            expected_allowed.append('os_project_member')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZoneImportsClient', 'create_zone_import', expected_allowed, False)
 
     @decorators.idempotent_id('31eaf25a-9532-11eb-a55d-74e5f9e2a801')
     def test_create_zone_import_invalid_ttl(self):
@@ -139,6 +149,25 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Ensure the fetched response matches the expected one')
         self.assertExpected(zone_import, body, self.excluded_keys)
 
+        # TODO(johnsom) Test reader roles once this bug is fixed.
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test with no extra header overrides (all_projects, sudo-project-id)
+        expected_allowed = ['os_primary']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZoneImportsClient', 'show_zone_import', expected_allowed, True,
+            zone_import['id'])
+
+        # Test with x-auth-all-projects
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZoneImportsClient', 'show_zone_import', expected_allowed, False,
+            zone_import['id'], headers=self.all_projects_header)
+
     @decorators.idempotent_id('56a16e68-b241-4e41-bc5c-c40747fa68e3')
     def test_delete_zone_import(self):
         LOG.info('Create a zone import')
@@ -153,6 +182,28 @@ class ZonesImportTest(BaseZonesImportTest):
         self.addCleanup(self.wait_zone_delete,
                         self.zone_client,
                         zone_import['zone_id'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZoneImportsClient', 'delete_zone_import', expected_allowed, True,
+            zone_import['id'])
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZoneImportsClient', 'delete_zone_import', expected_allowed, False,
+            zone_import['id'], headers=self.all_projects_header)
+        self.check_CUD_RBAC_enforcement(
+            'ZoneImportsClient', 'delete_zone_import', expected_allowed, False,
+            zone_import['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
         LOG.info('Delete the zone')
         resp, body = self.client.delete_zone_import(zone_import['id'])
@@ -178,6 +229,38 @@ class ZonesImportTest(BaseZonesImportTest):
         body = self.client.list_zone_imports()[1]
 
         self.assertGreater(len(body['imports']), 0)
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC - Users that are allowed to call list, but should get
+        #             zero zones.
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader',
+                                'os_admin', 'os_project_member',
+                                'os_project_reader']
+        else:
+            expected_allowed = ['os_alt']
+
+        self.check_list_RBAC_enforcement_count(
+            'ZoneImportsClient', 'list_zone_imports', expected_allowed, 0)
+
+        # Test that users who should see the zone, can see it.
+        expected_allowed = ['os_primary']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZoneImportsClient', 'list_zone_imports', expected_allowed,
+            [zone_import['id']])
+
+        # Test RBAC with x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZoneImportsClient', 'list_zone_imports', expected_allowed,
+            [zone_import['id']],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
     @decorators.idempotent_id('2c1fa20e-9554-11eb-a55d-74e5f9e2a801')
     def test_show_import_impersonate_another_project(self):
@@ -226,6 +309,17 @@ class ZonesImportTest(BaseZonesImportTest):
         self.assertExpected(
             zone_import, resp_body['imports'][0], self.excluded_keys)
 
+        # Test with x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZoneImportsClient', 'show_zone_import', expected_allowed, False,
+            zone_import['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
+
     @decorators.idempotent_id('7bd06ec6-9556-11eb-a55d-74e5f9e2a801')
     def test_list_import_zones_all_projects(self):
         LOG.info('Create import zone "A" using primary client')
@@ -269,3 +363,13 @@ class ZonesImportTest(BaseZonesImportTest):
             "Failed, expected import ID:{} wasn't found in "
             "listed import IDs".format(
                 zone_import['id'], listed_zone_import_ids))
+
+        # Test RBAC with x-auth-all-projects
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZoneImportsClient', 'list_zone_imports', expected_allowed,
+            [zone_import['id']], headers=self.all_projects_header)
