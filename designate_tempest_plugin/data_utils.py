@@ -47,6 +47,27 @@ def rand_zone_name(name='', prefix='rand', suffix='.com.'):
     return name + suffix
 
 
+def rand_dns_name_by_size(name_size, label_size=63):
+    """Generates label based DNS name, by given characters size
+    :param name_size: size in characters
+    :param label_size: the max number of characters to be used
+                       for label. Max value according the RFC is 63
+                       https://datatracker.ietf.org/doc/html/rfc1035#
+                       section-2.3.4in
+    :return: DNS name
+    """
+    template = ''
+    while len(template) < name_size:
+        remaining_length = name_size - len(template)
+        template += '{}.'.format(rand_string(
+            min(remaining_length - 1, label_size)))
+    if template.endswith('..'):
+        raise Exception("There is no way to generate a valid DNS name "
+                        "using provided set of values:{},{}, consider "
+                        "changing those values".format(name_size, label_size))
+    return template
+
+
 def rand_email(domain=None):
     """Generate a random zone name
     :return: a random zone name e.g. example.org.
