@@ -13,14 +13,12 @@
 # under the License.
 
 from socket import gaierror
-from unittest import expectedFailure
 
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
-from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
@@ -178,51 +176,3 @@ class ZoneTasksNegative(BaseZonesTest):
         except gaierror as e:
             LOG.info('Function "_query_nameserver" failed with:{} '.format(e))
         return query_succeeded
-
-    @expectedFailure
-    @decorators.idempotent_id('ca250d92-8a2b-11eb-b49b-74e5f9e2a801')
-    def test_manually_trigger_update_secondary_zone_negative(self):
-        # Create a PRIMARY zone
-        LOG.info('Create a PRIMARY zone')
-        zone_name = dns_data_utils.rand_zone_name(
-            name="manually_trigger_update_primary", suffix=self.tld_name)
-        pr_zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
-        waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
-
-        LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', pr_zone['action'])
-        self.assertEqual('PENDING', pr_zone['status'])
-
-        # Get the Name Servers created for a PRIMARY zone
-        nameservers = [
-            dic['hostname'] for dic in self.client.show_zone_nameservers(
-                pr_zone['id'])[1]['nameservers']]
-
-        # Make sure that the nameservers are not available using DNS
-        # query and if it does, skip the test.
-        LOG.info('Check if NameServers are available, skip the test if not')
-        for ns in nameservers:
-            if self._query_nameserver(
-                    ns, 5, pr_zone['name'], zone_type='SOA') is True:
-                raise self.skipException(
-                    "Nameserver:{} is available, but negative test scenario "
-                    "needs it to be unavailable, therefore test is "
-                    "skipped.".format(ns.strip('.')))
-
-        # Create a SECONDARY zone
-        LOG.info('Create a SECONDARY zone')
-        zone_name = dns_data_utils.rand_zone_name(
-            name="manually_trigger_update_secondary", suffix=self.tld_name)
-        sec_zone = self.client.create_zone(name=zone_name,
-            zone_type=const.SECONDARY_ZONE_TYPE, primaries=nameservers)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, sec_zone['id'])
-        LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', sec_zone['action'])
-        self.assertEqual('PENDING', sec_zone['status'])
-
-        # Manually trigger_update zone
-        LOG.info('Manually Trigger an Update of a Secondary Zone when the '
-                 'nameservers not pingable. Expected: error status code 500')
-        with self.assertRaisesDns(lib_exc.ServerFault, 'unknown', 500):
-            self.client.trigger_manual_update(sec_zone['id'])
