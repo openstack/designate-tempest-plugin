@@ -1063,7 +1063,7 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
                     lib_exc.BadRequest, 'bad_request', 400,
                     self.admin_client.update_recordset,
                     zone['id'], recordset['id'],
-                    recordet_data=dns_data_utils.rand_ns_records(),
+                    recordset_data=dns_data_utils.rand_ns_records(),
                     headers=sudo_managed_headers, extra_headers=True)
 
             if recordset['type'] == 'SOA':
@@ -1071,6 +1071,55 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
                     lib_exc.BadRequest, 'bad_request', 400,
                     self.admin_client.update_recordset,
                     zone['id'], recordset['id'],
-                    recordet_data=dns_data_utils.rand_soa_recordset(
+                    recordset_data=dns_data_utils.rand_soa_recordset(
                         zone['name']),
                     headers=sudo_managed_headers, extra_headers=True)
+
+
+class RecordsetsManagedRecordsNegativeTest(BaseRecordsetsTest):
+
+    credentials = ["admin", "system_admin", "primary"]
+
+    @classmethod
+    def setup_clients(cls):
+        super(RecordsetsManagedRecordsNegativeTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
+
+    @decorators.idempotent_id('083fa738-bb1b-11ec-b581-201e8823901f')
+    def test_delete_ns_record_not_permitted(self):
+        LOG.info('Get NS type recordset ID')
+        recordsets = self.recordset_client.list_recordset(
+            self.zone['id'])[1]['recordsets']
+        for recordset in recordsets:
+            if recordset['type'] == 'NS':
+                ns_record_id = recordset['id']
+                break
+
+        LOG.info('Primary user tries to delete NS Recordset')
+        self.assertRaises(
+            lib_exc.Forbidden,
+            self.recordset_client.delete_recordset,
+            self.zone['id'], ns_record_id, headers=self.managed_records)
+
+    @decorators.idempotent_id('1e78a742-66ee-11ec-8dc3-201e8823901f')
+    def test_create_soa_record_not_permitted(self):
+        soa_record = ("s1.devstack.org. admin.example.net. 1510721487 3510"
+                      " 600 86400 3600")
+        LOG.info('Primary tries to create a Recordset on '
+                 'the existing zone')
+        self.assertRaises(
+            lib_exc.BadRequest,
+            self.recordset_client.create_recordset,
+            self.zone['id'], soa_record)
+        LOG.info('Admin tries to create a Recordset on the existing zone')
+        self.assertRaises(
+            lib_exc.BadRequest,
+            self.admin_client.create_recordset,
+            self.zone['id'], soa_record)

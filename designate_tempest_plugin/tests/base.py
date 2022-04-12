@@ -177,6 +177,7 @@ class BaseDnsV2Test(BaseDnsTest):
     """Base class for DNS V2 API tests."""
 
     all_projects_header = {'X-Auth-All-Projects': True}
+    managed_records = {'x-designate-edit-managed-records': True}
 
     @classmethod
     def skip_checks(cls):
