@@ -51,8 +51,10 @@ DnsGroup = [
                help="The timeout on a single dns query to a nameserver"),
     cfg.StrOpt('zone_id',
                help="The target zone to test the dns recordsets "
-                    "If it is not specified, a new zone will be created ")
-
+                    "If it is not specified, a new zone will be created "),
+    cfg.StrOpt('tld_suffix',
+               default='com',
+               help="TLD suffix that used in all tests (if not overridden)")
 ]
 
 dns_feature_group = cfg.OptGroup(name='dns_feature_enabled',
