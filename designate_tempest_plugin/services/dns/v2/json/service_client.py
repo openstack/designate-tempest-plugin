@@ -25,3 +25,14 @@ class ServiceClient(base.DnsClientV2Base):
         """
         return self._list_request(
             'service_statuses', headers=headers)[1]['service_statuses']
+
+    @base.handle_errors
+    def show_statuses(self, uuid, headers=None):
+        """Show Service status
+
+        :param headers: (dict): The headers to use for the request.
+        :param uuid: service ID
+        :return: Service status dictionary
+        """
+        return self._show_request(
+            'service_statuses', uuid, headers=headers)[1]
