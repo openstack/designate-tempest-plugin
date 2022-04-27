@@ -23,6 +23,9 @@ from designate_tempest_plugin import data_utils as dns_data_utils
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
+quotas_types = ["api_export_size", "recordset_records",
+                "zone_records", "zone_recordsets", "zones"]
+
 
 class QuotasV2Test(base.BaseDnsV2Test):
 
@@ -53,7 +56,6 @@ class QuotasV2Test(base.BaseDnsV2Test):
             cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
         cls.alt_client = cls.os_alt.dns_v2.QuotasClient()
-        cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
 
     def _store_quotas(self, project_id, cleanup=True):
         """Remember current quotas and reset them after the test"""
@@ -68,29 +70,33 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
     @decorators.idempotent_id('1dac991a-9e2e-452c-a47a-26ac37381ec5')
     def test_show_quotas(self):
-        self._store_quotas(project_id=self.quotas_client.project_id)
-        LOG.info("Updating quotas")
-        quotas = dns_data_utils.rand_quotas()
-        _, body = self.admin_client.update_quotas(
-            project_id=self.quotas_client.project_id,
-            headers=self.all_projects_header,
-            **quotas)
-
-        LOG.info("Fetching quotas")
-        _, body = self.admin_client.show_quotas(
-            project_id=self.quotas_client.project_id,
-            headers=self.all_projects_header)
-
-        LOG.info("Ensuring the response has all quota types")
-        self.assertExpected(quotas, body, [])
+        LOG.info("Show default quotas, validate all quota types exists and "
+                 "their values are integers.")
+        for user in ['primary', 'admin']:
+            if user == 'primary':
+                body = self.quotas_client.show_quotas()[1]
+            if user == 'admin':
+                body = self.admin_client.show_quotas(
+                    project_id=self.quotas_client.project_id,
+                    headers=self.all_projects_header)[1]
+            for quota_type in quotas_types:
+                self.assertIn(
+                    quota_type, body.keys(),
+                    'Failed, expected quota type:{} was not found '
+                    'in received quota body'.format(quota_type))
+            for quota_type, quota_value in body.items():
+                self.assertTrue(
+                    isinstance(quota_value, int),
+                    'Failed, the value of:{} is:{}, expected integer'.format(
+                        quota_type, quota_value))
 
     @decorators.idempotent_id('0448b089-5803-4ce3-8a6c-5c15ff75a2cc')
-    def test_delete_quotas(self):
+    def test_reset_quotas(self):
         self._store_quotas(project_id=self.quotas_client.project_id)
-        LOG.info("Deleting quotas")
-        _, body = self.admin_client.delete_quotas(
+        LOG.info("Deleting (reset) quotas")
+        body = self.admin_client.delete_quotas(
             project_id=self.quotas_client.project_id,
-            headers=self.all_projects_header)
+            headers=self.all_projects_header)[1]
 
         LOG.info("Ensuring an empty response body")
         self.assertEqual(body.strip(), b"")
@@ -104,9 +110,9 @@ class QuotasV2Test(base.BaseDnsV2Test):
         self._store_quotas(project_id=self.admin_client.project_id)
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()
-        _, body = self.admin_client.update_quotas(
+        body = self.admin_client.update_quotas(
             project_id=self.admin_client.project_id,
-            **quotas)
+            **quotas)[1]
 
         LOG.info("Ensuring the response has all quota types")
         self.assertExpected(quotas, body, [])
@@ -121,15 +127,15 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
         quotas = dns_data_utils.rand_quotas()
         request = quotas.copy()
-        _, body = self.admin_client.update_quotas(
+        body = self.admin_client.update_quotas(
             project_id=project_id,
             headers=self.all_projects_header,
-            **request)
+            **request)[1]
 
         LOG.info("Ensuring the response has all quota types")
         self.assertExpected(quotas, body, [])
 
-        _, client_body = self.quotas_client.show_quotas(project_id=project_id)
+        client_body = self.quotas_client.show_quotas(project_id=project_id)[1]
 
         self.assertExpected(quotas, client_body, [])
 
@@ -145,15 +151,15 @@ class QuotasV2Test(base.BaseDnsV2Test):
             project_id=project_id,
             headers=self.all_projects_header)
 
-        _, default_quotas = self.admin_client.show_quotas(
+        default_quotas = self.admin_client.show_quotas(
             project_id=project_id,
-            headers=self.all_projects_header)
+            headers=self.all_projects_header)[1]
 
         LOG.info("Updating quotas for %s ", project_id)
 
         quotas = dns_data_utils.rand_quotas()
         request = quotas.copy()
-        _, body = self.admin_client.update_quotas(
+        self.admin_client.update_quotas(
             project_id=project_id,
             headers=self.all_projects_header,
             **request)
@@ -162,9 +168,9 @@ class QuotasV2Test(base.BaseDnsV2Test):
             project_id=project_id,
             headers=self.all_projects_header)
 
-        _, final_quotas = self.admin_client.show_quotas(
+        final_quotas = self.admin_client.show_quotas(
             project_id=project_id,
-            headers=self.all_projects_header)
+            headers=self.all_projects_header)[1]
 
         self.assertExpected(default_quotas, final_quotas, [])
 
@@ -188,16 +194,45 @@ class QuotasV2Test(base.BaseDnsV2Test):
                 **request)
 
         LOG.info("Make sure that the quotas weren't changed")
-        _, client_body = self.quotas_client.show_quotas(
-            project_id=self.quotas_client.project_id)
+        client_body = self.quotas_client.show_quotas(
+            project_id=self.quotas_client.project_id)[1]
         self.assertExpected(original_quotas, client_body, [])
+
+
+class QuotasV2TestNegative(base.BaseDnsV2Test):
+
+    credentials = ["primary", "admin", "system_admin"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(QuotasV2TestNegative, cls).setup_credentials()
+
+    @classmethod
+    def skip_checks(cls):
+        super(QuotasV2TestNegative, cls).skip_checks()
+
+        if not CONF.dns_feature_enabled.api_v2_quotas:
+            skip_msg = ("%s skipped as designate V2 Quotas API is not "
+                        "available" % cls.__name__)
+            raise cls.skipException(skip_msg)
+
+    @classmethod
+    def setup_clients(cls):
+        super(QuotasV2TestNegative, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_client = cls.os_system_admin.dns_v2.QuotasClient()
+        else:
+            cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
+        cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
 
     @decorators.idempotent_id('ae82a0ba-da60-11eb-bf12-74e5f9e2a801')
     def test_admin_sets_quota_for_a_project(self):
 
         primary_project_id = self.quotas_client.project_id
-        http_headers_to_use = [
-            {'X-Auth-All-Projects': True},
+        http_headers_to_use = [self.all_projects_header,
             {'x-auth-sudo-project-id': primary_project_id}]
 
         for http_header in http_headers_to_use:
@@ -240,21 +275,33 @@ class QuotasV2Test(base.BaseDnsV2Test):
             lib_exc.Forbidden, self.quotas_client.set_quotas,
             project_id=self.quotas_client.project_id,
             quotas=dns_data_utils.rand_quotas(),
-            headers={'x-auth-all-projects': True})
+            headers=self.all_projects_header)
 
     @decorators.idempotent_id('a6ce5b46-dcce-11eb-903e-74e5f9e2a801')
     @decorators.skip_because(bug="1934596")
     def test_admin_sets_invalid_quota_values(self):
 
         primary_project_id = self.quotas_client.project_id
-        http_header = {'X-Auth-All-Projects': True}
 
-        for item in ['zones', 'zone_records',
-                     'zone_recordsets', 'recordset_records']:
+        for item in quotas_types:
             quota = dns_data_utils.rand_quotas()
             quota[item] = tempest_data_utils.rand_name()
             self.assertRaises(
                 lib_exc.BadRequest, self.admin_client.set_quotas,
                 project_id=primary_project_id,
                 quotas=quota,
-                headers=http_header)
+                headers=self.all_projects_header)
+
+    @decorators.idempotent_id('ac212fd8-c602-11ec-b042-201e8823901f')
+    def test_admin_sets_not_existing_quota_type(self):
+
+        LOG.info('Try to set quota using not existing quota type in its body')
+        primary_project_id = self.quotas_client.project_id
+        quota = dns_data_utils.rand_quotas()
+        quota[tempest_data_utils.rand_name()] = 777
+
+        with self.assertRaisesDns(
+                lib_exc.ServerFault, 'quota_resource_unknown', 500):
+            self.admin_client.set_quotas(
+                project_id=primary_project_id,
+                quotas=quota, headers=self.all_projects_header)
