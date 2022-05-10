@@ -11,7 +11,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import six
 from tempest import test
 from tempest import config
 from tempest.lib.common.utils import test_utils as utils
@@ -91,7 +90,7 @@ class BaseDnsTest(test.BaseTestCase):
         )
 
     def assertExpected(self, expected, actual, excluded_keys):
-        for key, value in six.iteritems(expected):
+        for key, value in expected.items():
             if key not in excluded_keys:
                 self.assertIn(key, actual)
                 self.assertEqual(value, actual[key], key)
