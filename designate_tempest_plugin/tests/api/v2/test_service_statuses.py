@@ -24,27 +24,28 @@ CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
-class ServiceStatus(base.BaseDnsV2Test):
+class ServiceStatusAdmin(base.BaseDnsV2Test):
 
-    credentials = ["primary", "admin", "system_admin", "alt"]
+    credentials = ["admin", "system_admin"]
+
+    mandatory_services = ['central', 'mdns', 'worker', 'producer']
+    service_status_fields = [
+        'id', 'hostname', 'service_name', 'status', 'stats', 'capabilities',
+        'heartbeated_at', 'created_at', 'updated_at', 'links']
 
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
         cls.set_network_resources()
-        super(ServiceStatus, cls).setup_credentials()
+        super(ServiceStatusAdmin, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):
-        super(ServiceStatus, cls).setup_clients()
+        super(ServiceStatusAdmin, cls).setup_clients()
         if CONF.enforce_scope.designate:
             cls.admin_client = cls.os_system_admin.dns_v2.ServiceClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.ServiceClient()
-        cls.client = cls.os_primary.dns_v2.ServiceClient()
-
-        cls.primary_client = cls.os_primary.dns_v2.ServiceClient()
-        cls.alt_client = cls.os_alt.dns_v2.ServiceClient()
 
     @decorators.idempotent_id('bf277a76-8583-11eb-a557-74e5f9e2a801')
     def test_admin_list_service_statuses(self):
@@ -57,8 +58,8 @@ class ServiceStatus(base.BaseDnsV2Test):
 
         LOG.info('Make sure that all expected/mandatory services are '
                  'listed in API response.')
-        expected_services = ['central', 'mdns', 'worker', 'producer']
-        for service in expected_services:
+
+        for service in self.mandatory_services:
             self.assertIn(
                 service, [item[0] for item in services_statuses_tup],
                 "Failed, expected service: {} wasn't detected in API "
@@ -69,6 +70,37 @@ class ServiceStatus(base.BaseDnsV2Test):
             {const.UP}, set([item[1] for item in services_statuses_tup]),
             "Failed, not all listed services are in UP status, "
             "services: {}".format(services_statuses_tup))
+
+    @decorators.idempotent_id('fce0f704-c0ae-11ec-8213-201e8823901f')
+    def test_admin_show_service_status(self):
+
+        LOG.info('List services and get the IDs of mandatory services only')
+        services_ids = [
+            service['id'] for service in self.admin_client.list_statuses()
+            if service['service_name'] in self.mandatory_services]
+
+        LOG.info('Ensure all service status fields presents in response')
+        for id in services_ids:
+            service_show = self.admin_client.show_statuses(id)
+            self.assertEqual(
+                sorted(self.service_status_fields), sorted(service_show))
+
+
+class ServiceStatusNegative(base.BaseDnsV2Test):
+
+    credentials = ["primary", "alt"]
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(ServiceStatusNegative, cls).setup_credentials()
+
+    @classmethod
+    def setup_clients(cls):
+        super(ServiceStatusNegative, cls).setup_clients()
+        cls.primary_client = cls.os_primary.dns_v2.ServiceClient()
+        cls.alt_client = cls.os_alt.dns_v2.ServiceClient()
 
     @decorators.idempotent_id('d4753f76-de43-11eb-91d1-74e5f9e2a801')
     def test_primary_is_forbidden_to_list_service_statuses(self):
