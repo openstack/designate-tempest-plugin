@@ -58,17 +58,29 @@ class QuotasClient(base.DnsClientV2Base):
         return resp, body
 
     @base.handle_errors
-    def show_quotas(self, project_id, params=None, headers=None):
+    def show_quotas(self, project_id=None, params=None, headers=None):
         """Gets a specific quota.
 
-        :param project_id: Show the quotas of this project id
+        :param project_id: if provided - show the quotas of this project id.
+                           https://docs.openstack.org/api-ref/dns/?expanded=
+                           get-the-name-servers-for-a-zone-detail#view-quotas
+                           If not - show the quotas for a current
+                           project.
+                           https://docs.openstack.org/api-ref/dns/?expanded=ge
+                           t-the-name-servers-for-a-zone-detail#view-current-p
+                           roject-s-quotas
+
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
         :return: Serialized quota as a dictionary.
         """
-        return self._show_request('quotas', project_id, params=params,
-                                  headers=headers, extra_headers=True)
+        if project_id is None:
+            return self._show_request(
+                'quotas', uuid=None, params=params, headers=headers)
+        else:
+            return self._show_request(
+                'quotas', project_id, params=params, headers=headers)
 
     @base.handle_errors
     def delete_quotas(self, project_id, params=None, headers=None):
@@ -100,13 +112,10 @@ class QuotasClient(base.DnsClientV2Base):
         :param headers (dict): The headers to use for the request.
         :return: Serialized quota as a dictionary.
         """
-        if headers is None:
-            headers = {'content-type': 'application/json'}
-        if 'content-type' not in [header.lower() for header in headers]:
-            headers['content-type'] = 'application/json'
 
         resp, body = self._update_request(
             "quotas", project_id,
-            data=quotas, params=params, headers=headers)
+            data=quotas, params=params, headers=headers,
+            extra_headers=True)
         self.expected_success(200, resp.status)
         return resp, body
