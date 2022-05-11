@@ -51,7 +51,7 @@ class TldAdminTest(BaseTldTest):
     def resource_setup(cls):
         super(TldAdminTest, cls).resource_setup()
         cls.tld = cls.admin_client.create_tld(
-            tld_name='com', ignore_errors=lib_exc.Conflict
+            tld_name=cls.tld_suffix, ignore_errors=lib_exc.Conflict
         )
 
     @classmethod
@@ -66,8 +66,8 @@ class TldAdminTest(BaseTldTest):
                      "description": "sample tld"}
 
         LOG.info('Create a tld')
-        _, tld = self.admin_client.create_tld(tld_data['name'],
-                                        tld_data['description'])
+        tld = self.admin_client.create_tld(tld_data['name'],
+                                        tld_data['description'])[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
 
         self.assertEqual(tld_data["name"], tld['name'])
@@ -116,21 +116,6 @@ class TldAdminTest(BaseTldTest):
             lib_exc.BadRequest, self.admin_client.create_tld,
             tld_name='org', description='test_create_invalid_tld' * 1000)
 
-    @decorators.idempotent_id('06deced8-d4de-11eb-b8ee-74e5f9e2a801')
-    def test_create_zone_for_not_existing_tld(self):
-        LOG.info('Create an "org" TLD')
-        tld_data = {"name": "org",
-                    "description": "test_create_zone_for_not_existing_tld"}
-        tld = self.admin_client.create_tld(
-            tld_data['name'], tld_data['description'])[1]
-        self.addCleanup(self.admin_client.delete_tld, tld['id'])
-        self.assertEqual(tld_data["name"], tld['name'])
-
-        LOG.info('Try to create a Primary zone with "zzz" (not existing) TLD.')
-        self.assertRaises(
-            lib_exc.BadRequest, self.primary_zone_client.create_zone,
-            name='example.zzz.')
-
     @decorators.idempotent_id('757019c0-d4e2-11eb-b8ee-74e5f9e2a801')
     def test_create_tld_as_primary_user(self):
         tld_data = {
@@ -147,12 +132,12 @@ class TldAdminTest(BaseTldTest):
                      "description": "sample tld"}
 
         LOG.info('Create a tld')
-        _, tld = self.admin_client.create_tld(tld_data['name'],
-                                        tld_data['description'])
+        tld = self.admin_client.create_tld(tld_data['name'],
+                                        tld_data['description'])[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
 
         LOG.info('Fetch the tld')
-        _, body = self.admin_client.show_tld(tld['id'])
+        body = self.admin_client.show_tld(tld['id'])[1]
 
         LOG.info('Ensure the fetched response matches the created tld')
         self.assertExpected(tld, body, self.excluded_keys)
@@ -160,12 +145,12 @@ class TldAdminTest(BaseTldTest):
     @decorators.idempotent_id('26708cb8-7126-48a7-9424-1c225e56e609')
     def test_delete_tld(self):
         LOG.info('Create a tld')
-        _, tld = self.admin_client.create_tld()
+        tld = self.admin_client.create_tld()[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Delete the tld')
-        _, body = self.admin_client.delete_tld(tld['id'])
+        self.admin_client.delete_tld(tld['id'])
 
         self.assertRaises(lib_exc.NotFound,
            lambda: self.admin_client.show_tld(tld['id']))
@@ -173,13 +158,13 @@ class TldAdminTest(BaseTldTest):
     @decorators.idempotent_id('95b13759-c85c-4791-829b-9591ca15779d')
     def test_list_tlds(self):
         LOG.info('List tlds')
-        _, body = self.admin_client.list_tlds()
+        body = self.admin_client.list_tlds()[1]
 
         self.assertGreater(len(body['tlds']), 0)
 
     @decorators.idempotent_id('1a233812-48d9-4d15-af5e-9961744286ff')
     def test_update_tld(self):
-        _, tld = self.admin_client.create_tld()
+        tld = self.admin_client.create_tld()[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
 
         tld_data = {
@@ -188,8 +173,8 @@ class TldAdminTest(BaseTldTest):
         }
 
         LOG.info('Update the tld')
-        _, patch_tld = self.admin_client.update_tld(tld['id'],
-                       tld_data['name'], tld_data['description'])
+        patch_tld = self.admin_client.update_tld(tld['id'],
+                       tld_data['name'], tld_data['description'])[1]
 
         self.assertEqual(tld_data["name"], patch_tld["name"])
         self.assertEqual(tld_data["description"], patch_tld["description"])

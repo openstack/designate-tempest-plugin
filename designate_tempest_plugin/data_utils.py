@@ -35,7 +35,7 @@ def rand_ipv6():
     return an.format(netaddr.ipv6_compact)
 
 
-def rand_zone_name(name='', prefix='rand', suffix='.com.'):
+def rand_zone_name(name='', prefix='rand', suffix=None):
     """Generate a random zone name
     :param str name: The name that you want to include
     :param prefix: the exact text to start the string. Defaults to "rand"
@@ -43,6 +43,8 @@ def rand_zone_name(name='', prefix='rand', suffix='.com.'):
     :return: a random zone name e.g. example.org.
     :rtype: string
     """
+    if suffix is None:
+        suffix = '.{}.'.format(CONF.dns.tld_suffix)
     name = data_utils.rand_name(name=name, prefix=prefix)
     return name + suffix
 
@@ -67,7 +69,6 @@ def rand_ttl(start=1, end=86400):
 
 def rand_zonefile_data(name=None, ttl=None):
     """Generate random zone data, with optional overrides
-
     :return: A ZoneModel
     """
     zone_base = ('$ORIGIN &\n& # IN SOA ns.& nsadmin.& # # # # #\n'
@@ -105,11 +106,11 @@ def rand_quotas(zones=None, zone_records=None, zone_recordsets=None,
 
 def rand_zone_data(name=None, email=None, ttl=None, description=None):
     """Generate random zone data, with optional overrides
-
     :return: A ZoneModel
     """
     if name is None:
-        name = rand_zone_name(prefix='testdomain', suffix='.com.')
+        name = rand_zone_name(
+            prefix='testdomain', suffix='.{}.'.format(CONF.dns.tld_suffix))
     if email is None:
         email = ("admin@" + name).strip('.')
     if description is None:
@@ -126,7 +127,6 @@ def rand_zone_data(name=None, email=None, ttl=None, description=None):
 def rand_recordset_data(record_type, zone_name, name=None, records=None,
                         ttl=None):
     """Generate random recordset data, with optional overrides
-
     :return: A RecordsetModel
     """
     if name is None:
@@ -202,7 +202,7 @@ def rand_txt_recordset(zone_name, data=None, **kwargs):
 
 def wildcard_ns_recordset(zone_name):
     name = "*.{0}".format(zone_name)
-    records = ["ns.example.com."]
+    records = ["ns.example.{}.".format(CONF.dns.tld_suffix)]
     return rand_recordset_data('NS', zone_name, name, records)
 
 
@@ -225,7 +225,6 @@ def rand_tld():
 
 def rand_transfer_request_data(description=None, target_project_id=None):
     """Generate random transfer request data, with optional overrides
-
     :return: A TransferRequest data
     """
 
@@ -255,7 +254,6 @@ def make_rand_recordset(zone_name, record_type):
     """Create a rand recordset by type
     This essentially just dispatches to the relevant random recordset
     creation functions.
-
     :param str zone_name: The zone name the recordset applies to
     :param str record_type: The type of recordset (ie A, MX, NS, etc...)
     """
@@ -266,7 +264,6 @@ def make_rand_recordset(zone_name, record_type):
 
 def rand_string(size):
     """Create random string of ASCII chars by size
-
     :param int size - length os the string to be create
     :return - random creates string of ASCII lover characters
     """
@@ -275,7 +272,6 @@ def rand_string(size):
 
 def rand_domain_name(tld=None):
     """Create random valid domain name
-
     :param tld (optional) - TLD that will be used to random domain name
     :return - valid domain name, for example: paka.zbabun.iuh
     """
