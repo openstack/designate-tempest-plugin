@@ -216,6 +216,19 @@ def rand_ns_records():
     return ns_records
 
 
+def rand_soa_records(number_of_records=2):
+    return ['{} {} {} {} {} {}.'.format(
+        '{}.{}.{}'.format(rand_string(3), rand_string(7), rand_string(3)),
+        random.randint(1000000000, 2020080302), random.randint(3000, 7200),
+        random.randint(1000, 3600), random.randint(1000000, 1209600),
+        random.randint(1000, 3600)) for i in range(0, number_of_records)]
+
+
+def rand_soa_recordset(zone_name, **kwargs):
+    return rand_recordset_data(
+        'SOA', zone_name, records=rand_soa_records(), **kwargs)
+
+
 def rand_tld():
     data = {
         "name": rand_zone_name(prefix='tld', suffix='')

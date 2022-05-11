@@ -191,7 +191,8 @@ class DnsClientBase(rest_client.RestClient):
 
         return resp, self.deserialize(resp, body)
 
-    def _put_request(self, resource, uuid, data, params=None):
+    def _put_request(self, resource, uuid, data, params=None,
+                     headers=None, extra_headers=False):
         """Updates the specified object using PUT request.
         :param resource: The name of the REST resource, e.g., 'zones'.
         :param uuid: Unique identifier of the object in UUID format.
@@ -200,11 +201,18 @@ class DnsClientBase(rest_client.RestClient):
                      is sent as-is.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
+        :param extra_headers (bool): Boolean value than indicates if the
+                                     headers returned by the get_headers()
+                                     method are to be used but additional
+                                     headers are needed in the request
+                                     pass them in as a dict.
         :returns: Serialized object as a dictionary.
         """
         body = self.serialize(data)
         uri = self.get_uri(resource, uuid=uuid, params=params)
-        resp, body = self.put(uri, body=body)
+        resp, body = self.put(
+            uri, body=body, headers=headers, extra_headers=extra_headers)
 
         self.expected_success(self.PUT_STATUS_CODES, resp.status)
 

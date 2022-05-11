@@ -59,7 +59,8 @@ class RecordsetClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def update_recordset(self, zone_uuid, recordset_uuid,
-                         recordet_data, params=None):
+                         recordet_data, params=None,
+                         headers=None, extra_headers=None):
         """Update the recordset related to the specified zone.
         :param zone_uuid: Unique identifier of the zone in UUID format.
         :param recordset_uuid: Unique identifier of the recordset in UUID
@@ -68,11 +69,18 @@ class RecordsetClient(base.DnsClientV2Base):
                                data.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
+        :param extra_headers (bool): Boolean value than indicates if the
+                                     headers returned by the get_headers()
+                                     method are to be used but additional
+                                     headers are needed in the request
+                                     pass them in as a dict.
         :return: A tuple with the server response and the created zone.
         """
         resp, body = self._put_request(
             'zones/{0}/recordsets'.format(zone_uuid), recordset_uuid,
-            data=recordet_data, params=params)
+            data=recordet_data, params=params,
+            headers=headers, extra_headers=extra_headers)
 
         # Update Recordset should Return a HTTP 202, or a 200 if the recordset
         # is already active
