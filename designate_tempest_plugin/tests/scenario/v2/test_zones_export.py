@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import json
+import os
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
@@ -42,6 +44,7 @@ class ZonesExportTest(BaseZoneExportsTest):
             cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
+        cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     def _create_zone_export(self):
         LOG.info('Create a zone')
@@ -49,10 +52,10 @@ class ZonesExportTest(BaseZoneExportsTest):
         self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone export')
-        zone_export = self.client.create_zone_export(zone['id'])[1]
+        zone_export = self.client.create_zone_export(
+            zone['id'], wait_until=const.COMPLETE)[1]
         self.addCleanup(self.client.delete_zone_export, zone_export['id'])
-        waiters.wait_for_zone_export_status(
-            self.client, zone_export['id'], const.COMPLETE)
+
         return zone, zone_export
 
     @decorators.idempotent_id('0484c3c4-df57-458e-a6e5-6eb63e0475e0')
@@ -127,3 +130,58 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Ensure exported data ia as expected')
         self.assertEqual(zone['name'], resp_data.origin)
         self.assertEqual(zone['ttl'], resp_data.ttl)
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('d8f444aa-a645-4a03-b366-46836f57dc69')
+    def test_all_recordset_types_exist_in_show_zonefile(self):
+        recorsets_data_file = os.path.join(
+            os.path.dirname(__file__), 'recordset_data.json')
+
+        if not os.path.exists(recorsets_data_file):
+            raise self.skipException(
+                f"Could not find {recorsets_data_file}")
+
+        file = open(recorsets_data_file, "r")
+        load_file = json.loads(file.read())
+        file.close()
+
+        LOG.info('Create a zone')
+        zone = self.zones_client.create_zone(wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
+
+        created_records = []
+        for record_data in load_file.values():
+            recordset_data = {
+                'name': f"{record_data['name']}.{zone['name']}",
+                'type': record_data['type'],
+                'records': record_data['records'],
+            }
+            try:
+                LOG.info('Create a Recordset')
+                recordset = self.recordset_client.create_recordset(
+                    zone['id'], recordset_data)[1]
+                self.addCleanup(self.wait_recordset_delete,
+                                self.recordset_client, zone['id'],
+                                recordset['id'])
+                created_records.append(recordset['records'])
+                waiters.wait_for_recordset_status(self.recordset_client,
+                                                  zone['id'], recordset['id'],
+                                                  const.ACTIVE)
+            except Exception as err:
+                LOG.warning(f"Record of type {recordset['type']} could not be"
+                            f" created and failed with error: {err}")
+
+        LOG.info('Create a zone export')
+        zone_export = self.client.create_zone_export(
+            zone['id'], wait_until=const.COMPLETE)[1]
+        self.addCleanup(self.client.delete_zone_export, zone_export['id'])
+
+        LOG.info('Show exported zonefile')
+        created_zonefile = self.client.show_exported_zonefile(
+            zone_export['id'])[1]
+
+        file_records = [item.data for item in created_zonefile.records]
+        for record in created_records:
+            for r in record:
+                self.assertIn(r, file_records,
+                            f"Failed, missing record: {r} in zone file")
