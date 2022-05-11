@@ -24,8 +24,6 @@ from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 
-from designate_tempest_plugin.common import waiters
-
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
@@ -62,8 +60,8 @@ class ZonesTest(BaseZonesTest):
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
+        self.assertEqual(const.CREATE, zone['action'])
+        self.assertEqual(const.PENDING, zone['status'])
 
         # Get the Name Servers (hosts) created in PRIMARY zone
         nameservers = self.client.show_zone_nameservers(zone['id'])[1]
@@ -76,22 +74,19 @@ class ZonesTest(BaseZonesTest):
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
+        self.assertEqual(const.CREATE, zone['action'])
+        self.assertEqual(const.PENDING, zone['status'])
 
     @decorators.idempotent_id('ec150c22-f52e-11eb-b09b-74e5f9e2a801')
     def test_create_zone_validate_recordsets_created(self):
         # Create a PRIMARY zone and wait till it's Active
         LOG.info('Create a PRIMARY zone')
-        zone = self.client.create_zone()[1]
+        zone = self.client.create_zone(wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
-        self.assertEqual('CREATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
-
-        LOG.info('Wait till the zone is Active')
-        waiters.wait_for_zone_status(self.client, zone['id'], 'ACTIVE')
+        self.assertEqual(const.CREATE, zone['action'])
+        self.assertEqual(const.PENDING, zone['status'])
 
         LOG.info('Ensure that SOA and NS recordsets types has been created.')
         recordsets = self.recordset_client.list_recordset(
@@ -140,8 +135,8 @@ class ZonesTest(BaseZonesTest):
         _, body = self.client.delete_zone(zone['id'])
 
         LOG.info('Ensure we respond with DELETE+PENDING')
-        self.assertEqual('DELETE', body['action'])
-        self.assertEqual('PENDING', body['status'])
+        self.assertEqual(const.DELETE, body['action'])
+        self.assertEqual(const.PENDING, body['status'])
 
     @decorators.idempotent_id('79921370-92e1-11eb-9d02-74e5f9e2a801')
     def test_delete_non_existing_zone(self):
@@ -176,11 +171,52 @@ class ZonesTest(BaseZonesTest):
             zone['id'], description=description)
 
         LOG.info('Ensure we respond with UPDATE+PENDING')
-        self.assertEqual('UPDATE', zone['action'])
-        self.assertEqual('PENDING', zone['status'])
+        self.assertEqual(const.UPDATE, zone['action'])
+        self.assertEqual(const.PENDING, zone['status'])
 
         LOG.info('Ensure we respond with updated values')
         self.assertEqual(description, zone['description'])
+
+    @decorators.idempotent_id('3acddc86-62cc-4bfa-8589-b99e5d239bf2')
+    @decorators.skip_because(bug="1960487")
+    def test_serial_changes_on_update(self):
+        LOG.info('Create a zone')
+        zone = self.client.create_zone(wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+
+        LOG.info("Update Zone's email")
+        update_email = self.client.update_zone(
+            zone['id'], email=dns_data_utils.rand_email())[1]
+        self.assertNotEqual(
+            zone['serial'], update_email['serial'],
+            "Failed, expected: 'Serial' is supposed to be changed "
+            "on Email update.")
+
+        LOG.info("Update Zone's TTL")
+        update_ttl = self.client.update_zone(
+            zone['id'], ttl=dns_data_utils.rand_ttl())[1]
+        self.assertNotEqual(
+            update_email['serial'], update_ttl['serial'],
+            "Failed, expected: 'Serial' is supposed to be changed "
+            "on TTL update.")
+
+        LOG.info("Update Zone's email and description")
+        update_email_description = self.client.update_zone(
+            zone['id'],
+            email=dns_data_utils.rand_email(),
+            description=data_utils.rand_name())[1]
+        self.assertNotEqual(
+            update_ttl['serial'], update_email_description['serial'],
+            "Failed, expect the Serial to change "
+            "when the Email and Description are updated")
+
+        LOG.info("Update Zone's description")
+        update_description = self.client.update_zone(
+            zone['id'], description=data_utils.rand_name())[1]
+        self.assertEqual(
+            update_email_description['serial'], update_description['serial'],
+            "Failed, expect the Serial to not change "
+            "when the Description is updated")
 
     @decorators.idempotent_id('e391e30a-92e0-11eb-9d02-74e5f9e2a801')
     def test_update_non_existing_zone(self):
@@ -280,30 +316,20 @@ class ZonesAdminTest(BaseZonesTest):
     def test_list_all_projects_zones(self):
 
         LOG.info('Create zone "A" using Primary client')
-        primary_zone = self.client.create_zone()[1]
+        primary_zone = self.client.create_zone(wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete, self.client, primary_zone['id'])
-        LOG.info('Wait till the zone is ACTIVE')
-        waiters.wait_for_zone_status(
-            self.client, primary_zone['id'], 'ACTIVE')
 
         LOG.info('Create zone "B" using Alt client')
-        alt_zone = self.alt_client.create_zone()[1]
+        alt_zone = self.alt_client.create_zone(wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete, self.alt_client, alt_zone['id'])
-        LOG.info('Wait till the zone is ACTIVE')
-        waiters.wait_for_zone_status(
-            self.alt_client, alt_zone['id'], 'ACTIVE')
 
         LOG.info('Create zone "C" using Admin client')
         admin_zone = self.admin_client.create_zone(
-            project_id="FakeProjectID")[1]
+            project_id="FakeProjectID", wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_client, admin_zone['id'],
-            headers=self.all_projects_header)
-        LOG.info('Wait till the zone is ACTIVE')
-        waiters.wait_for_zone_status(
-            self.admin_client, admin_zone['id'], 'ACTIVE',
             headers=self.all_projects_header)
 
         LOG.info('As admin user list all projects zones')
