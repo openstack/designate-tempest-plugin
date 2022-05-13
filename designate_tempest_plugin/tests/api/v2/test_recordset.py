@@ -402,6 +402,32 @@ class RecordsetsTest(BaseRecordsetsTest):
             self.client, self.zone['id'],
             body['id'], const.ACTIVE)
 
+    @decorators.idempotent_id('f15e583e-e479-11eb-8e5a-74e5f9e2a801')
+    def test_delete_zone_with_existing_recordset(self):
+
+        LOG.info('Create a Zone')
+        zone = self.zone_client.create_zone(wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+
+        LOG.info('Create a Recordset')
+        recordset_data = data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        record = self.client.create_recordset(
+            zone['id'], recordset_data, wait_until=const.ACTIVE)[1]
+
+        LOG.info("Delete a Zone and wait till it's done")
+        body = self.zone_client.delete_zone(zone['id'])[1]
+        LOG.info('Ensure we respond with DELETE+PENDING')
+        self.assertEqual(const.DELETE, body['action'])
+        self.assertEqual(const.PENDING, body['status'])
+
+        LOG.info('Ensure successful deletion of Zone')
+        waiters.wait_for_zone_404(self.zone_client, zone['id'])
+
+        LOG.info('Ensure successful deletion of Recordset')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.show_recordset(zone['id'], record['id']))
+
 
 @ddt.ddt
 class RecordsetsNegativeTest(BaseRecordsetsTest):
@@ -700,11 +726,13 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                     record_type='A', zone_name=zone['name'])
                 resp, body = self.client.create_recordset(
                     zone['id'], recordset_data)
+
                 self.addCleanup(
                     self.wait_recordset_delete, self.client,
                     self.zone['id'], body['id'])
                 self.assertEqual(const.PENDING, body['status'],
                                  'Failed, expected status is PENDING')
+
                 LOG.info('Wait until the recordset is active')
                 waiters.wait_for_recordset_status(
                     self.client, zone['id'],
@@ -728,11 +756,13 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                     record_type='A', zone_name=alt_zone['name'])
                 resp, body = self.alt_client.create_recordset(
                     alt_zone['id'], recordset_data)
+
                 self.addCleanup(
                     self.wait_recordset_delete, self.client,
                     self.zone['id'], body['id'])
                 self.assertEqual(const.PENDING, body['status'],
                                  'Failed, expected status is PENDING')
+
                 LOG.info('Wait until the recordset is active')
                 waiters.wait_for_recordset_status(
                     self.alt_client, alt_zone['id'],
@@ -742,6 +772,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                 recordset_data['project_id'] = alt_zone['project_id']
                 recordsets_created['alt'] = recordset_data
 
+        LOG.info('Created resordsets are {}:'.format(recordsets_created))
         return recordsets_created
 
     @decorators.idempotent_id('9c0f58ad-1b31-4899-b184-5380720604e5')
