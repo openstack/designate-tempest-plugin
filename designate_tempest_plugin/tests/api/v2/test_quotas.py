@@ -278,7 +278,6 @@ class QuotasV2TestNegative(base.BaseDnsV2Test):
             headers=self.all_projects_header)
 
     @decorators.idempotent_id('a6ce5b46-dcce-11eb-903e-74e5f9e2a801')
-    @decorators.skip_because(bug="1934596")
     def test_admin_sets_invalid_quota_values(self):
 
         primary_project_id = self.quotas_client.project_id
@@ -293,7 +292,6 @@ class QuotasV2TestNegative(base.BaseDnsV2Test):
                 headers=self.all_projects_header)
 
     @decorators.idempotent_id('ac212fd8-c602-11ec-b042-201e8823901f')
-    @decorators.skip_because(bug="1934596")
     def test_admin_sets_not_existing_quota_type(self):
 
         LOG.info('Try to set quota using not existing quota type in its body')
@@ -302,7 +300,7 @@ class QuotasV2TestNegative(base.BaseDnsV2Test):
         quota[tempest_data_utils.rand_name()] = 777
 
         with self.assertRaisesDns(
-                lib_exc.ServerFault, 'quota_resource_unknown', 500):
+                lib_exc.BadRequest, 'invalid_object', 400):
             self.admin_client.set_quotas(
                 project_id=primary_project_id,
                 quotas=quota, headers=self.all_projects_header)
