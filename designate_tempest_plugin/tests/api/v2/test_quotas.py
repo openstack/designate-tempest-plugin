@@ -293,6 +293,7 @@ class QuotasV2TestNegative(base.BaseDnsV2Test):
                 headers=self.all_projects_header)
 
     @decorators.idempotent_id('ac212fd8-c602-11ec-b042-201e8823901f')
+    @decorators.skip_because(bug="1934596")
     def test_admin_sets_not_existing_quota_type(self):
 
         LOG.info('Try to set quota using not existing quota type in its body')
