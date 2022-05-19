@@ -53,8 +53,8 @@ DnsGroup = [
                help="The target zone to test the dns recordsets "
                     "If it is not specified, a new zone will be created "),
     cfg.StrOpt('tld_suffix',
-               default='com',
-               help="TLD suffix that used in all tests (if not overridden)")
+               default='test',
+               help="TLD suffix that used in all tests (if not overridden).")
 ]
 
 dns_feature_group = cfg.OptGroup(name='dns_feature_enabled',

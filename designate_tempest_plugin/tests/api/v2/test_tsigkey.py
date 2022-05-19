@@ -28,6 +28,29 @@ LOG = logging.getLogger(__name__)
 class BaseTsigkeyTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'links']
 
+    @classmethod
+    def setup_clients(cls):
+        super(BaseTsigkeyTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseTsigkeyTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseTsigkeyTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseTsigkeyTest, cls).resource_cleanup()
+
 
 class TsigkeyAdminTest(BaseTsigkeyTest):
     credentials = ["primary", "admin", "system_admin"]
@@ -54,7 +77,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @decorators.idempotent_id('e7b484e3-7ed5-4840-89d7-1e696986f8e4')
     def test_create_tsigkey_for_zone(self):
         LOG.info('Create a resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_tsigkey_for_zone", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         tsigkey_data = {
@@ -98,7 +123,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @decorators.idempotent_id('d46e5e86-a18c-4315-aa0c-95a00e816fbf')
     def test_list_tsigkey(self):
         LOG.info('Create a resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_tsigkey", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         LOG.info('Create a tsigkey')
         tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])[1]
@@ -110,7 +137,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     def test_list_tsigkeys_limit_results(self):
         for i in range(3):
             LOG.info('As Primary user create a zone: {} '.format(i))
-            zone = self.zone_client.create_zone()[1]
+            zone_name = dns_data_utils.rand_zone_name(
+                name="list_tsigkey_limit", suffix=self.tld_name)
+            zone = self.zone_client.create_zone(name=zone_name)[1]
             self.addCleanup(
                 self.wait_zone_delete, self.zone_client, zone['id'])
             LOG.info('As Admin user create a tsigkey: {} '.format(i))
@@ -132,7 +161,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         for name in test_tsigkeys_names:
             LOG.info('As Primary user create a zone to be used '
                      'for {}'.format(name))
-            zone = self.zone_client.create_zone()[1]
+            zone_name = dns_data_utils.rand_zone_name(
+                name="list_tsigkey_marker", suffix=self.tld_name)
+            zone = self.zone_client.create_zone(name=zone_name)[1]
             self.addCleanup(
                 self.wait_zone_delete, self.zone_client, zone['id'])
             LOG.info('As Admin user create "{}" tsigkey'.format(name))
@@ -180,7 +211,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         created_tsigkey_ids = []
         for name in names_to_create:
             LOG.info('As Primary user create a zone for: {} '.format(name))
-            zone = self.zone_client.create_zone()[1]
+            zone_name = dns_data_utils.rand_zone_name(
+                name="list_tsigkey_sort", suffix=self.tld_name)
+            zone = self.zone_client.create_zone(name=zone_name)[1]
             self.addCleanup(
                 self.wait_zone_delete, self.zone_client, zone['id'])
             LOG.info('As Admin user create a tsigkey: {} '.format(name))
@@ -234,7 +267,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     def test_list_tsigkey_filter_by_name(self):
         tsigkey_name = data_utils.rand_name('ddd_tsgikey')
         LOG.info('As Primary user create a zone for: {} '.format(tsigkey_name))
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_tsigkey_filter_name", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         LOG.info('As Admin user create a tsigkey: {} '.format(tsigkey_name))
         tsigkey = self.admin_client.create_tsigkey(
@@ -271,7 +306,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.addCleanup(self.admin_client.delete_tsigkey, pool_tsigkey['id'])
 
         LOG.info('Create tsigkey for a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_tsigkey_filter_scope", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         zone_tsigkey = self.admin_client.create_tsigkey(
             resource_id=zone['id'], scope='ZONE')[1]
@@ -337,7 +374,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @decorators.idempotent_id('c5d7facf-0f05-47a2-a4fb-87f203860880')
     def test_show_tsigkey(self):
         LOG.info('Create a resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_tsigkey", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a tsigkey')
@@ -353,7 +392,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @decorators.idempotent_id('d09dc0dd-dd72-41ee-9085-2afb2bf35459')
     def test_update_tsigkey(self):
         LOG.info('Create a resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="update_tsigkey", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a tsigkey')
@@ -375,7 +416,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @decorators.idempotent_id('9cdffbd2-bc67-4a25-8eb7-4be8635c88a3')
     def test_delete_tsigkey(self):
         LOG.info('Create a resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="delete_tsigkey", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a tsigkey')
@@ -492,7 +535,9 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
 
     @decorators.idempotent_id('f94af13a-d743-11eb-beba-74e5f9e2a801')
     def test_create_tsigkey_for_zone_invalid_algorithm(self):
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_tsigkey_invalid_algo", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),
@@ -510,7 +555,9 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     @decorators.idempotent_id('4df903d8-d745-11eb-beba-74e5f9e2a801')
     def test_create_tsigkey_for_zone_invalid_name(self):
         LOG.info('Create a zone resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_tsigkey_invalid_name", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name(
@@ -530,7 +577,9 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     @decorators.skip_because(bug="1933760")
     def test_create_tsigkey_for_zone_empty_secret(self):
         LOG.info('Create a zone resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_tsigkey_empty_secret", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),
@@ -548,7 +597,9 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     @decorators.idempotent_id('dfca9268-d745-11eb-beba-74e5f9e2a801')
     def test_create_tsigkey_for_zone_invalid_scope(self):
         LOG.info('Create a zone resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_tsigkey_invalid_scope", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),
@@ -566,7 +617,9 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     @decorators.idempotent_id('57255858-d74a-11eb-beba-74e5f9e2a801')
     def test_create_tsigkey_for_zone_invalid_zone_id(self):
         LOG.info('Create a resource')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_tsigkey_invalide_zone_id", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),

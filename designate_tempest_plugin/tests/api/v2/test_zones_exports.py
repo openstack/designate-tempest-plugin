@@ -21,6 +21,7 @@ from tempest.lib.common.utils import data_utils
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin.common import constants as const
+from designate_tempest_plugin import data_utils as dns_data_utils
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -29,6 +30,29 @@ LOG = logging.getLogger(__name__)
 class BaseZoneExportsTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                      'status', 'location']
+
+    @classmethod
+    def setup_clients(cls):
+        super(BaseZoneExportsTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseZoneExportsTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseZoneExportsTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseZoneExportsTest, cls).resource_cleanup()
 
 
 class ZonesExportTest(BaseZoneExportsTest):
@@ -52,9 +76,11 @@ class ZonesExportTest(BaseZoneExportsTest):
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
 
-    def _create_zone_export(self):
+    def _create_zone_export(self, test_name):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name=test_name, suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone export')
@@ -66,7 +92,7 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('2dd8a9a0-98a2-4bf6-bb51-286583b30f40')
     def test_create_zone_export(self):
-        zone_export = self._create_zone_export()[1]
+        zone_export = self._create_zone_export('create_zone_export')[1]
 
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual(const.PENDING, zone_export['status'])
@@ -74,7 +100,7 @@ class ZonesExportTest(BaseZoneExportsTest):
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('2d29a2a9-1941-4b7e-9d8a-ad6c2140ea68')
     def test_show_zone_export(self):
-        zone_export = self._create_zone_export()[1]
+        zone_export = self._create_zone_export('show_zone_export')[1]
 
         LOG.info('Re-Fetch the zone export')
         body = self.client.show_zone_export(zone_export['id'])[1]
@@ -85,7 +111,9 @@ class ZonesExportTest(BaseZoneExportsTest):
     @decorators.idempotent_id('fb04507c-9600-11eb-b1cd-74e5f9e2a801')
     def test_show_zone_export_impersonate_another_project(self):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name='show_zone_export_impersonate', suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone export using primary client')
@@ -108,7 +136,9 @@ class ZonesExportTest(BaseZoneExportsTest):
     @decorators.idempotent_id('97234f00-8bcb-43f8-84dd-874f8bc4a80e')
     def test_delete_zone_export(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name='delete_zone_export', suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
@@ -125,7 +155,7 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('476bfdfe-58c8-46e2-b376-8403c0fff440')
     def test_list_zone_exports(self):
-        self._create_zone_export()[1]
+        self._create_zone_export('list_zone_exports')[1]
 
         LOG.info('List zone exports')
         body = self.client.list_zone_exports()[1]
@@ -135,14 +165,18 @@ class ZonesExportTest(BaseZoneExportsTest):
     @decorators.idempotent_id('f34e7f34-9613-11eb-b1cd-74e5f9e2a801')
     def test_list_zone_exports_all_projects(self):
         LOG.info('Create a primary zone and its export')
-        primary_zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name='list_zone_exports_all_projects', suffix=self.tld_name)
+        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(
             self.wait_zone_delete, self.zone_client, primary_zone['id'])
         primary_export = self.client.create_zone_export(primary_zone['id'])[1]
         self.addCleanup(self.client.delete_zone_export, primary_export['id'])
 
         LOG.info('Create an alt zone and its export')
-        alt_zone = self.alt_zone_client.create_zone()[1]
+        alt_zone_name = dns_data_utils.rand_zone_name(
+            name='list_zone_exports_all_projects_alt', suffix=self.tld_name)
+        alt_zone = self.alt_zone_client.create_zone(name=alt_zone_name)[1]
         self.addCleanup(
             self.wait_zone_delete, self.alt_zone_client, alt_zone['id'])
         alt_export = self.alt_client.create_zone_export(alt_zone['id'])[1]
@@ -169,14 +203,18 @@ class ZonesExportTest(BaseZoneExportsTest):
     def test_list_zone_exports_filter_results(self):
 
         LOG.info('Create a primary zone and its export')
-        primary_zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name='list_zone_exports_filter', suffix=self.tld_name)
+        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(
             self.wait_zone_delete, self.zone_client, primary_zone['id'])
         primary_export = self.client.create_zone_export(primary_zone['id'])[1]
         self.addCleanup(self.client.delete_zone_export, primary_export['id'])
 
         LOG.info('Create an alt zone, its export and delete it')
-        alt_zone = self.alt_zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name='list_zone_exports_filter_alt', suffix=self.tld_name)
+        alt_zone = self.alt_zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(
             self.wait_zone_delete, self.alt_zone_client, alt_zone['id'])
         alt_export = self.alt_client.create_zone_export(alt_zone['id'])[1]
@@ -222,7 +260,7 @@ class ZonesExportTest(BaseZoneExportsTest):
 
 
 class ZonesExportTestNegative(BaseZoneExportsTest):
-    credentials = ["primary", "alt"]
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -237,9 +275,11 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
 
-    def _create_zone_export(self):
+    def _create_zone_export(self, test_name):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(name=test_name,
+                                                  suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone export')
@@ -258,7 +298,9 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
     @decorators.idempotent_id('943dad4a-9617-11eb-b1cd-74e5f9e2a801')
     def test_export_not_your_zone(self):
         LOG.info('Create a primary zone.')
-        primary_zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(name='export_not_your_zone',
+                                                  suffix=self.tld_name)
+        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(
             self.wait_zone_delete, self.zone_client, primary_zone['id'])
 
@@ -270,7 +312,9 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
     @decorators.idempotent_id('518dc308-9604-11eb-b1cd-74e5f9e2a801')
     def test_create_zone_export_using_deleted_zone(self):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(name='export_deleted_zone',
+                                                  suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
         LOG.info("Delete the zone and wait till it's done.")
@@ -290,7 +334,8 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
 
     @decorators.idempotent_id('52a1fee0-c338-4ed9-b9f9-41ee7fd73375')
     def test_show_zonefile_not_supported_accept_value(self):
-        zone, zone_export = self._create_zone_export()
+        zone, zone_export = self._create_zone_export(
+            'show_zonefile_bad_accept')
         # Tempest-lib _error_checker will raise UnexpectedResponseCode
         e = self.assertRaises(
             lib_exc.UnexpectedResponseCode, self.client.show_exported_zonefile,

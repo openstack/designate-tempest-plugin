@@ -27,6 +27,7 @@ LOG = logging.getLogger(__name__)
 
 class TldZoneTest(base.BaseDnsV2Test):
     credentials = ["admin", "system_admin", "primary"]
+    tld_suffix = '.'.join(["TldZoneTest", CONF.dns.tld_suffix])
 
     @classmethod
     def setup_credentials(cls):
@@ -47,13 +48,12 @@ class TldZoneTest(base.BaseDnsV2Test):
     @classmethod
     def resource_setup(cls):
         super(TldZoneTest, cls).resource_setup()
-        cls.tld = cls.admin_tld_client.create_tld(
-            tld_name=cls.tld_suffix, ignore_errors=lib_exc.Conflict
-        )
+        cls.class_tld = cls.admin_tld_client.create_tld(
+            tld_name=cls.tld_suffix)
 
     @classmethod
     def resource_cleanup(cls):
-        cls.admin_tld_client.delete_tld(cls.tld[1]['id'])
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
         super(TldZoneTest, cls).resource_cleanup()
 
     @decorators.idempotent_id('68b3e7cc-bf0e-11ec-b803-201e8823901f')

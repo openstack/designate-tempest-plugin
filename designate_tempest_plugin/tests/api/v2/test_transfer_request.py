@@ -27,6 +27,30 @@ LOG = logging.getLogger(__name__)
 class BaseTransferRequestTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'key', 'links']
 
+    @classmethod
+    def setup_clients(cls):
+        super(BaseTransferRequestTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseTransferRequestTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(
+            name="BaseTransferRequestTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseTransferRequestTest, cls).resource_cleanup()
+
 
 class TransferRequestTest(BaseTransferRequestTest):
     credentials = ["primary", "alt", "admin", "system_admin"]
@@ -54,11 +78,13 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('2381d489-ad84-403d-b0a2-8b77e4e966bf')
     def test_create_transfer_request(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_transfer_request", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
-        _, transfer_request = self.client.create_transfer_request(zone['id'])
+        transfer_request = self.client.create_transfer_request(zone['id'])[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
@@ -68,15 +94,17 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('5deae1ac-7c14-42dc-b14e-4e4b2725beb7')
     def test_create_transfer_request_scoped(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_transfer_request_scoped", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         transfer_request_data = dns_data_utils.rand_transfer_request_data(
             target_project_id=self.os_alt.credentials.project_id)
 
         LOG.info('Create a scoped zone transfer_request')
-        _, transfer_request = self.client.create_transfer_request(
-            zone['id'], transfer_request_data)
+        transfer_request = self.client.create_transfer_request(
+            zone['id'], transfer_request_data)[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
@@ -86,11 +114,13 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('4505152f-0a9c-4f02-b385-2216c914a0be')
     def test_create_transfer_request_empty_body(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_transfer_request_empty", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
         LOG.info('Create a zone transfer_request')
-        _, transfer_request = self.client.create_transfer_request_empty_body(
-            zone['id'])
+        transfer_request = self.client.create_transfer_request_empty_body(
+            zone['id'])[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
@@ -100,16 +130,18 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('64a7be9f-8371-4ce1-a242-c1190de7c985')
     def test_show_transfer_request(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_transfer_request", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
-        _, transfer_request = self.client.create_transfer_request(zone['id'])
+        transfer_request = self.client.create_transfer_request(zone['id'])[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
         LOG.info('Fetch the transfer_request')
-        _, body = self.client.show_transfer_request(transfer_request['id'])
+        body = self.client.show_transfer_request(transfer_request['id'])[1]
 
         LOG.info('Ensure the fetched response matches the '
                  'created transfer_request')
@@ -119,7 +151,9 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.skip_because(bug="1926572")
     def test_show_transfer_request_impersonate_another_project(self):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_transfer_request_impersonate", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
@@ -148,20 +182,22 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Checks the target of a scoped transfer request can see
         # the request.
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_transfer_request_as_target", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         transfer_request_data = dns_data_utils.rand_transfer_request_data(
             target_project_id=self.os_alt.credentials.project_id)
 
         LOG.info('Create a scoped zone transfer_request')
-        _, transfer_request = self.client.create_transfer_request(
-            zone['id'], transfer_request_data)
+        transfer_request = self.client.create_transfer_request(
+            zone['id'], transfer_request_data)[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
         LOG.info('Fetch the transfer_request as the target')
-        _, body = self.alt_client.show_transfer_request(transfer_request['id'])
+        body = self.alt_client.show_transfer_request(transfer_request['id'])[1]
 
         LOG.info('Ensure the fetched response matches the '
                  'created transfer_request')
@@ -172,24 +208,28 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('7d81c487-aa15-44c4-b3e5-424ab9e6a3e5')
     def test_delete_transfer_request(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="delete_transfer_request", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a transfer_request')
-        _, transfer_request = self.client.create_transfer_request(zone['id'])
+        transfer_request = self.client.create_transfer_request(zone['id'])[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Delete the transfer_request')
-        _, body = self.client.delete_transfer_request(transfer_request['id'])
+        self.client.delete_transfer_request(transfer_request['id'])
         self.assertRaises(lib_exc.NotFound,
             lambda: self.client.show_transfer_request(transfer_request['id']))
 
     @decorators.idempotent_id('ddd42a19-1768-428c-846e-32f9d6493011')
     def test_list_transfer_requests(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_transfer_request", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
@@ -205,12 +245,17 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('db985892-9d02-11eb-a160-74e5f9e2a801')
     def test_list_transfer_requests_all_projects(self):
         LOG.info('Create a Primary zone')
-        primary_zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_transfer_request_all_projects", suffix=self.tld_name)
+        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete,
                         self.zone_client, primary_zone['id'])
 
         LOG.info('Create an Alt zone')
-        alt_zone = self.alt_zone_client.create_zone()[1]
+        alt_zone_name = dns_data_utils.rand_zone_name(
+            name="list_transfer_request_all_projects_alt",
+            suffix=self.tld_name)
+        alt_zone = self.alt_zone_client.create_zone(name=alt_zone_name)[1]
         self.addCleanup(self.wait_zone_delete,
                         self.alt_zone_client, alt_zone['id'])
 
@@ -251,12 +296,16 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('bee42f38-e666-4b85-a710-01f40ea1e56a')
     def test_list_transfer_requests_impersonate_another_project(self):
         LOG.info('Create a Primary zone')
-        primary_zone = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_transfer_request_impersonate", suffix=self.tld_name)
+        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete,
                         self.zone_client, primary_zone['id'])
 
         LOG.info('Create an Alt zone')
-        alt_zone = self.alt_zone_client.create_zone()[1]
+        alt_zone_name = dns_data_utils.rand_zone_name(
+            name="list_transfer_request_impersonate_alt", suffix=self.tld_name)
+        alt_zone = self.alt_zone_client.create_zone(name=alt_zone_name)[1]
         self.addCleanup(self.wait_zone_delete,
                         self.alt_zone_client, alt_zone['id'])
 
@@ -282,7 +331,9 @@ class TransferRequestTest(BaseTransferRequestTest):
     @decorators.idempotent_id('de5e9d32-c723-4518-84e5-58da9722cc13')
     def test_update_transfer_request(self):
         LOG.info('Create a zone')
-        _, zone = self.zone_client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="update_transfer_request", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
@@ -309,6 +360,7 @@ class TransferRequestTest(BaseTransferRequestTest):
 
 
 class TestTransferRequestNotFound(BaseTransferRequestTest):
+    credentials = ["admin", "primary", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -351,6 +403,7 @@ class TestTransferRequestNotFound(BaseTransferRequestTest):
 
 
 class TestTransferRequestInvalidId(BaseTransferRequestTest):
+    credentials = ["admin", "primary", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):

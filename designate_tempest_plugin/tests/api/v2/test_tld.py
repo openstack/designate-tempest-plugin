@@ -31,6 +31,9 @@ class BaseTldTest(base.BaseDnsV2Test):
 class TldAdminTest(BaseTldTest):
     credentials = ["admin", "system_admin", "primary"]
 
+    # Use a TLD suffix unique to this test class.
+    local_tld_suffix = '.'.join(["tldadmintest", CONF.dns.tld_suffix])
+
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -48,40 +51,33 @@ class TldAdminTest(BaseTldTest):
         cls.primary_zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @classmethod
-    def resource_setup(cls):
-        super(TldAdminTest, cls).resource_setup()
-        cls.tld = cls.admin_client.create_tld(
-            tld_name=cls.tld_suffix, ignore_errors=lib_exc.Conflict
-        )
-
-    @classmethod
-    def resource_cleanup(cls):
-        cls.admin_client.delete_tld(cls.tld[1]['id'])
-        super(TldAdminTest, cls).resource_cleanup()
+    def _generate_tld_name(cls, test_name):
+        return '.'.join([data_utils.rand_name(name=test_name),
+                         cls.local_tld_suffix])
 
     @decorators.idempotent_id('52a4bb4b-4eff-4591-9dd3-ad98316806c3')
     def test_create_tld(self):
-        tld_data = {
-                     "name": "org",
-                     "description": "sample tld"}
+        tld_name = self._generate_tld_name("test_create_tld")
+        tld_data = {"name": tld_name, "description": "sample tld"}
 
         LOG.info('Create a tld')
         tld = self.admin_client.create_tld(tld_data['name'],
-                                        tld_data['description'])[1]
+                                           tld_data['description'])[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
 
-        self.assertEqual(tld_data["name"], tld['name'])
+        self.assertEqual(tld_name, tld['name'])
 
     @decorators.idempotent_id('961bd2e8-d4d0-11eb-b8ee-74e5f9e2a801')
     def test_create_duplicated_tlds(self):
-        tld_data = {
-            "name": "org", "description": "test_create_duplicated_tlds"}
+        tld_name = self._generate_tld_name("test_create_duplicated_tlds")
+        tld_data = {"name": tld_name,
+                    "description": "test_create_duplicated_tlds"}
 
         LOG.info('Create a first "org" TLD')
         tld = self.admin_client.create_tld(
             tld_data['name'], tld_data['description'])[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
-        self.assertEqual(tld_data["name"], tld['name'])
+        self.assertEqual(tld_name, tld['name'])
 
         LOG.info('Try to create a second "org" TLD')
         self.assertRaises(
@@ -91,15 +87,15 @@ class TldAdminTest(BaseTldTest):
 
     @decorators.idempotent_id('0c0ab92e-d4db-11eb-b8ee-74e5f9e2a801')
     def test_create_multiply_tlds(self):
-        tlds = ['abc', 'def', 'gih']
-        for tld_name in tlds:
-            tld_data = {
-                "name": tld_name, "description": "test_create_multiply_tlds"}
+        for _dummy in range(0, 2):
+            tld_name = self._generate_tld_name("test_create_multiply_tlds")
+            tld_data = {"name": tld_name,
+                        "description": "test_create_multiply_tlds"}
             LOG.info('Create a "{}" TLD'.format(tld_name))
             tld = self.admin_client.create_tld(
                 tld_data['name'], tld_data['description'])[1]
             self.addCleanup(self.admin_client.delete_tld, tld['id'])
-            self.assertEqual(tld_data["name"], tld['name'])
+            self.assertEqual(tld_name, tld['name'])
 
     @decorators.idempotent_id('52a4bb4b-4eff-4591-9dd3-ad98316806c3')
     def test_create_invalid_tld(self):
@@ -127,13 +123,14 @@ class TldAdminTest(BaseTldTest):
 
     @decorators.idempotent_id('271af08c-2603-4f61-8eb1-05887b74e25a')
     def test_show_tld(self):
+        tld_name = self._generate_tld_name("test_show_tld")
         tld_data = {
-                     "name": "org",
+                     "name": tld_name,
                      "description": "sample tld"}
 
         LOG.info('Create a tld')
         tld = self.admin_client.create_tld(tld_data['name'],
-                                        tld_data['description'])[1]
+                                           tld_data['description'])[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
 
         LOG.info('Fetch the tld')
@@ -145,7 +142,8 @@ class TldAdminTest(BaseTldTest):
     @decorators.idempotent_id('26708cb8-7126-48a7-9424-1c225e56e609')
     def test_delete_tld(self):
         LOG.info('Create a tld')
-        tld = self.admin_client.create_tld()[1]
+        tld_name = self._generate_tld_name("test_delete_tld")
+        tld = self.admin_client.create_tld(tld_name)[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'],
                         ignore_errors=lib_exc.NotFound)
 
@@ -158,17 +156,25 @@ class TldAdminTest(BaseTldTest):
     @decorators.idempotent_id('95b13759-c85c-4791-829b-9591ca15779d')
     def test_list_tlds(self):
         LOG.info('List tlds')
+        tld_name = self._generate_tld_name("test_list_tlds")
+        tld = self.admin_client.create_tld(tld_name)[1]
+        self.addCleanup(self.admin_client.delete_tld, tld['id'],
+                        ignore_errors=lib_exc.NotFound)
+
         body = self.admin_client.list_tlds()[1]
 
         self.assertGreater(len(body['tlds']), 0)
 
     @decorators.idempotent_id('1a233812-48d9-4d15-af5e-9961744286ff')
     def test_update_tld(self):
-        tld = self.admin_client.create_tld()[1]
+        tld_name = self._generate_tld_name("test_update_tld")
+        tld = self.admin_client.create_tld(tld_name)[1]
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
 
+        tld_name_2 = self._generate_tld_name("test_update_tld")
+
         tld_data = {
-                     "name": "org",
+                     "name": tld_name_2,
                      "description": "Updated description"
         }
 
@@ -176,7 +182,7 @@ class TldAdminTest(BaseTldTest):
         patch_tld = self.admin_client.update_tld(tld['id'],
                        tld_data['name'], tld_data['description'])[1]
 
-        self.assertEqual(tld_data["name"], patch_tld["name"])
+        self.assertEqual(tld_name_2, patch_tld["name"])
         self.assertEqual(tld_data["description"], patch_tld["description"])
 
     @decorators.idempotent_id('8116dcf5-a329-47d1-90be-5ff32f299c53')

@@ -18,6 +18,7 @@ from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.tests import base
+from designate_tempest_plugin import data_utils as dns_data_utils
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -26,6 +27,29 @@ LOG = logging.getLogger(__name__)
 class BaseTransferAcceptTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'key', 'links',
                     'zone_name']
+
+    @classmethod
+    def setup_clients(cls):
+        super(BaseTransferAcceptTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseTransferAcceptTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseTransferAcceptTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseTransferAcceptTest, cls).resource_cleanup()
 
 
 class TransferAcceptTest(BaseTransferAcceptTest):
@@ -68,7 +92,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     @decorators.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
     def test_create_transfer_accept(self):
         LOG.info('Create a zone')
-        _, zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_transfer_accept", suffix=self.tld_name)
+        zone = self.prm_zone_client.create_zone(name=zone_name,
+                                                wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers=self.all_projects_header,
@@ -97,7 +124,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     @decorators.idempotent_id('37c6afbb-3ea3-4fd8-94ea-a426244f019a')
     def test_show_transfer_accept(self):
         LOG.info('Create a zone')
-        _, zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')
+        zone_name = dns_data_utils.rand_zone_name(name="show_transfer_accept",
+                                              suffix=self.tld_name)
+        zone = self.prm_zone_client.create_zone(name=zone_name,
+                                                wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers=self.all_projects_header,
@@ -133,7 +163,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     def test_ownership_transferred_zone(self):
 
         LOG.info('Create a Primary zone')
-        zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="ownership_transferred_zone", suffix=self.tld_name)
+        zone = self.prm_zone_client.create_zone(name=zone_name,
+                                                wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers=self.all_projects_header,
@@ -178,7 +211,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         for _ in range(number_of_zones_to_transfer):
 
             LOG.info('Create a Primary zone')
-            zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
+            zone_name = dns_data_utils.rand_zone_name(
+                name="list_transfer_accepts", suffix=self.tld_name)
+            zone = self.prm_zone_client.create_zone(name=zone_name,
+                                                    wait_until='ACTIVE')[1]
             self.addCleanup(
                 self.wait_zone_delete, self.admin_zone_client, zone['id'],
                 headers=self.all_projects_header,
@@ -255,7 +291,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
     @decorators.idempotent_id('b6ac770e-a1d3-11eb-b534-74e5f9e2a801')
     def test_show_transfer_accept_impersonate_another_project(self):
         LOG.info('Create a zone as primary tenant')
-        zone = self.prm_zone_client.create_zone(wait_until='ACTIVE')[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_transfer_accept_impersonate", suffix=self.tld_name)
+        zone = self.prm_zone_client.create_zone(name=zone_name,
+                                                wait_until='ACTIVE')[1]
 
         # In case when something goes wrong with the test and E2E
         # scenario fails for some reason, we'll use Admin tenant
@@ -323,7 +362,10 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
     @decorators.idempotent_id('324a3e80-a1cc-11eb-b534-74e5f9e2a801')
     def test_create_transfer_accept_using_invalid_key(self):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone(wait_until='ACTIVE')[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_transfer_accept_invalid_key", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name,
+                                            wait_until='ACTIVE')[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
@@ -335,7 +377,8 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
             transfer_request['id']
         )
 
-        data = {"key": data_utils.rand_password(len(transfer_request['key'])),
+        data = {"key": data_utils.rand_password(
+                len(transfer_request['key'])),
                 "zone_transfer_request_id": transfer_request['id']}
 
         LOG.info('Create a zone transfer_accept using invalid key')
@@ -346,7 +389,10 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
     @decorators.idempotent_id('23afb948-a1ce-11eb-b534-74e5f9e2a801')
     def test_create_transfer_accept_using_deleted_transfer_request_id(self):
         LOG.info('Create a zone')
-        zone = self.zone_client.create_zone(wait_until='ACTIVE')[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_transfer_accept_deleted_id", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name,
+                                            wait_until='ACTIVE')[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')

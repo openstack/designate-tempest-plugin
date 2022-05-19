@@ -27,6 +27,29 @@ LOG = logging.getLogger(__name__)
 class BaseBlacklistsTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'links']
 
+    @classmethod
+    def setup_clients(cls):
+        super(BaseBlacklistsTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseBlacklistsTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseBlacklistsTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseBlacklistsTest, cls).resource_cleanup()
+
 
 class BlacklistE2E(BaseBlacklistsTest):
 
@@ -86,7 +109,8 @@ class BlacklistE2E(BaseBlacklistsTest):
     @decorators.idempotent_id('de030088-d97e-11eb-8ab8-74e5f9e2a801')
     def test_admin_creates_zone_matches_blacklist_name_or_regex(self):
         LOG.info('Create a blacklists using: regex and exact string(name)')
-        zone_name = 'blacklistnameregextest1' + dns_data_utils.rand_zone_name()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="admin_creates_zone_matches_blacklist1", suffix=self.tld_name)
         blacklists = [
             {'pattern': '^blacklistnameregextest2.*',
              'description': 'Zone starts with "a" char'},
@@ -99,9 +123,10 @@ class BlacklistE2E(BaseBlacklistsTest):
 
         LOG.info('As Admin user try to create zones that are '
                  'supposed to be blocked')
+        zone_name2 = dns_data_utils.rand_zone_name(
+            name="admin_creates_zone_matches_blacklist2", suffix=self.tld_name)
         zone = self.admin_zone_client.create_zone(
-            name='blacklistnameregextest2' +
-                 dns_data_utils.rand_zone_name(),
+            name=zone_name2,
             project_id=self.primary_zone_client.project_id)[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'])

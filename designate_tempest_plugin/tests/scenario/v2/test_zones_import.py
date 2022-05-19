@@ -24,6 +24,8 @@ LOG = logging.getLogger(__name__)
 
 class ZonesImportTest(BaseZonesImportTest):
 
+    credentials = ["primary", "admin", "system_admin"]
+
     @classmethod
     def setup_clients(cls):
         super(ZonesImportTest, cls).setup_clients()
@@ -34,10 +36,11 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.attr(type='slow')
     @decorators.idempotent_id('679f38d0-2f2f-49c5-934e-8fe0c452f56e')
     def test_create_zone_import_and_wait_for_zone(self):
-        name = dns_data_utils.rand_zone_name('testimport')
-        zonefile = dns_data_utils.rand_zonefile_data(name=name)
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_zone_import_and_wait_for_zone", suffix=self.tld_name)
+        zonefile = dns_data_utils.rand_zonefile_data(name=zone_name)
 
-        LOG.info('Import zone %r', name)
+        LOG.info('Import zone %r', zone_name)
         _, zone_import = self.client.create_zone_import(zonefile)
         self.addCleanup(self.client.delete_zone_import, zone_import['id'])
 
@@ -63,4 +66,4 @@ class ZonesImportTest(BaseZonesImportTest):
         _, zone = self.zones_client.show_zone(zone_import['zone_id'])
         self.assertEqual('NONE', zone['action'])
         self.assertEqual('ACTIVE', zone['status'])
-        self.assertEqual(name, zone['name'])
+        self.assertEqual(zone_name, zone['name'])
