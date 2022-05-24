@@ -28,12 +28,33 @@ import tempest.test
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
-TLD = dns_data_utils.rand_string(3)
-
 
 class BasePtrTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                      'status', 'action']
+
+    @classmethod
+    def setup_clients(cls):
+        super(BasePtrTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BasePtrTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name='BasePtrTest')
+        cls.tld_name = tld_name[:-1]
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BasePtrTest, cls).resource_cleanup()
 
 
 class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
@@ -56,8 +77,24 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
         cls.primary_ptr_client = cls.os_primary.dns_v2.PtrClient()
         cls.primary_floating_ip_client = cls.os_primary.floating_ips_client
 
+    @classmethod
+    def resource_setup(cls):
+        super(DesignatePtrRecord, cls).resource_setup()
+
+        # The 'arpa' TLD is a special case as the negative test class also
+        # needs to use this space. To stop test class concurrency conflicts,
+        # let each class manage different TLDs for the reverse namespace.
+        cls.arpa_tld = cls.admin_tld_client.create_tld(tld_name='arpa')
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.arpa_tld[1]['id'])
+        super(DesignatePtrRecord, cls).resource_cleanup()
+
     def _set_ptr(self, ptr_name=None, ttl=None, description=None,
-                 headers=None, tld=TLD, fip_id=None):
+                 headers=None, tld=None, fip_id=None):
+        if not tld:
+            tld = self.tld_name
         if not fip_id:
             fip = self.primary_floating_ip_client.create_floatingip(
                 floating_network_id=CONF.network.public_network_id)[
@@ -148,7 +185,7 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
 
 class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
 
-    credentials = ['primary', 'admin']
+    credentials = ['primary', 'admin', 'system_admin']
 
     @classmethod
     def setup_credentials(cls):
@@ -163,8 +200,25 @@ class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
         cls.primary_floating_ip_client = cls.os_primary.floating_ips_client
         cls.admin_ptr_client = cls.os_admin.dns_v2.PtrClient()
 
+    @classmethod
+    def resource_setup(cls):
+        super(DesignatePtrRecordNegative, cls).resource_setup()
+
+        # The 'arpa' TLD is a special case as the positive test class also
+        # needs to use this space. To stop test class concurrency conflicts,
+        # let each class manage different TLDs for the reverse namespace.
+        cls.in_addr_arpa_tld = cls.admin_tld_client.create_tld(
+            tld_name='in-addr.arpa')
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.in_addr_arpa_tld[1]['id'])
+        super(DesignatePtrRecordNegative, cls).resource_cleanup()
+
     def _set_ptr(self, ptr_name=None, ttl=None, description=None,
-                 headers=None, tld=TLD, fip_id=None):
+                 headers=None, tld=None, fip_id=None):
+        if not tld:
+            tld = self.tld_name
         if not fip_id:
             fip = self.primary_floating_ip_client.create_floatingip(
                 floating_network_id=CONF.network.public_network_id)[

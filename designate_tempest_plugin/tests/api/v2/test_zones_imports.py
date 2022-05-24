@@ -30,6 +30,29 @@ class BaseZonesImportTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                      'status', 'message', 'zone_id']
 
+    @classmethod
+    def setup_clients(cls):
+        super(BaseZonesImportTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseZonesImportTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseZonesImportTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseZonesImportTest, cls).resource_cleanup()
+
 
 class ZonesImportTest(BaseZonesImportTest):
     credentials = ["primary", "admin", "system_admin", "alt"]
@@ -64,7 +87,11 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.idempotent_id('2e2d907d-0609-405b-9c96-3cb2b87e3dce')
     def test_create_zone_import(self):
         LOG.info('Create a zone import')
-        _, zone_import = self.client.create_zone_import()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_zone_import", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name)
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zone_data)[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
         # Make sure we complete the import and have the zone_id for cleanup
         waiters.wait_for_zone_import_status(
@@ -73,8 +100,12 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.idempotent_id('31eaf25a-9532-11eb-a55d-74e5f9e2a801')
     def test_create_zone_import_invalid_ttl(self):
         LOG.info('Try to create a zone import using invalid TTL value')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_zone_import_invalid_ttl", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name,
+                                                      ttl='zahlabut')
         zone_import = self.client.create_zone_import(
-            zonefile_data=dns_data_utils.rand_zonefile_data(ttl='zahlabut'))[1]
+            zonefile_data=zone_data)[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
         waiters.wait_for_zone_import_status(
             self.client, zone_import['id'], "ERROR")
@@ -92,7 +123,11 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.idempotent_id('c8909558-0dc6-478a-9e91-eb97b52e59e0')
     def test_show_zone_import(self):
         LOG.info('Create a zone import')
-        _, zone_import = self.client.create_zone_import()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_zone_import", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name)
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zone_data)[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
         # Make sure we complete the import and have the zone_id for cleanup
         waiters.wait_for_zone_import_status(
@@ -107,10 +142,14 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.idempotent_id('56a16e68-b241-4e41-bc5c-c40747fa68e3')
     def test_delete_zone_import(self):
         LOG.info('Create a zone import')
-        _, zone_import = self.client.create_zone_import()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="delete_zone_import", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name)
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zone_data)[1]
         waiters.wait_for_zone_import_status(self.client, zone_import['id'],
                                             const.COMPLETE)
-        _, zone_import = self.client.show_zone_import(zone_import['id'])
+        zone_import = self.client.show_zone_import(zone_import['id'])[1]
         self.addCleanup(self.wait_zone_delete,
                         self.zone_client,
                         zone_import['zone_id'])
@@ -125,14 +164,18 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.idempotent_id('9eab76af-1995-485f-a2ef-8290c1863aba')
     def test_list_zones_imports(self):
         LOG.info('Create a zone import')
-        _, zone_import = self.client.create_zone_import()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_zone_imports", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name)
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zone_data)[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
         # Make sure we complete the import and have the zone_id for cleanup
         waiters.wait_for_zone_import_status(
             self.client, zone_import['id'], const.COMPLETE)
 
         LOG.info('List zones imports')
-        _, body = self.client.list_zone_imports()
+        body = self.client.list_zone_imports()[1]
 
         self.assertGreater(len(body['imports']), 0)
 
@@ -140,7 +183,11 @@ class ZonesImportTest(BaseZonesImportTest):
     def test_show_import_impersonate_another_project(self):
 
         LOG.info('Import zone "A" using primary client')
-        zone_import = self.client.create_zone_import()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_zone_import_impersonate", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name)
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zone_data)[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
 
         # Make sure we complete the import and have the zone_id for cleanup
@@ -182,7 +229,11 @@ class ZonesImportTest(BaseZonesImportTest):
     @decorators.idempotent_id('7bd06ec6-9556-11eb-a55d-74e5f9e2a801')
     def test_list_import_zones_all_projects(self):
         LOG.info('Create import zone "A" using primary client')
-        zone_import = self.client.create_zone_import()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="_zone_imports_all_projects", suffix=self.tld_name)
+        zone_data = dns_data_utils.rand_zonefile_data(name=zone_name)
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zone_data)[1]
         self.addCleanup(self.clean_up_resources, zone_import['id'])
         # Make sure we complete the import and have the zone_id for cleanup
         waiters.wait_for_zone_import_status(

@@ -22,21 +22,44 @@ from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
 class ZonesTest(base.BaseDnsV2Test):
+    credentials = ["primary", "admin", "system_admin"]
+
     @classmethod
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(ZonesTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="ZonesTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(ZonesTest, cls).resource_cleanup()
 
     @decorators.attr(type='smoke')
     @decorators.attr(type='slow')
     @decorators.idempotent_id('d0648f53-4114-45bd-8792-462a82f69d32')
     def test_create_and_delete_zone(self):
         LOG.info('Create a zone')
-        zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_and_delete_zone", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
@@ -70,7 +93,10 @@ class ZonesTest(base.BaseDnsV2Test):
         LOG.info('Create a zone and wait until it becomes ACTIVE')
         orig_ttl = 666
         orig_description = 'test_create_and_update_zone: org description'
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_and_update_zone", suffix=self.tld_name)
         zone = self.client.create_zone(
+            name=zone_name,
             ttl=orig_ttl, description=orig_description,
             wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
@@ -100,7 +126,9 @@ class ZonesTest(base.BaseDnsV2Test):
     @decorators.idempotent_id('c9838adf-14dc-4097-9130-e5cea3727abb')
     def test_delete_zone_pending_create(self):
         LOG.info('Create a zone')
-        zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="delete_zone_pending_create", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
@@ -125,7 +153,9 @@ class ZonesTest(base.BaseDnsV2Test):
         "Config option dns.nameservers is missing or empty")
     def test_zone_create_propagates_to_nameservers(self):
         LOG.info('Create a zone')
-        zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="zone_create_propagates", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         waiters.wait_for_zone_status(self.client, zone['id'], const.ACTIVE)
@@ -138,7 +168,9 @@ class ZonesTest(base.BaseDnsV2Test):
         "Config option dns.nameservers is missing or empty")
     def test_zone_delete_propagates_to_nameservers(self):
         LOG.info('Create a zone')
-        zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="zone_delete_propagates", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 

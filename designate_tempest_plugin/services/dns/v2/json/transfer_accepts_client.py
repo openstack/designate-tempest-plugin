@@ -19,20 +19,25 @@ class TransferAcceptClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def create_transfer_accept(self, transfer_accept_data,
-                               params=None, headers=None):
+                               params=None, headers=None, extra_headers=None):
         """Create a zone transfer_accept.
         :param transfer_accept_data: A python dictionary representing
                                 data for the zone transfer accept.
         :param params: A Python dict that represents the query paramaters to
                        include in the accept URI.
         :param headers (dict): The headers to use for the request.
+        :param extra_headers (bool): Boolean value than indicates if the
+                                     headers returned by the get_headers()
+                                     method are to be used but additional
+                                     headers are needed in the request
+                                     pass them in as a dict.
         :return: Serialized accepted zone transfer as a dictionary.
         """
 
         transfer_accept_uri = 'zones/tasks/transfer_accepts'
         resp, body = self._create_request(
             transfer_accept_uri, transfer_accept_data,
-            params=params, headers=headers)
+            params=params, headers=headers, extra_headers=extra_headers)
 
         # Create Transfer accept should Return a HTTP 201
         self.expected_success(201, resp.status)

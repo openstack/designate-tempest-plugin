@@ -32,6 +32,29 @@ class BaseZonesTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                     'status', 'action']
 
+    @classmethod
+    def setup_clients(cls):
+        super(BaseZonesTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseZonesTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseZonesTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseZonesTest, cls).resource_cleanup()
+
 
 class ZonesTest(BaseZonesTest):
     credentials = ["admin", "system_admin", "primary"]
@@ -56,7 +79,9 @@ class ZonesTest(BaseZonesTest):
     def test_create_zones(self):
         # Create a PRIMARY zone
         LOG.info('Create a PRIMARY zone')
-        zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_zones_primary", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
@@ -69,8 +94,11 @@ class ZonesTest(BaseZonesTest):
 
         # Create a SECONDARY zone
         LOG.info('Create a SECONDARY zone')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_zones_secondary", suffix=self.tld_name)
         zone = self.client.create_zone(
-            zone_type=const.SECONDARY_ZONE_TYPE, primaries=nameservers)[1]
+            name=zone_name, zone_type=const.SECONDARY_ZONE_TYPE,
+            primaries=nameservers)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
@@ -81,7 +109,10 @@ class ZonesTest(BaseZonesTest):
     def test_create_zone_validate_recordsets_created(self):
         # Create a PRIMARY zone and wait till it's Active
         LOG.info('Create a PRIMARY zone')
-        zone = self.client.create_zone(wait_until=const.ACTIVE)[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="create_zone_validate_recordsets", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name,
+                                       wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
@@ -102,11 +133,13 @@ class ZonesTest(BaseZonesTest):
     @decorators.idempotent_id('02ca5d6a-86ce-4f02-9d94-9e5db55c3055')
     def test_show_zone(self):
         LOG.info('Create a zone')
-        _, zone = self.client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_zones", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Fetch the zone')
-        _, body = self.client.show_zone(zone['id'])
+        body = self.client.show_zone(zone['id'])[1]
 
         LOG.info('Ensure the fetched response matches the created zone')
         self.assertExpected(zone, body, self.excluded_keys)
@@ -127,12 +160,14 @@ class ZonesTest(BaseZonesTest):
     @decorators.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
     def test_delete_zone(self):
         LOG.info('Create a zone')
-        _, zone = self.client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="delete_zones", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Delete the zone')
-        _, body = self.client.delete_zone(zone['id'])
+        body = self.client.delete_zone(zone['id'])[1]
 
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual(const.DELETE, body['action'])
@@ -147,7 +182,9 @@ class ZonesTest(BaseZonesTest):
     @decorators.idempotent_id('5bfa3cfe-5bc8-443b-bf48-cfba44cbb247')
     def test_list_zones(self):
         LOG.info('Create a zone')
-        _, zone = self.client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_zones", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('List zones')
@@ -160,15 +197,17 @@ class ZonesTest(BaseZonesTest):
     @decorators.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')
     def test_update_zone(self):
         LOG.info('Create a zone')
-        _, zone = self.client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="update_zone", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         # Generate a random description
         description = data_utils.rand_name()
 
         LOG.info('Update the zone')
-        _, zone = self.client.update_zone(
-            zone['id'], description=description)
+        zone = self.client.update_zone(
+            zone['id'], description=description)[1]
 
         LOG.info('Ensure we respond with UPDATE+PENDING')
         self.assertEqual(const.UPDATE, zone['action'])
@@ -181,7 +220,10 @@ class ZonesTest(BaseZonesTest):
     @decorators.skip_because(bug="1960487")
     def test_serial_changes_on_update(self):
         LOG.info('Create a zone')
-        zone = self.client.create_zone(wait_until=const.ACTIVE)[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="serial_changes_on_update", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name,
+                                       wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info("Update Zone's email")
@@ -236,7 +278,9 @@ class ZonesTest(BaseZonesTest):
     def test_get_primary_zone_nameservers(self):
         # Create a zone and get the associated "pool_id"
         LOG.info('Create a zone')
-        zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="get_primary_nameservers", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
         zone_pool_id = zone['pool_id']
 
@@ -281,7 +325,9 @@ class ZonesAdminTest(BaseZonesTest):
     @decorators.idempotent_id('f6fe8cce-8b04-11eb-a861-74e5f9e2a801')
     def test_show_zone_impersonate_another_project(self):
         LOG.info('Create zone "A" using primary client')
-        zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_zone_impersonate", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('As Alt tenant show zone created by Primary tenant. '
@@ -316,18 +362,27 @@ class ZonesAdminTest(BaseZonesTest):
     def test_list_all_projects_zones(self):
 
         LOG.info('Create zone "A" using Primary client')
-        primary_zone = self.client.create_zone(wait_until=const.ACTIVE)[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_zone_all_projects_A", suffix=self.tld_name)
+        primary_zone = self.client.create_zone(name=zone_name,
+                                               wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete, self.client, primary_zone['id'])
 
         LOG.info('Create zone "B" using Alt client')
-        alt_zone = self.alt_client.create_zone(wait_until=const.ACTIVE)[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_zone_all_projects_B", suffix=self.tld_name)
+        alt_zone = self.alt_client.create_zone(name=zone_name,
+                                               wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete, self.alt_client, alt_zone['id'])
 
         LOG.info('Create zone "C" using Admin client')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_zone_all_projects_C", suffix=self.tld_name)
         admin_zone = self.admin_client.create_zone(
-            project_id="FakeProjectID", wait_until=const.ACTIVE)[1]
+            name=zone_name, project_id="FakeProjectID",
+            wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_client, admin_zone['id'],
             headers=self.all_projects_header)
@@ -352,7 +407,7 @@ class ZonesAdminTest(BaseZonesTest):
 
 
 class ZoneOwnershipTest(BaseZonesTest):
-    credentials = ["primary", "alt"]
+    credentials = ["primary", "alt", "admin", "system_admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -369,7 +424,9 @@ class ZoneOwnershipTest(BaseZonesTest):
     @decorators.idempotent_id('5d28580a-a012-4b57-b211-e077b1a01340')
     def test_no_create_duplicate_domain(self):
         LOG.info('Create a zone as a default user')
-        _, zone = self.client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="no_create_duplicate", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Create a zone as an default with existing domain')
@@ -383,7 +440,9 @@ class ZoneOwnershipTest(BaseZonesTest):
     @decorators.idempotent_id('a48776fd-b1aa-4a25-9f09-d1d34cfbb175')
     def test_no_create_subdomain_by_alt_user(self):
         LOG.info('Create a zone as a default user')
-        _, zone = self.client.create_zone()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="no_create_subdomain_by_alt", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Create a zone as an alt user with existing subdomain')
@@ -394,10 +453,11 @@ class ZoneOwnershipTest(BaseZonesTest):
 
     @decorators.idempotent_id('f1723d48-c082-43cd-94bf-ebeb5b8c9458')
     def test_no_create_superdomain_by_alt_user(self):
-        zone_name = dns_data_utils.rand_zone_name()
+        zone_name = dns_data_utils.rand_zone_name(
+            name="no_create_superdomain_by_alt", suffix=self.tld_name)
 
         LOG.info('Create a zone as a default user')
-        _, zone = self.client.create_zone(name='a.b.' + zone_name)
+        zone = self.client.create_zone(name='a.b.' + zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('Create a zone as an alt user with existing superdomain')
@@ -406,6 +466,8 @@ class ZoneOwnershipTest(BaseZonesTest):
 
 
 class ZonesNegativeTest(BaseZonesTest):
+    credentials = ["admin", "primary", "system_admin"]
+
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.

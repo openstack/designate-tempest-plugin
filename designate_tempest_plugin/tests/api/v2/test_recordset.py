@@ -15,14 +15,14 @@ from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
-from tempest.lib.common.utils import data_utils as lib_data_utils
+from tempest.lib.common.utils import data_utils
 import ddt
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
 
 from designate_tempest_plugin.common import waiters
-from designate_tempest_plugin import data_utils
+from designate_tempest_plugin import data_utils as dns_data_utils
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -33,18 +33,33 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
                      'type']
 
     @classmethod
+    def setup_clients(cls):
+        super(BaseRecordsetsTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
     def resource_setup(cls):
         super(BaseRecordsetsTest, cls).resource_setup()
 
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseRecordsetsTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
         # All the recordset tests need a zone, create one to share
-        LOG.info('Create a zone')
-        cls.zone = cls.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(name="TestZone",
+                                              suffix=cls.tld_name)
+        LOG.info('Create a zone: %s', zone_name)
+        cls.zone = cls.zone_client.create_zone(name=zone_name)[1]
 
     @classmethod
     def resource_cleanup(cls):
         cls.zone_client.delete_zone(
             cls.zone['id'], ignore_errors=lib_exc.NotFound)
-
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
         super(BaseRecordsetsTest, cls).resource_cleanup()
 
 
@@ -76,7 +91,7 @@ class RecordsetsTest(BaseRecordsetsTest):
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('631d74fd-6909-4684-a61b-5c4d2f92c3e7')
     def test_create_recordset(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
@@ -128,17 +143,17 @@ class RecordsetsTest(BaseRecordsetsTest):
     def test_create_recordset_type_SRV_TCP(self):
         self._test_create_recordset_type(
             "_sip._tcp", "SRV", [
-                "10 60 5060 server1.example.{}.".format(self.tld_suffix),
-                "20 60 5060 server2.example.{}.".format(self.tld_suffix),
-                "20 30 5060 server3.example.{}.".format(self.tld_suffix)])
+                "10 60 5060 server1.example{}".format(self.tld_name),
+                "20 60 5060 server2.example{}".format(self.tld_name),
+                "20 30 5060 server3.example{}".format(self.tld_name)])
 
     @decorators.idempotent_id('59c1aa42-278e-4f7b-a6a1-4320d5daf1fd')
     def test_create_recordset_type_SRV_UDP(self):
         self._test_create_recordset_type(
             "_sip._udp", "SRV", [
-                "10 60 5060 server1.example.{}.".format(self.tld_suffix),
-                "10 60 5060 server2.example.{}.".format(self.tld_suffix),
-                "20 30 5060 server3.example.{}.".format(self.tld_suffix)])
+                "10 60 5060 server1.example{}".format(self.tld_name),
+                "10 60 5060 server2.example{}".format(self.tld_name),
+                "20 30 5060 server3.example{}".format(self.tld_name)])
 
     @decorators.idempotent_id('1ac46f94-f03a-4f85-b84f-826a2660b927')
     def test_create_recordset_type_CNAME(self):
@@ -192,7 +207,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('5964f730-5546-46e6-9105-5030e9c492b2')
     def test_list_recordsets(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
@@ -209,7 +224,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('84c13cb2-9020-4c1e-aeb0-c348d9a70caa')
     def test_show_recordsets(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
@@ -227,7 +242,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('855399c1-8806-4ae5-aa31-cb8a6f35e218')
     def test_delete_recordset(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset')
@@ -246,7 +261,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('8d41c85f-09f9-48be-a202-92d1bdf5c796')
     def test_update_recordset(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a recordset')
@@ -256,7 +271,7 @@ class RecordsetsTest(BaseRecordsetsTest):
             self.wait_recordset_delete, self.client,
             self.zone['id'], record['id'])
 
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'], name=record['name'])
 
         LOG.info('Update the recordset')
@@ -268,7 +283,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('60904cc5-148b-4e3b-a0c6-35656dc8d44c')
     def test_update_recordset_one_field(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a recordset')
@@ -279,7 +294,7 @@ class RecordsetsTest(BaseRecordsetsTest):
             self.zone['id'], record['id'])
 
         recordset_data = {
-            'ttl': data_utils.rand_ttl(start=record['ttl'] + 1)
+            'ttl': dns_data_utils.rand_ttl(start=record['ttl'] + 1)
         }
 
         LOG.info('Update the recordset')
@@ -295,7 +310,7 @@ class RecordsetsTest(BaseRecordsetsTest):
     def test_show_recordsets_impersonate_another_project(self):
 
         LOG.info('Create a Recordset')
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
@@ -335,7 +350,7 @@ class RecordsetsTest(BaseRecordsetsTest):
     def test_admin_list_all_recordsets_for_a_project(self):
 
         LOG.info('Create a Recordset as Primary tenant')
-        recordset_data_primary_1 = data_utils.rand_recordset_data(
+        recordset_data_primary_1 = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
         body_pr_1 = self.client.create_recordset(
             self.zone['id'], recordset_data_primary_1)[1]
@@ -344,7 +359,7 @@ class RecordsetsTest(BaseRecordsetsTest):
             self.zone['id'], body_pr_1['id'])
         self.assertEqual(const.PENDING, body_pr_1['status'],
                          'Failed, expected status is PENDING')
-        recordset_data_primary_2 = data_utils.rand_recordset_data(
+        recordset_data_primary_2 = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
         body_pr_2 = self.client.create_recordset(
             self.zone['id'], recordset_data_primary_2)[1]
@@ -387,9 +402,9 @@ class RecordsetsTest(BaseRecordsetsTest):
     @decorators.idempotent_id('48013b7c-f526-11eb-b04f-74e5f9e2a801')
     def test_create_A_recordset_multiply_ips(self):
         LOG.info('Create A type Recordset using a list of random IPs')
-        recordset_data = data_utils.rand_a_recordset(
+        recordset_data = dns_data_utils.rand_a_recordset(
             zone_name=self.zone['name'],
-            ips=[data_utils.rand_ip() for _ in range(10)])
+            ips=[dns_data_utils.rand_ip() for _ in range(10)])
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
         self.addCleanup(
@@ -406,11 +421,14 @@ class RecordsetsTest(BaseRecordsetsTest):
     def test_delete_zone_with_existing_recordset(self):
 
         LOG.info('Create a Zone')
-        zone = self.zone_client.create_zone(wait_until=const.ACTIVE)[1]
+        zone_name = dns_data_utils.rand_zone_name(name="TestZone",
+                                              suffix=self.tld_name)
+        zone = self.zone_client.create_zone(name=zone_name,
+                                            wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a Recordset')
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=zone['name'])
         record = self.client.create_recordset(
             zone['id'], recordset_data, wait_until=const.ACTIVE)[1]
@@ -432,7 +450,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 @ddt.ddt
 class RecordsetsNegativeTest(BaseRecordsetsTest):
 
-    credentials = ["primary", "alt"]
+    credentials = ["admin", "system_admin", "primary", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -469,79 +487,58 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('b6dad57e-5ce9-4fa5-8d66-aebbcd23b4ad')
     def test_get_nonexistent_recordset(self):
-        LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
         LOG.info('Attempt to get an invalid Recordset')
         with self.assertRaisesDns(
                 lib_exc.NotFound, 'recordset_not_found', 404):
-            self.client.show_recordset(zone['id'], lib_data_utils.rand_uuid())
+            self.client.show_recordset(self.zone['id'],
+                                       data_utils.rand_uuid())
 
     @decorators.idempotent_id('93d744a8-0dfd-4650-bcef-1e6ad632ad72')
     def test_get_nonexistent_recordset_invalid_id(self):
-        LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
         LOG.info('Attempt to get an invalid Recordset')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
-            self.client.show_recordset(zone['id'], 'invalid')
+            self.client.show_recordset(self.zone['id'], 'invalid')
 
     @decorators.idempotent_id('da08f19a-7f10-47cc-8b41-994507190812')
     def test_update_nonexistent_recordset(self):
-        LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
-        recordset_data = data_utils.rand_recordset_data('A', zone['name'])
+        recordset_data = dns_data_utils.rand_recordset_data(
+            'A', self.zone['name'])
 
         LOG.info('Attempt to update an invalid Recordset')
         with self.assertRaisesDns(
                 lib_exc.NotFound, 'recordset_not_found', 404):
             self.client.update_recordset(
-                zone['id'], lib_data_utils.rand_uuid(), recordset_data)
+                self.zone['id'], data_utils.rand_uuid(), recordset_data)
 
     @decorators.idempotent_id('158340a1-3f69-4aaa-9968-956190563768')
     def test_update_nonexistent_recordset_invalid_id(self):
-        LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
-        recordset_data = data_utils.rand_recordset_data('A', zone['name'])
+        recordset_data = dns_data_utils.rand_recordset_data(
+            'A', self.zone['name'])
 
         LOG.info('Attempt to update an invalid Recordset')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
             self.client.update_recordset(
-                zone['id'], 'invalid', recordset_data)
+                self.zone['id'], 'invalid', recordset_data)
 
     @decorators.idempotent_id('64bd94d4-54bd-4bee-b6fd-92ede063234e')
     def test_delete_nonexistent_recordset(self):
-        LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
         LOG.info('Attempt to delete an invalid Recordset')
         with self.assertRaisesDns(
                 lib_exc.NotFound, 'recordset_not_found', 404):
             self.client.delete_recordset(
-                zone['id'], lib_data_utils.rand_uuid())
+                self.zone['id'], data_utils.rand_uuid())
 
     @decorators.idempotent_id('5948b599-a332-4dcb-840b-afc825075ba3')
     def test_delete_nonexistent_recordset_invalid_id(self):
-        LOG.info('Create a zone')
-        zone = self.zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
-
         LOG.info('Attempt to get an invalid Recordset')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
-            self.client.delete_recordset(zone['id'], 'invalid')
+            self.client.delete_recordset(self.zone['id'], 'invalid')
 
     @decorators.idempotent_id('64e01dc4-a2a8-11eb-aad4-74e5f9e2a801')
     def test_show_recordsets_invalid_ids(self):
 
         LOG.info('Create a Recordset')
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
@@ -560,18 +557,18 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         self.assertRaises(
             lib_exc.NotFound, lambda: self.client.show_recordset(
                 zone_uuid=self.zone['id'],
-                recordset_uuid=lib_data_utils.rand_uuid()))
+                recordset_uuid=data_utils.rand_uuid()))
 
         LOG.info('Ensure 404 NotFound status code is received if '
                  'zone ID is invalid.')
         self.assertRaises(
             lib_exc.NotFound, lambda: self.client.show_recordset(
-                zone_uuid=lib_data_utils.rand_uuid(),
+                zone_uuid=data_utils.rand_uuid(),
                 recordset_uuid=body['id']))
 
     @decorators.idempotent_id('c1d9f046-a2b1-11eb-aad4-74e5f9e2a801')
     def test_create_recordset_for_other_tenant(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
 
         LOG.info('Create a Recordset as Alt tenant for a zone created by '
@@ -582,6 +579,8 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):
+    credentials = ["admin", "primary", "system_admin", "alt"]
+
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -612,7 +611,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
     @decorators.idempotent_id('65ec0495-81d9-4cfb-8007-9d93b32ae883')
     def test_get_single_zones_recordsets(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'], records=['10.1.0.2'])
 
         LOG.info('Create a Recordset')
@@ -626,7 +625,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
     @decorators.idempotent_id('a8e41020-65be-453b-a8c1-2497d539c345')
     def test_list_filter_zones_recordsets(self):
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'], records=['10.0.1.2'])
 
         LOG.info('Create a Recordset')
@@ -637,11 +636,13 @@ class RootRecordsetsTests(BaseRecordsetsTest):
             self.zone['id'], zone_recordset['id'])
 
         LOG.info('Create another zone')
-        zone2 = self.zone_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(name="list-filter",
+                                              suffix=self.tld_name)
+        zone2 = self.zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone2['id'])
 
         LOG.info('Create another Recordset')
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=zone2['name'],
             records=['10.0.1.3'])
         resp, zone_recordset2 = self.client.create_recordset(
@@ -668,11 +669,15 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
     @decorators.idempotent_id('7f4970bf-9aeb-4a3c-9afd-02f5a7178d35')
     def test_list_zones_recordsets_zone_names(self):
-        LOG.info('Create another zone')
-        zone2 = self.zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone2['id'])
-
         LOG.info('List recordsets')
+        zone_name = dns_data_utils.rand_zone_name(name="zone_names",
+                                              suffix=self.tld_name)
+        alt_zone = self.zone_client.create_zone(
+            name=zone_name, wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete,
+                        self.zone_client,
+                        alt_zone['id'])
+
         body = self.client.list_zones_recordsets()[1]
 
         recordsets = body['recordsets']
@@ -714,7 +719,9 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
         for client in clients_list:
             if client == 'primary':
                 # Create a zone and wait till it's ACTIVE
-                zone = self.zone_client.create_zone()[1]
+                zone_name = dns_data_utils.rand_zone_name(name="primary",
+                                                      suffix=self.tld_name)
+                zone = self.zone_client.create_zone(name=zone_name)[1]
                 self.addCleanup(self.wait_zone_delete,
                                 self.zone_client,
                                 zone['id'])
@@ -722,7 +729,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                     self.zone_client, zone['id'], const.ACTIVE)
 
                 # Create a recordset and wait till it's ACTIVE
-                recordset_data = data_utils.rand_recordset_data(
+                recordset_data = dns_data_utils.rand_recordset_data(
                     record_type='A', zone_name=zone['name'])
                 resp, body = self.client.create_recordset(
                     zone['id'], recordset_data)
@@ -744,7 +751,9 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
 
             if client == 'alt':
                 # Create a zone and wait till it's ACTIVE
-                alt_zone = self.alt_zone_client.create_zone()[1]
+                zone_name = dns_data_utils.rand_zone_name(name="alt",
+                                                      suffix=self.tld_name)
+                alt_zone = self.alt_zone_client.create_zone(name=zone_name)[1]
                 self.addCleanup(self.wait_zone_delete,
                                 self.alt_zone_client,
                                 alt_zone['id'])
@@ -752,7 +761,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                     self.alt_zone_client, alt_zone['id'], const.ACTIVE)
 
                 # Create a recordset and wait till it's ACTIVE
-                recordset_data = data_utils.rand_recordset_data(
+                recordset_data = dns_data_utils.rand_recordset_data(
                     record_type='A', zone_name=alt_zone['name'])
                 resp, body = self.alt_client.create_recordset(
                     alt_zone['id'], recordset_data)
@@ -778,7 +787,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
     @decorators.idempotent_id('9c0f58ad-1b31-4899-b184-5380720604e5')
     def test_no_create_recordset_by_alt_tenant(self):
         # try with name=A123456.zone.com.
-        recordset_data = data_utils.rand_recordset_data(
+        recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
         resp, rrset = self.client.create_recordset(
             self.zone['id'], recordset_data)
@@ -793,13 +802,13 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('d4a9aad9-c778-429b-9a0c-4cd2b61a0a01')
     def test_no_create_super_recordsets(self):
-        zone_name = data_utils.rand_zone_name()
+        zone_name = dns_data_utils.rand_zone_name(suffix=self.tld_name)
 
         LOG.info('Create a zone as a default user')
         zone = self.zone_client.create_zone(name='a.b.' + zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
-        rrset_data = data_utils.rand_recordset_data(
+        rrset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=zone_name)
 
         LOG.info('Create a zone as an alt user with existing superdomain')
@@ -810,23 +819,21 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
 
     @decorators.idempotent_id('3dbe244d-fa85-4afc-869b-0306388d8746')
     def test_no_create_recordset_via_alt_domain(self):
-        zone = self.zone_client.create_zone()[1]
-        alt_zone = self.alt_zone_client.create_zone()[1]
-        self.addCleanup(self.wait_zone_delete,
-                        self.zone_client,
-                        zone['id'])
+        zone_name = dns_data_utils.rand_zone_name(name="alt-domain",
+                                              suffix=self.tld_name)
+        alt_zone = self.alt_zone_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete,
                         self.alt_zone_client,
                         alt_zone['id'])
 
         # alt attempts to create record with name A12345.{zone}
-        recordset_data = data_utils.rand_recordset_data(
-            record_type='A', zone_name=zone['name'])
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=self.zone['name'])
 
         self.assertRaises(
             lib_exc.RestClientException,
             lambda: self.alt_client.create_recordset(
-                zone['id'],
+                self.zone['id'],
                 recordset_data
             )
         )
@@ -924,7 +931,10 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
         sudo_managed_headers.update(managed_records_header)
 
         LOG.info('Primary user creates a Zone')
+        zone_name = dns_data_utils.rand_zone_name(name="update_soa_ns",
+                                              suffix=self.tld_name)
         zone = self.zone_client.create_zone(
+            name=zone_name,
             description='Zone for "managed recordsets update" test',
             wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
@@ -939,7 +949,7 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
                     lib_exc.BadRequest, 'bad_request', 400,
                     self.admin_client.update_recordset,
                     zone['id'], recordset['id'],
-                    recordet_data=data_utils.rand_ns_records(),
+                    recordet_data=dns_data_utils.rand_ns_records(),
                     headers=sudo_managed_headers, extra_headers=True)
 
             if recordset['type'] == 'SOA':
@@ -947,5 +957,6 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
                     lib_exc.BadRequest, 'bad_request', 400,
                     self.admin_client.update_recordset,
                     zone['id'], recordset['id'],
-                    recordet_data=data_utils.rand_soa_recordset(zone['name']),
+                    recordet_data=dns_data_utils.rand_soa_recordset(
+                        zone['name']),
                     headers=sudo_managed_headers, extra_headers=True)

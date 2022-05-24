@@ -14,13 +14,16 @@
 
 import json
 import os
+
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
+
+from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
+from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests.api.v2.test_zones_exports import \
     BaseZoneExportsTest
-from designate_tempest_plugin.common import constants as const
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -46,9 +49,11 @@ class ZonesExportTest(BaseZoneExportsTest):
         cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
-    def _create_zone_export(self):
+    def _create_zone_export(self, test_name):
         LOG.info('Create a zone')
-        zone = self.zones_client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name=test_name, suffix=self.tld_name)
+        zone = self.zones_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone export')
@@ -60,7 +65,8 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('0484c3c4-df57-458e-a6e5-6eb63e0475e0')
     def test_create_zone_export_and_show_exported_zonefile(self):
-        zone, zone_export = self._create_zone_export()
+        zone, zone_export = self._create_zone_export(
+            'create_zone_export_and_show_exported_zonefile')
 
         self.assertEqual(const.PENDING, zone_export['status'])
         self.assertEqual(zone['id'], zone_export['zone_id'])
@@ -82,7 +88,8 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('56b8f30e-cd45-4c7a-bc0c-bbf92d7dc697')
     def test_show_exported_zonefile_impersonate_another_project(self):
-        zone, zone_export = self._create_zone_export()
+        zone, zone_export = self._create_zone_export(
+            'show_exported_zonefile_impersonate')
 
         LOG.info('As Admin impersonate "primary" client,'
                  ' to show exported zone file')
@@ -94,7 +101,8 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('c2e55514-ff2e-41d9-a3cc-9e78873254c9')
     def test_show_exported_zonefile_all_projects(self):
-        zone, zone_export = self._create_zone_export()
+        zone, zone_export = self._create_zone_export(
+            'show_exported_zonefile_all_projects')
         resp_headers, resp_data = self.admin_client.show_exported_zonefile(
             zone_export['id'], headers={
                 'x-auth-all-projects': True
@@ -104,7 +112,8 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('9746b7f2-2df4-448c-8a85-5ab6bf74f1fe')
     def test_show_exported_zonefile_any_mime_type(self):
-        zone, zone_export = self._create_zone_export()
+        zone, zone_export = self._create_zone_export(
+            'show_exported_zonefile_any_mime_type')
         resp_headers, resp_data = self.client.show_exported_zonefile(
             zone_export['id'], headers={'Accept': '*/*'})
 
@@ -119,7 +128,8 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('dc7a9dde-d287-4e22-9788-26578f0d3bf0')
     def test_missing_accept_headers(self):
-        zone, zone_export = self._create_zone_export()
+        zone, zone_export = self._create_zone_export(
+            'missing_accept_headers')
         resp_headers, resp_data = self.client.show_exported_zonefile(
             zone_export['id'], headers={})
         LOG.info('Ensure Content-Type: text/dns')
@@ -146,7 +156,10 @@ class ZonesExportTest(BaseZoneExportsTest):
         file.close()
 
         LOG.info('Create a zone')
-        zone = self.zones_client.create_zone(wait_until=const.ACTIVE)[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="all_recordset_types_exist", suffix=self.tld_name)
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         created_records = []

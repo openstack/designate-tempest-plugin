@@ -17,6 +17,7 @@ from tempest.lib import exceptions as lib_exc
 import ddt
 
 from designate_tempest_plugin.tests import base
+from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.common import waiters
 
 
@@ -35,8 +36,10 @@ class RecordsetsTest(base.BaseDnsV2Test):
         super(RecordsetsTest, cls).setup_clients()
         if CONF.enforce_scope.designate:
             cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
@@ -49,8 +52,15 @@ class RecordsetsTest(base.BaseDnsV2Test):
             LOG.info('Retrieve info from a zone')
             _, zone = cls.client.show_zone(zone_id)
         else:
+            # Make sure we have an allowed TLD available
+            tld_name = dns_data_utils.rand_zone_name(name="RecordsetsTest")
+            cls.tld_name = f".{tld_name}"
+            cls.class_tld = cls.admin_tld_client.create_tld(
+                tld_name=tld_name[:-1])
             LOG.info('Create a new zone')
-            _, zone = cls.client.create_zone()
+            zone_name = dns_data_utils.rand_zone_name(
+                name="recordsets_test_setup", suffix=cls.tld_name)
+            zone = cls.client.create_zone(name=zone_name)[1]
             cls.addClassResourceCleanup(
                 test_utils.call_and_ignore_notfound_exc,
                 cls.client.delete_zone, zone['id'])
@@ -59,6 +69,11 @@ class RecordsetsTest(base.BaseDnsV2Test):
         waiters.wait_for_zone_status(cls.client, zone['id'], 'ACTIVE')
 
         cls.zone = zone
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(RecordsetsTest, cls).resource_cleanup()
 
     @decorators.attr(type='slow')
     @decorators.idempotent_id('4664ed66-9ff1-45f2-9e60-d4913195c505')

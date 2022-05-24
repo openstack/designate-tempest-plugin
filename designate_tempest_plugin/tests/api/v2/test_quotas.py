@@ -15,7 +15,7 @@ from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
-from tempest.lib.common.utils import data_utils as tempest_data_utils
+from tempest.lib.common.utils import data_utils
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
@@ -285,7 +285,7 @@ class QuotasV2TestNegative(base.BaseDnsV2Test):
 
         for item in quotas_types:
             quota = dns_data_utils.rand_quotas()
-            quota[item] = tempest_data_utils.rand_name()
+            quota[item] = data_utils.rand_name()
             self.assertRaises(
                 lib_exc.BadRequest, self.admin_client.set_quotas,
                 project_id=primary_project_id,
@@ -299,7 +299,7 @@ class QuotasV2TestNegative(base.BaseDnsV2Test):
         LOG.info('Try to set quota using not existing quota type in its body')
         primary_project_id = self.quotas_client.project_id
         quota = dns_data_utils.rand_quotas()
-        quota[tempest_data_utils.rand_name()] = 777
+        quota[data_utils.rand_name()] = 777
 
         with self.assertRaisesDns(
                 lib_exc.ServerFault, 'quota_resource_unknown', 500):

@@ -49,11 +49,27 @@ class QuotasV2Test(base.BaseDnsV2Test):
         super(QuotasV2Test, cls).setup_clients()
         if CONF.enforce_scope.designate:
             cls.admin_client = cls.os_system_admin.dns_v2.QuotasClient()
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
         cls.alt_client = cls.os_alt.dns_v2.QuotasClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(QuotasV2Test, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="QuotasV2Test")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(QuotasV2Test, cls).resource_cleanup()
 
     @decorators.idempotent_id('6987953a-dccf-11eb-903e-74e5f9e2a801')
     def test_alt_reaches_zones_quota(self):
@@ -78,7 +94,9 @@ class QuotasV2Test(base.BaseDnsV2Test):
             attempt_number += 1
             LOG.info('Attempt No:{} '.format(attempt_number))
             try:
-                zone = self.alt_zone_client.create_zone()[1]
+                zone_name = dns_data_utils.rand_zone_name(
+                    name="alt_reaches_zones_quota", suffix=self.tld_name)
+                zone = self.alt_zone_client.create_zone(name=zone_name)[1]
                 self.addCleanup(
                     self.wait_zone_delete, self.alt_zone_client, zone['id'])
             except Exception as err:

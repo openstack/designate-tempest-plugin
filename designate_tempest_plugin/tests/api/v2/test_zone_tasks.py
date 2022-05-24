@@ -22,6 +22,7 @@ from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
+from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.tests import base
 
 from designate_tempest_plugin.services.dns.query.query_client \
@@ -34,6 +35,29 @@ LOG = logging.getLogger(__name__)
 class BaseZonesTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                     'status', 'action']
+
+    @classmethod
+    def setup_clients(cls):
+        super(BaseZonesTest, cls).setup_clients()
+
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(BaseZonesTest, cls).resource_setup()
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="BaseZonesTest")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(BaseZonesTest, cls).resource_cleanup()
 
 
 class ZoneTasks(BaseZonesTest):
@@ -58,7 +82,9 @@ class ZoneTasks(BaseZonesTest):
     @decorators.idempotent_id('287e2cd0-a0e7-11eb-b962-74e5f9e2a801')
     def test_zone_abandon(self):
         LOG.info('Create a PRIMARY zone')
-        pr_zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="zone_abandon", suffix=self.tld_name)
+        pr_zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
         waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
 
@@ -88,7 +114,9 @@ class ZoneTasks(BaseZonesTest):
     def test_zone_abandon_forbidden(self):
 
         LOG.info('Create a PRIMARY zone and add to the cleanup')
-        pr_zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="zone_abandon_forbidden", suffix=self.tld_name)
+        pr_zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
         waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
 
@@ -144,7 +172,9 @@ class ZoneTasksNegative(BaseZonesTest):
     def test_manually_trigger_update_secondary_zone_negative(self):
         # Create a PRIMARY zone
         LOG.info('Create a PRIMARY zone')
-        pr_zone = self.client.create_zone()[1]
+        zone_name = dns_data_utils.rand_zone_name(
+            name="manually_trigger_update_primary", suffix=self.tld_name)
+        pr_zone = self.client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
         waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
 
@@ -170,7 +200,9 @@ class ZoneTasksNegative(BaseZonesTest):
 
         # Create a SECONDARY zone
         LOG.info('Create a SECONDARY zone')
-        sec_zone = self.client.create_zone(
+        zone_name = dns_data_utils.rand_zone_name(
+            name="manually_trigger_update_secondary", suffix=self.tld_name)
+        sec_zone = self.client.create_zone(name=zone_name,
             zone_type=const.SECONDARY_ZONE_TYPE, primaries=nameservers)[1]
         self.addCleanup(self.wait_zone_delete, self.client, sec_zone['id'])
         LOG.info('Ensure we respond with CREATE+PENDING')
