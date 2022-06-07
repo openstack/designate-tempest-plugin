@@ -67,9 +67,10 @@ class BaseDnsTest(rbac_utils.RBACTestsMixin, test.BaseTestCase):
     # have cls.os_alt, and admin will have cls.os_admin.
     # NOTE(johnsom) We will allocate most credentials here so that each test
     # can test for allowed and disallowed RBAC policies.
-    credentials = ['admin', 'primary']
+    credentials = ['admin', 'primary', 'alt']
     if CONF.dns_feature_enabled.enforce_new_defaults:
-        credentials.extend(['system_admin', 'system_reader', 'project_reader'])
+        credentials.extend(['system_admin', 'system_reader',
+                            'project_member', 'project_reader'])
 
     # A tuple of credentials that will be allocated by tempest using the
     # 'credentials' list above. These are used to build RBAC test lists.

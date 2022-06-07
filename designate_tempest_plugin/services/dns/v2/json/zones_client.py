@@ -111,16 +111,17 @@ class ZonesClient(base.DnsClientV2Base):
             'zones', uuid, params=params, headers=headers)
 
     @base.handle_errors
-    def show_zone_nameservers(self, zone_uuid, params=None):
+    def show_zone_nameservers(self, zone_uuid, params=None, headers=None):
         """Gets list of Zone Name Servers
         :param zone_uuid: Unique identifier of the zone in UUID format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: Serialized nameservers as a list.
         """
         return self._show_request(
             'zones/{0}/nameservers'.format(zone_uuid), uuid=None,
-            params=params)
+            params=params, headers=headers)
 
     @base.handle_errors
     def list_zones(self, params=None, headers=None):
@@ -151,7 +152,8 @@ class ZonesClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def update_zone(self, uuid, email=None, ttl=None,
-                    description=None, wait_until=False, params=None):
+                    description=None, wait_until=False, params=None,
+                    headers=None):
         """Update a zone with the specified parameters.
         :param uuid: The unique identifier of the zone.
         :param email: The email for the zone.
@@ -163,6 +165,7 @@ class ZonesClient(base.DnsClientV2Base):
         :param wait_until: Block until the zone reaches the desiered status
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the updated zone.
         """
         zone = {
@@ -171,7 +174,8 @@ class ZonesClient(base.DnsClientV2Base):
             'description': description or data_utils.rand_name('test-zone'),
         }
 
-        resp, body = self._update_request('zones', uuid, zone, params=params)
+        resp, body = self._update_request('zones', uuid, zone, params=params,
+                                          headers=headers)
 
         # Update Zone should Return a HTTP 202
         self.expected_success(202, resp.status)
