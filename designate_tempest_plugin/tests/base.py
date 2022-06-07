@@ -18,6 +18,7 @@ from tempest.lib.common.utils import test_utils as utils
 
 from designate_tempest_plugin.services.dns.query.query_client import \
     QueryClient
+from designate_tempest_plugin.tests import rbac_utils
 
 
 CONF = config.CONF
@@ -55,7 +56,7 @@ class AssertRaisesDns(test.BaseTestCase):
         return False
 
 
-class BaseDnsTest(test.BaseTestCase):
+class BaseDnsTest(rbac_utils.RBACTestsMixin, test.BaseTestCase):
     """Base class for DNS tests."""
 
     # NOTE(andreaf) credentials holds a list of the credentials to be allocated
@@ -64,9 +65,22 @@ class BaseDnsTest(test.BaseTestCase):
     # rest the actual roles.
     # NOTE(kiall) primary will result in a manager @ cls.os_primary, alt will
     # have cls.os_alt, and admin will have cls.os_admin.
-    # NOTE(kiall) We should default to only primary, and request additional
-    # credentials in the tests that require them.
-    credentials = ['primary']
+    # NOTE(johnsom) We will allocate most credentials here so that each test
+    # can test for allowed and disallowed RBAC policies.
+    credentials = ['admin', 'primary']
+    if CONF.dns_feature_enabled.enforce_new_defaults:
+        credentials.extend(['system_admin', 'system_reader', 'project_reader'])
+
+    # A tuple of credentials that will be allocated by tempest using the
+    # 'credentials' list above. These are used to build RBAC test lists.
+    allocated_creds = []
+    for cred in credentials:
+        if isinstance(cred, list):
+            allocated_creds.append('os_roles_' + cred[0])
+        else:
+            allocated_creds.append('os_' + cred)
+    # Tests shall not mess with the list of allocated credentials
+    allocated_credentials = tuple(allocated_creds)
 
     @classmethod
     def skip_checks(cls):
