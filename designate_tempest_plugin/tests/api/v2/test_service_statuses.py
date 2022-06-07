@@ -26,7 +26,8 @@ LOG = logging.getLogger(__name__)
 
 class ServiceStatusAdmin(base.BaseDnsV2Test):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["primary", "admin", "system_admin", "system_reader", "alt",
+                   "project_reader", "project_member"]
 
     mandatory_services = ['central', 'mdns', 'worker', 'producer']
     service_status_fields = [
@@ -70,6 +71,15 @@ class ServiceStatusAdmin(base.BaseDnsV2Test):
             {const.UP}, set([item[1] for item in services_statuses_tup]),
             "Failed, not all listed services are in UP status, "
             "services: {}".format(services_statuses_tup))
+
+        # Test RBAC
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'ServiceClient', 'list_statuses', expected_allowed, False)
 
     @decorators.idempotent_id('fce0f704-c0ae-11ec-8213-201e8823901f')
     def test_admin_show_service_status(self):
