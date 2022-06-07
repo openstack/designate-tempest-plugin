@@ -29,7 +29,8 @@ class BaseTldTest(base.BaseDnsV2Test):
 
 
 class TldAdminTest(BaseTldTest):
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "system_admin", "system_reader",
+                   "primary", "alt", "project_reader", "project_member"]
 
     # Use a TLD suffix unique to this test class.
     local_tld_suffix = '.'.join(["tldadmintest", CONF.dns.tld_suffix])
@@ -66,6 +67,14 @@ class TldAdminTest(BaseTldTest):
         self.addCleanup(self.admin_client.delete_tld, tld['id'])
 
         self.assertEqual(tld_name, tld['name'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement('TldClient', 'create_tld',
+                                        expected_allowed, False)
 
     @decorators.idempotent_id('961bd2e8-d4d0-11eb-b8ee-74e5f9e2a801')
     def test_create_duplicated_tlds(self):
@@ -139,6 +148,15 @@ class TldAdminTest(BaseTldTest):
         LOG.info('Ensure the fetched response matches the created tld')
         self.assertExpected(tld, body, self.excluded_keys)
 
+        # Test RBAC
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'TldClient', 'show_tld', expected_allowed, False, tld['id'])
+
     @decorators.idempotent_id('26708cb8-7126-48a7-9424-1c225e56e609')
     def test_delete_tld(self):
         LOG.info('Create a tld')
@@ -150,8 +168,16 @@ class TldAdminTest(BaseTldTest):
         LOG.info('Delete the tld')
         self.admin_client.delete_tld(tld['id'])
 
-        self.assertRaises(lib_exc.NotFound,
-           lambda: self.admin_client.show_tld(tld['id']))
+        self.assertRaises(lib_exc.NotFound, self.admin_client.show_tld,
+                          tld['id'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement('TldClient', 'delete_tld',
+                                        expected_allowed, False, tld['id'])
 
     @decorators.idempotent_id('95b13759-c85c-4791-829b-9591ca15779d')
     def test_list_tlds(self):
@@ -164,6 +190,16 @@ class TldAdminTest(BaseTldTest):
         body = self.admin_client.list_tlds()[1]
 
         self.assertGreater(len(body['tlds']), 0)
+
+        # Test RBAC
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'TldClient', 'list_tlds', expected_allowed, [tld['id']],
+            params={'limit': 1000})
 
     @decorators.idempotent_id('1a233812-48d9-4d15-af5e-9961744286ff')
     def test_update_tld(self):
@@ -184,6 +220,15 @@ class TldAdminTest(BaseTldTest):
 
         self.assertEqual(tld_name_2, patch_tld["name"])
         self.assertEqual(tld_data["description"], patch_tld["description"])
+
+        # Test RBAC
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'TldClient', 'update_tld', expected_allowed, False, tld['id'],
+            tld_data['name'], tld_data['description'])
 
     @decorators.idempotent_id('8116dcf5-a329-47d1-90be-5ff32f299c53')
     def test_list_tlds_dot_json_fails(self):
