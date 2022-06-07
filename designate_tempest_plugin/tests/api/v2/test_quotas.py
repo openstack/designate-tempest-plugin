@@ -29,7 +29,8 @@ quotas_types = ["api_export_size", "recordset_records",
 
 class QuotasV2Test(base.BaseDnsV2Test):
 
-    credentials = ["primary", "admin", "system_admin", "alt"]
+    credentials = ["primary", "admin", "system_admin", "system_reader", "alt",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -90,10 +91,28 @@ class QuotasV2Test(base.BaseDnsV2Test):
                     'Failed, the value of:{} is:{}, expected integer'.format(
                         quota_type, quota_value))
 
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_system_admin', 'os_system_reader',
+                                     'os_project_member', 'os_project_reader'])
+
+        self.check_list_show_with_ID_RBAC_enforcement(
+            'QuotasClient', 'show_quotas', expected_allowed, False)
+
     @decorators.idempotent_id('0448b089-5803-4ce3-8a6c-5c15ff75a2cc')
     def test_reset_quotas(self):
         self._store_quotas(project_id=self.quotas_client.project_id)
+
         LOG.info("Deleting (reset) quotas")
+
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_system_admin'])
+
+        self.check_CUD_RBAC_enforcement(
+            'QuotasClient', 'delete_quotas', expected_allowed, False,
+            project_id=self.quotas_client.project_id)
+
         body = self.admin_client.delete_quotas(
             project_id=self.quotas_client.project_id,
             headers=self.all_projects_header)[1]
@@ -103,16 +122,21 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
     @decorators.idempotent_id('76d24c87-1b39-4e19-947c-c08e1380dc61')
     def test_update_quotas(self):
-        if CONF.enforce_scope.designate:
-            raise self.skipException(
-                "System scoped tokens do not have a project_id.")
-
-        self._store_quotas(project_id=self.admin_client.project_id)
+        self._store_quotas(project_id=self.quotas_client.project_id)
         LOG.info("Updating quotas")
         quotas = dns_data_utils.rand_quotas()
         body = self.admin_client.update_quotas(
-            project_id=self.admin_client.project_id,
-            **quotas)[1]
+            project_id=self.quotas_client.project_id,
+            **quotas, headers=self.all_projects_header)[1]
+
+        expected_allowed = ['os_admin']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_system_admin'])
+
+        self.check_CUD_RBAC_enforcement(
+            'QuotasClient', 'update_quotas', expected_allowed, False,
+            project_id=self.quotas_client.project_id,
+            **quotas, headers=self.all_projects_header)
 
         LOG.info("Ensuring the response has all quota types")
         self.assertExpected(quotas, body, [])
