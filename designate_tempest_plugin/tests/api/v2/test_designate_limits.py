@@ -24,7 +24,8 @@ LOG = logging.getLogger(__name__)
 
 
 class DesignateLimit(base.BaseDnsV2Test):
-    credentials = ["admin", "system_admin", "primary", "alt"]
+    credentials = ["admin", "system_admin", "system_reader", "primary", "alt",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -102,3 +103,14 @@ class DesignateLimit(base.BaseDnsV2Test):
                 project_id, received_project_ids,
                 'Failed, expected project_id:{} is missing in:{} '.format(
                     project_id, received_project_ids))
+
+    @decorators.idempotent_id('fc57fa6b-5280-4186-9be9-ff4da0961db0')
+    def test_list_designate_limits_RBAC(self):
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_system_admin', 'os_system_reader',
+                                     'os_project_member', 'os_project_reader'])
+
+        self.check_list_show_RBAC_enforcement(
+            'DesignateLimitClient', 'list_designate_limits',
+            expected_allowed, False)
