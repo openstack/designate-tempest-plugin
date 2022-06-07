@@ -100,16 +100,17 @@ class ZoneExportsClient(base.DnsClientV2Base):
             'zones/tasks/exports', params=params, headers=headers)
 
     @base.handle_errors
-    def delete_zone_export(self, uuid, params=None):
+    def delete_zone_export(self, uuid, params=None, headers=None):
         """Deletes the zone export task with the specified UUID.
 
         :param uuid: The unique identifier of the exported zone.
         :param params: A Python dict that represents the query parameters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the response body.
         """
         resp, body = self._delete_request(
-            'zones/tasks/exports', uuid, params=params)
+            'zones/tasks/exports', uuid, params=params, headers=headers)
 
         # Delete Zone export should Return a HTTP 204
         self.expected_success(204, resp.status)

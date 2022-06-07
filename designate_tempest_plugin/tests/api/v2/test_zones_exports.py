@@ -56,7 +56,8 @@ class BaseZoneExportsTest(base.BaseDnsV2Test):
 
 
 class ZonesExportTest(BaseZoneExportsTest):
-    credentials = ["primary", "admin", "system_admin", "alt"]
+    credentials = ["primary", "admin", "system_admin", "system_reader", "alt",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -92,10 +93,20 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('2dd8a9a0-98a2-4bf6-bb51-286583b30f40')
     def test_create_zone_export(self):
-        zone_export = self._create_zone_export('create_zone_export')[1]
+        zone, zone_export = self._create_zone_export('create_zone_export')
 
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual(const.PENDING, zone_export['status'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+            expected_allowed.append('os_project_member')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZoneExportsClient', 'create_zone_export', expected_allowed, True,
+            zone['id'])
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('2d29a2a9-1941-4b7e-9d8a-ad6c2140ea68')
@@ -107,6 +118,25 @@ class ZonesExportTest(BaseZoneExportsTest):
 
         LOG.info('Ensure the fetched response matches the zone export')
         self.assertExpected(zone_export, body, self.excluded_keys)
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        expected_allowed = ['os_primary']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZoneExportsClient', 'show_zone_export', expected_allowed, True,
+            zone_export['id'])
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZoneExportsClient', 'show_zone_export', expected_allowed, True,
+            zone_export['id'], headers=self.all_projects_header)
 
     @decorators.idempotent_id('fb04507c-9600-11eb-b1cd-74e5f9e2a801')
     def test_show_zone_export_impersonate_another_project(self):
@@ -133,6 +163,17 @@ class ZonesExportTest(BaseZoneExportsTest):
             'for a primary client: {}'.format(
                 zone_export['id'], listed_export_ids))
 
+        # Test RBAC with x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'ZoneExportsClient', 'show_zone_export', expected_allowed, True,
+            zone_export['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
+
     @decorators.idempotent_id('97234f00-8bcb-43f8-84dd-874f8bc4a80e')
     def test_delete_zone_export(self):
         LOG.info('Create a zone')
@@ -145,6 +186,29 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a zone export')
         _, zone_export = self.client.create_zone_export(zone['id'])
 
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZoneExportsClient', 'delete_zone_export', expected_allowed, True,
+            zone_export['id'])
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'ZoneExportsClient', 'delete_zone_export', expected_allowed, False,
+            zone_export['id'], headers=self.all_projects_header)
+
+        self.check_CUD_RBAC_enforcement(
+            'ZoneExportsClient', 'delete_zone_export', expected_allowed, False,
+            zone_export['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
+
         LOG.info('Delete the zone export')
         _, body = self.client.delete_zone_export(zone_export['id'])
 
@@ -155,12 +219,44 @@ class ZonesExportTest(BaseZoneExportsTest):
 
     @decorators.idempotent_id('476bfdfe-58c8-46e2-b376-8403c0fff440')
     def test_list_zone_exports(self):
-        self._create_zone_export('list_zone_exports')[1]
+        export = self._create_zone_export('list_zone_exports')[1]
 
         LOG.info('List zone exports')
         body = self.client.list_zone_exports()[1]
 
         self.assertGreater(len(body['exports']), 0)
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC - Users that are allowed to call list, but should get
+        #             zero zones.
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader',
+                                'os_admin', 'os_project_member',
+                                'os_project_reader']
+        else:
+            expected_allowed = ['os_alt']
+
+        self.check_list_RBAC_enforcement_count(
+            'ZoneExportsClient', 'list_zone_exports', expected_allowed, 0)
+
+        # Test that users who should see the zone, can see it.
+        expected_allowed = ['os_primary']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZoneExportsClient', 'list_zone_exports',
+            expected_allowed, [export['id']])
+
+        # Test RBAC with x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZoneExportsClient', 'list_zone_exports',
+            expected_allowed, [export['id']],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
     @decorators.idempotent_id('f34e7f34-9613-11eb-b1cd-74e5f9e2a801')
     def test_list_zone_exports_all_projects(self):
@@ -198,6 +294,16 @@ class ZonesExportTest(BaseZoneExportsTest):
                 id, listed_exports_ids,
                 'Failed, expected ID:{} was not found in '
                 'listed IDs:{}'.format(id, listed_exports_ids))
+
+        # Test RBAC with x-auth-all-projects
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'ZoneExportsClient', 'list_zone_exports', expected_allowed,
+            [alt_export['id']], headers=self.all_projects_header)
 
     @decorators.idempotent_id('e4a11a14-9aaa-11eb-be59-74e5f9e2a801')
     def test_list_zone_exports_filter_results(self):
