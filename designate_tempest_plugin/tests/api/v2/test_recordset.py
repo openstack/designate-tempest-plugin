@@ -66,7 +66,8 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
 @ddt.ddt
 class RecordsetsTest(BaseRecordsetsTest):
 
-    credentials = ["admin", "system_admin", "primary", "alt"]
+    credentials = ["admin", "system_admin", "system_reader", "primary", "alt",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -93,6 +94,16 @@ class RecordsetsTest(BaseRecordsetsTest):
     def test_create_recordset(self):
         recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+            expected_allowed.append('os_project_member')
+
+        self.check_CUD_RBAC_enforcement(
+            'RecordsetClient', 'create_recordset', expected_allowed, True,
+            self.zone['id'], recordset_data)
 
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
@@ -213,14 +224,45 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        recordset_id = body['id']
         self.addCleanup(
             self.wait_recordset_delete, self.client,
-            self.zone['id'], body['id'])
+            self.zone['id'], recordset_id)
 
         LOG.info('List zone recordsets')
         body = self.client.list_recordset(self.zone['id'])[1]
 
         self.assertGreater(len(body), 0)
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        expected_allowed = ['os_primary']
+
+        self.check_list_show_RBAC_enforcement(
+            'RecordsetClient', 'list_recordset', expected_allowed, True,
+            self.zone['id'])
+
+        # Test that users who should see the zone, can see it.
+        expected_allowed = ['os_primary']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'RecordsetClient', 'list_recordset',
+            expected_allowed, [recordset_id], self.zone['id'])
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'RecordsetClient', 'list_recordset', expected_allowed,
+            [recordset_id], self.zone['id'], headers=self.all_projects_header)
+        self.check_list_IDs_RBAC_enforcement(
+            'RecordsetClient', 'list_recordset',
+            expected_allowed, [recordset_id], self.zone['id'],
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
     @decorators.idempotent_id('84c13cb2-9020-4c1e-aeb0-c348d9a70caa')
     def test_show_recordsets(self):
@@ -230,15 +272,39 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         resp, body = self.client.create_recordset(
             self.zone['id'], recordset_data)
+        recordset_id = body['id']
         self.addCleanup(
             self.wait_recordset_delete, self.client,
-            self.zone['id'], body['id'])
+            self.zone['id'], recordset_id)
 
         LOG.info('Re-Fetch the Recordset')
-        record = self.client.show_recordset(self.zone['id'], body['id'])[1]
+        record = self.client.show_recordset(self.zone['id'], recordset_id)[1]
 
         LOG.info('Ensure the fetched response matches the expected one')
         self.assertExpected(body, record, self.excluded_keys)
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        expected_allowed = ['os_primary']
+
+        self.check_list_show_RBAC_enforcement(
+            'RecordsetClient', 'show_recordset', expected_allowed, True,
+            self.zone['id'], recordset_id)
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'RecordsetClient', 'show_recordset', expected_allowed, True,
+            self.zone['id'], recordset_id, headers=self.all_projects_header)
+        self.check_list_show_RBAC_enforcement(
+            'RecordsetClient', 'show_recordset', expected_allowed, True,
+            self.zone['id'], recordset_id,
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
     @decorators.idempotent_id('855399c1-8806-4ae5-aa31-cb8a6f35e218')
     def test_delete_recordset(self):
@@ -248,16 +314,40 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Recordset')
         record = self.client.create_recordset(
             self.zone['id'], recordset_data)[1]
+        recordset_id = record['id']
         self.addCleanup(
             self.wait_recordset_delete, self.client,
-            self.zone['id'], record['id'])
+            self.zone['id'], recordset_id)
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'RecordsetClient', 'delete_recordset', expected_allowed, True,
+            self.zone['id'], recordset_id)
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'RecordsetClient', 'delete_recordset', expected_allowed, False,
+            self.zone['id'], recordset_id, headers=self.all_projects_header)
+
+        self.check_CUD_RBAC_enforcement(
+            'RecordsetClient', 'delete_recordset', expected_allowed, False,
+            self.zone['id'], recordset_id,
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
         LOG.info('Delete a Recordset')
-        self.client.delete_recordset(self.zone['id'], record['id'])
+        self.client.delete_recordset(self.zone['id'], recordset_id)
 
         LOG.info('Ensure successful deletion of Recordset')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.show_recordset(self.zone['id'], record['id']))
+            lambda: self.client.show_recordset(self.zone['id'], recordset_id))
 
     @decorators.idempotent_id('8d41c85f-09f9-48be-a202-92d1bdf5c796')
     def test_update_recordset(self):
@@ -267,19 +357,43 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a recordset')
         record = self.client.create_recordset(
             self.zone['id'], recordset_data)[1]
+        recordset_id = record['id']
         self.addCleanup(
             self.wait_recordset_delete, self.client,
-            self.zone['id'], record['id'])
+            self.zone['id'], recordset_id)
 
         recordset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=self.zone['name'], name=record['name'])
 
         LOG.info('Update the recordset')
         update = self.client.update_recordset(self.zone['id'],
-            record['id'], recordset_data)[1]
+            recordset_id, recordset_data)[1]
 
         self.assertEqual(record['name'], update['name'])
         self.assertNotEqual(record['records'], update['records'])
+
+        # Test RBAC
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'RecordsetClient', 'update_recordset', expected_allowed, True,
+            self.zone['id'], recordset_id, recordset_data)
+
+        # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
+        expected_allowed = ['os_admin', 'os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+
+        self.check_CUD_RBAC_enforcement(
+            'RecordsetClient', 'update_recordset', expected_allowed, False,
+            self.zone['id'], recordset_id, recordset_data,
+            headers=self.all_projects_header)
+        self.check_CUD_RBAC_enforcement(
+            'RecordsetClient', 'update_recordset', expected_allowed, False,
+            self.zone['id'], recordset_id, recordset_data,
+            headers={'x-auth-sudo-project-id': self.client.project_id})
 
     @decorators.idempotent_id('60904cc5-148b-4e3b-a0c6-35656dc8d44c')
     def test_update_recordset_one_field(self):

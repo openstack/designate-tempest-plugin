@@ -106,17 +106,20 @@ class RecordsetClient(base.DnsClientV2Base):
             params=params, headers=headers)
 
     @base.handle_errors
-    def delete_recordset(self, zone_uuid, recordset_uuid, params=None):
+    def delete_recordset(self, zone_uuid, recordset_uuid, params=None,
+                         headers=None):
         """Deletes a recordset related to the specified zone UUID.
         :param zone_uuid: The unique identifier of the zone.
         :param recordset_uuid: The unique identifier of the record in
                                uuid format.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
+        :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the response body.
         """
         resp, body = self._delete_request(
-            'zones/{0}/recordsets'.format(zone_uuid), recordset_uuid)
+            'zones/{0}/recordsets'.format(zone_uuid), recordset_uuid,
+            params=params, headers=headers)
 
         # Delete Recordset should Return a HTTP 202
         self.expected_success(202, resp.status)
