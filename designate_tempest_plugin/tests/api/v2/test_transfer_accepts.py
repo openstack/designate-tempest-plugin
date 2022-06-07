@@ -53,7 +53,8 @@ class BaseTransferAcceptTest(base.BaseDnsV2Test):
 
 
 class TransferAcceptTest(BaseTransferAcceptTest):
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin", "system_admin", "system_reader",
+                   "project_member", "project_reader"]
 
     @classmethod
     def setup_credentials(cls):
@@ -114,6 +115,21 @@ class TransferAcceptTest(BaseTransferAcceptTest):
                  "key": transfer_request['key'],
                  "zone_transfer_request_id": transfer_request['id']
         }
+
+        # Test RBAC
+        # Note: Everyone can call this API and succeed if they know the
+        #       transfer key.
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.append('os_system_admin')
+            expected_allowed.append('os_system_reader')
+            expected_allowed.append('os_project_member')
+            expected_allowed.append('os_project_reader')
+
+        self.check_CUD_RBAC_enforcement(
+            'TransferAcceptClient', 'create_transfer_accept',
+            expected_allowed, True, data)
+
         LOG.info('Create a zone transfer_accept')
         _, transfer_accept = self.prm_accept_client.create_transfer_accept(
             data)
@@ -158,6 +174,25 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Ensure the fetched response matches the '
                  'created transfer_accept')
         self.assertExpected(transfer_accept, body, self.excluded_keys)
+
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC
+        expected_allowed = ['os_primary']
+
+        self.check_list_show_RBAC_enforcement(
+            'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
+            True, transfer_accept['id'])
+
+        # Test RBAC with x-auth-all-projects
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
+            True, transfer_accept['id'], headers=self.all_projects_header)
 
     @decorators.idempotent_id('89b516f0-8c9f-11eb-a322-74e5f9e2a801')
     def test_ownership_transferred_zone(self):
@@ -241,6 +276,30 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             self.assertEqual('COMPLETE', transfer_accept['status'])
             transfer_request_ids.append(transfer_accept['id'])
 
+        # TODO(johnsom) Test reader role once this bug is fixed:
+        #               https://bugs.launchpad.net/tempest/+bug/1964509
+        # Test RBAC - Users that are allowed to call list, but should get
+        #             zero zones.
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_RBAC_enforcement_count(
+            'TransferAcceptClient', 'list_transfer_accept',
+            expected_allowed, 0)
+
+        # Test that users who should see the zone, can see it.
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_IDs_RBAC_enforcement(
+            'TransferAcceptClient', 'list_transfer_accept',
+            expected_allowed, transfer_request_ids,
+            headers=self.all_projects_header)
+
         # As Admin list all accepted zone transfers, expected:
         # each previously transferred zone is listed.
         # Note: This is an all-projects list call, so other tests running
@@ -250,7 +309,8 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         admin_client_accept_ids = [
             item['id'] for item in
             self.admin_accept_client.list_transfer_accept(
-                headers=self.all_projects_header, params={'limit': 1000})]
+                headers=self.all_projects_header,
+                params={'limit': 1000})[1]['transfer_accepts']]
         for tr_id in transfer_request_ids:
             self.assertIn(
                 tr_id, admin_client_accept_ids,
@@ -265,7 +325,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             item['id'] for item in
             self.admin_accept_client.list_transfer_accept(
                 headers=self.all_projects_header,
-                params={'status': 'COMPLETE'})]
+                params={'status': 'COMPLETE'})[1]['transfer_accepts']]
         for tr_id in transfer_request_ids:
             self.assertIn(
                 tr_id, admin_client_accept_ids,
@@ -282,7 +342,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             item['id'] for item in
             self.admin_accept_client.list_transfer_accept(
                 headers=self.all_projects_header,
-                params={'status': not_existing_status})]
+                params={'status': not_existing_status})[1]['transfer_accepts']]
         self.assertEmpty(
             admin_client_accept_ids,
             "Failed, filtered list should be empty, but actually it's not, "
@@ -340,6 +400,18 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         # should be able to "cleanup" a transferred zone.
         self.addCleanup(
             self.wait_zone_delete, self.alt_zone_client, zone['id'])
+
+        # Test RBAC with x-auth-sudo-project-id header
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin']
+
+        self.check_list_show_RBAC_enforcement(
+            'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
+            True, transfer_accept['id'],
+            headers={'x-auth-sudo-project-id':
+                     self.os_alt.credentials.project_id})
 
 
 class TransferAcceptTestNegative(BaseTransferAcceptTest):
