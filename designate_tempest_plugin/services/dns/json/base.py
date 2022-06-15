@@ -17,8 +17,7 @@ from oslo_log import log as logging
 from oslo_serialization import jsonutils as json
 from tempest.lib.common import rest_client
 from tempest.lib import exceptions as lib_exc
-from six.moves.urllib import parse as urllib
-import six
+from urllib import parse as urllib_parse
 
 from designate_tempest_plugin.common import models
 
@@ -58,7 +57,7 @@ class DnsClientBase(rest_client.RestClient):
     DELETE_STATUS_CODES = []
 
     def serialize(self, data):
-        if isinstance(data, six.string_types):
+        if isinstance(data, str):
             return data
         return json.dumps(data)
 
@@ -106,7 +105,7 @@ class DnsClientBase(rest_client.RestClient):
         else:
             uuid = '/%s' % uuid if uuid else ''
 
-        params = '?%s' % urllib.urlencode(params) if params else ''
+        params = '?%s' % urllib_parse.urlencode(params) if params else ''
 
         return uri_pattern.format(pref=self.uri_prefix,
                                   res=resource_name,
