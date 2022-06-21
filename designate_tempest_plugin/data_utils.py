@@ -209,11 +209,12 @@ def wildcard_ns_recordset(zone_name):
 
 def rand_ns_records():
     ns_zone = rand_zone_name()
-    records = []
+    ns_records = []
+    # Make sure we don't have equal priority here which causes test failures
+    # when doing sorted comparisons
     for i in range(0, 2):
-        records.append("ns%s.%s" % (i, ns_zone))
-    ns_records = [{"hostname": x, "priority": random.randint(1, 999)}
-                  for x in records]
+        ns_records.append({"hostname": "ns%s.%s" % (i, ns_zone),
+                           "priority": (random.randint(1, 999) + i)})
     return ns_records
 
 
