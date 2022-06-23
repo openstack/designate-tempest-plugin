@@ -58,7 +58,7 @@ def rand_email(domain=None):
     return 'example@%s' % domain.rstrip('.')
 
 
-def rand_ttl(start=1, end=86400):
+def rand_ttl(start=0, end=86400):
     """Generate a random TTL value
     :return: a random ttl e.g. 165
     :rtype: string
