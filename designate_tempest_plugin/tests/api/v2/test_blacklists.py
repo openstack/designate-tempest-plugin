@@ -66,7 +66,6 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
                                         expected_allowed, False)
 
     @decorators.idempotent_id('ea608152-da3c-11eb-b8b8-74e5f9e2a801')
-    @decorators.skip_because(bug="1934252")
     def test_create_blacklist_invalid_pattern(self):
         patterns = ['', '#(*&^%$%$#@$', 'a' * 1000]
         for pattern in patterns:
