@@ -125,7 +125,7 @@ def rand_zone_data(name=None, email=None, ttl=None, description=None):
 
 
 def rand_recordset_data(record_type, zone_name, name=None, records=None,
-                        ttl=None):
+                        ttl=None, number_of_records=None):
     """Generate random recordset data, with optional overrides
     :return: A RecordsetModel
     """
@@ -133,6 +133,8 @@ def rand_recordset_data(record_type, zone_name, name=None, records=None,
         name = rand_zone_name(prefix=record_type, suffix='.' + zone_name)
     if records is None:
         records = [rand_ip()]
+    if number_of_records:
+        records = [rand_ip() for r in range(number_of_records)]
     if ttl is None:
         ttl = rand_ttl()
     return {

@@ -19,7 +19,8 @@ from designate_tempest_plugin.services.dns.v2.json import base
 class ZoneExportsClient(base.DnsClientV2Base):
 
     @base.handle_errors
-    def create_zone_export(self, uuid, params=None, wait_until=False):
+    def create_zone_export(self, uuid, params=None,
+                           wait_until=False, headers=None):
         """Create a zone export.
 
         :param uuid: Unique identifier of the zone in UUID format.
@@ -27,18 +28,20 @@ class ZoneExportsClient(base.DnsClientV2Base):
                        include in the request URI.
         :param wait_until: Block until the exported zone reaches the
                            desired status
+        :param headers (dict): The headers to use for the request.
         :return: Serialized imported zone as a dictionary.
         """
 
         export_uri = 'zones/{0}/tasks/export'.format(uuid)
         resp, body = self._create_request(
-            export_uri, params=params)
+            export_uri, params=params, headers=headers)
 
         # Create Zone Export should Return a HTTP 202
         self.expected_success(202, resp.status)
 
         if wait_until:
-            waiters.wait_for_zone_export_status(self, body['id'], wait_until)
+            waiters.wait_for_zone_export_status(
+                self, body['id'], wait_until, headers=headers)
 
         return resp, body
 
