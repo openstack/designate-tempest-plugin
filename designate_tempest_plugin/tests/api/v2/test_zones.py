@@ -182,18 +182,6 @@ class ZonesTest(BaseZonesTest):
             'ZonesClient', 'show_zone', expected_allowed, False, zone['id'],
             headers={'x-auth-sudo-project-id': self.client.project_id})
 
-    @decorators.idempotent_id('49268b24-92de-11eb-9d02-74e5f9e2a801')
-    def test_show_not_existing_zone(self):
-        LOG.info('Fetch non existing zone')
-        self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.show_zone(uuid.uuid1()))
-
-    @decorators.idempotent_id('736e3b50-92e0-11eb-9d02-74e5f9e2a801')
-    def test_use_invalid_id_to_show_zone(self):
-        LOG.info('Fetch the zone using invalid zone ID')
-        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
-            self.client.show_zone(uuid='zahlabut')
-
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
     def test_delete_zone(self):
@@ -231,12 +219,6 @@ class ZonesTest(BaseZonesTest):
         self.assertEqual(const.DELETE, body['action'])
         self.assertEqual(const.PENDING, body['status'])
 
-    @decorators.idempotent_id('79921370-92e1-11eb-9d02-74e5f9e2a801')
-    def test_delete_non_existing_zone(self):
-        LOG.info('Delete non existing zone')
-        self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.delete_zone(uuid.uuid1()))
-
     @decorators.idempotent_id('5bfa3cfe-5bc8-443b-bf48-cfba44cbb247')
     def test_list_zones(self):
         LOG.info('Create a zone')
@@ -246,7 +228,7 @@ class ZonesTest(BaseZonesTest):
         self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
 
         LOG.info('List zones')
-        _, body = self.client.list_zones()
+        body = self.client.list_zones()[1]
 
         # TODO(kiall): We really want to assert that out newly created zone is
         #              present in the response.
@@ -374,20 +356,6 @@ class ZonesTest(BaseZonesTest):
             "Failed, expect the Serial to not change "
             "when the Description is updated")
 
-    @decorators.idempotent_id('e391e30a-92e0-11eb-9d02-74e5f9e2a801')
-    def test_update_non_existing_zone(self):
-        LOG.info('Update non existing zone')
-        self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.update_zone(
-                uuid.uuid1(), description=data_utils.rand_name()))
-
-    @decorators.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
-    def test_list_zones_dot_json_fails(self):
-        uri = self.client.get_uri('zones.json')
-
-        self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.get(uri))
-
     @decorators.idempotent_id('d4ce813e-64a5-11eb-9f43-74e5f9e2a801')
     def test_get_primary_zone_nameservers(self):
         # Create a zone and get the associated "pool_id"
@@ -438,6 +406,25 @@ class ZonesTest(BaseZonesTest):
             'ZonesClient', 'show_zone_nameservers', expected_allowed,
             False, zone['id'],
             headers={'x-auth-sudo-project-id': self.client.project_id})
+
+    @decorators.idempotent_id('9970b632-f2db-11ec-a757-201e8823901f')
+    def test_create_zone_ttl_zero(self):
+        LOG.info('Create a PRIMARY zone')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="test_create_zone_ttl_zero", suffix=self.tld_name)
+        zone = self.client.create_zone(name=zone_name, ttl=0)[1]
+        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+
+        LOG.info('Ensure we respond with CREATE+PENDING')
+        self.assertEqual(const.CREATE, zone['action'])
+        self.assertEqual(const.PENDING, zone['status'])
+
+        LOG.info('Fetch the zone, ensure TTL is Zero')
+        body = self.client.show_zone(zone['id'])[1]
+        self.assertEqual(
+            0, body['ttl'],
+            "Failed, actual Zone's TTL:{} "
+            "is not Zero".format(body['ttl']))
 
 
 class ZonesAdminTest(BaseZonesTest):
@@ -657,3 +644,35 @@ class ZonesNegativeTest(BaseZonesTest):
             lib_exc.BadRequest, 'invalid_object', 400,
             self.client.create_zone,
             description=dns_data_utils.rand_zone_name() * 10000)
+
+    @decorators.idempotent_id('49268b24-92de-11eb-9d02-74e5f9e2a801')
+    def test_show_not_existing_zone(self):
+        LOG.info('Fetch non existing zone')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.show_zone(uuid.uuid1()))
+
+    @decorators.idempotent_id('736e3b50-92e0-11eb-9d02-74e5f9e2a801')
+    def test_use_invalid_id_to_show_zone(self):
+        LOG.info('Fetch the zone using invalid zone ID')
+        with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
+            self.client.show_zone(uuid='zahlabut')
+
+    @decorators.idempotent_id('79921370-92e1-11eb-9d02-74e5f9e2a801')
+    def test_delete_non_existing_zone(self):
+        LOG.info('Delete non existing zone')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.delete_zone(uuid.uuid1()))
+
+    @decorators.idempotent_id('e391e30a-92e0-11eb-9d02-74e5f9e2a801')
+    def test_update_non_existing_zone(self):
+        LOG.info('Update non existing zone')
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.update_zone(
+                uuid.uuid1(), description=data_utils.rand_name()))
+
+    @decorators.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
+    def test_list_zones_dot_json_fails(self):
+        uri = self.client.get_uri('zones.json')
+
+        self.assertRaises(lib_exc.NotFound,
+            lambda: self.client.get(uri))
