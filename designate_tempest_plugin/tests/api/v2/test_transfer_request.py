@@ -297,12 +297,12 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
-        _, transfer_request = self.client.create_transfer_request(zone['id'])
+        transfer_request = self.client.create_transfer_request(zone['id'])[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
         LOG.info('List transfer_requests')
-        _, body = self.client.list_transfer_requests()
+        body = self.client.list_transfer_requests()[1]
 
         self.assertGreater(len(body['transfer_requests']), 0)
 
@@ -445,16 +445,16 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
-        _, transfer_request = self.client.create_transfer_request(zone['id'])
+        transfer_request = self.client.create_transfer_request(zone['id'])[1]
         self.addCleanup(self.client.delete_transfer_request,
                         transfer_request['id'])
 
         LOG.info('Update the transfer_request')
         data = {
-                 "description": "demo descripion"
+                 "description": "demo description"
                }
-        _, transfer_request_patch = self.client.update_transfer_request(
-            transfer_request['id'], transfer_request_data=data)
+        transfer_request_patch = self.client.update_transfer_request(
+            transfer_request['id'], transfer_request_data=data)[1]
 
         self.assertEqual(data['description'],
                          transfer_request_patch['description'])
@@ -507,6 +507,15 @@ class TestTransferRequestNotFound(BaseTransferRequestTest):
         super(TestTransferRequestNotFound, cls).setup_clients()
         cls.client = cls.os_primary.dns_v2.TransferRequestClient()
 
+    @decorators.idempotent_id('39131f7c-e9bb-4f92-a325-444a675e1b3d')
+    def test_create_transfer_request_404(self):
+        e = self.assertRaises(lib_exc.NotFound,
+                              self.client.create_transfer_request,
+                              data_utils.rand_uuid())
+        self.assertEqual(404, e.resp.status)
+        self.assertEqual(404, e.resp_body['code'])
+        self.assertEqual("zone_not_found", e.resp_body['type'])
+
     @decorators.idempotent_id('d255f72f-ba24-43df-9dba-011ed7f4625d')
     def test_show_transfer_request_404(self):
         e = self.assertRaises(lib_exc.NotFound,
@@ -532,8 +541,6 @@ class TestTransferRequestNotFound(BaseTransferRequestTest):
         self.assertEqual(404, resp.status)
         self.assertEqual(404, resp_body['code'])
         self.assertEqual("zone_transfer_request_not_found", resp_body['type'])
-        self.assertEqual("Could not find ZoneTransferRequest",
-                         resp_body['message'])
 
 
 class TestTransferRequestInvalidId(BaseTransferRequestTest):

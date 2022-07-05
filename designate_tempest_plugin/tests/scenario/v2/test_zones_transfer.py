@@ -15,6 +15,7 @@ from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+from designate_tempest_plugin.common import constants as const
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
@@ -74,7 +75,8 @@ class ZonesTransferTest(base.BaseDnsV2Test):
             self.request_client.create_transfer_request_empty_body(
                 zone['id'])[1])
         self.addCleanup(self.request_client.delete_transfer_request,
-                        transfer_request['id'])
+                        transfer_request['id'],
+                        ignore_errors=lib_exc.NotFound)
 
         accept_data = {
                  "key": transfer_request['key'],
@@ -82,7 +84,13 @@ class ZonesTransferTest(base.BaseDnsV2Test):
         }
 
         LOG.info('Accept the request as alt tenant')
-        self.alt_accept_client.create_transfer_accept(accept_data)
+        transfer_accept = self.alt_accept_client.create_transfer_accept(
+            accept_data)[1]
+
+        LOG.info('Ensure we respond with COMPLETE status')
+        show_request = self.request_client.show_transfer_request(
+            transfer_request['id'])[1]
+        self.assertEqual(const.COMPLETE, show_request['status'])
 
         LOG.info('Fetch the zone as alt tenant')
         alt_zone = self.alt_zones_client.show_zone(zone['id'])[1]
@@ -100,6 +108,15 @@ class ZonesTransferTest(base.BaseDnsV2Test):
                 lib_exc.BadRequest, 'invalid_zone_transfer_request', 400):
             self.admin_accept_client.create_transfer_accept(accept_data)
 
+        LOG.info('Delete the transfer_request')
+        self.request_client.delete_transfer_request(transfer_request['id'])[1]
+
+        LOG.info('Validation that transfer_accept deleted'
+                 ' after the transfer_request delete')
+        self.assertRaises(lib_exc.NotFound,
+                          self.accept_client.show_transfer_accept,
+                          transfer_accept['id'])
+
     @decorators.idempotent_id('5855b772-a036-11eb-9973-74e5f9e2a801')
     def test_zone_transfer_target_project(self):
         LOG.info('Create a zone as "primary" tenant')
@@ -116,7 +133,7 @@ class ZonesTransferTest(base.BaseDnsV2Test):
         self.addCleanup(self.request_client.delete_transfer_request,
                         transfer_request['id'])
         LOG.info('Ensure we respond with ACTIVE status')
-        self.assertEqual('ACTIVE', transfer_request['status'])
+        self.assertEqual(const.ACTIVE, transfer_request['status'])
 
         LOG.info('Accept the request as "alt" tenant, Expected: should fail '
                  'as "admin" was set as a target project.')
