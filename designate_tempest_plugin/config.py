@@ -65,7 +65,7 @@ DnsFeatureGroup = [
                 default=True,
                 help="Is the v2 dns API enabled."),
     cfg.BoolOpt('api_admin',
-                default=True,
+                default=False,
                 help="Is the admin dns API enabled."),
     cfg.BoolOpt('api_v2_root_recordsets',
                 default=False,
