@@ -70,6 +70,8 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
                 name="recordsetvalidation")
             self.class_tld = self.admin_tld_client.create_tld(
                 tld_name=tld_name[:-1])
+            self.addCleanup(
+                self.admin_tld_client.delete_tld, self.class_tld[1]['id'])
             zone_name = dns_data_utils.rand_zone_name(name="TestZone",
                                                   suffix=f'.{tld_name}')
             zone_data = dns_data_utils.rand_zone_data(name=zone_name)
