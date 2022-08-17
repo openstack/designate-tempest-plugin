@@ -54,11 +54,6 @@
         "type": "SPF",
         "records": ["\"v=spf1; a -all\""]
     },
-    "NS": {
-        "name": "NS_Record",
-        "type": "NS",
-        "records": ["ns1.example.org."]
-    },
     "PTR_IPV4": {
         "name": "PTR_Record_IPV4",
         "type": "PTR",
