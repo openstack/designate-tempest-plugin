@@ -45,18 +45,37 @@ class DesignateApiVersion(base.BaseDnsV2Test, service_base.DnsClientV2Base):
     def test_list_enabled_api_versions(self):
         for user in ['admin', 'primary', 'not_auth_user']:
             if user == 'admin':
-                versions = self.admin_client.list_enabled_api_versions()[1][
-                    'versions']['values']
+                ver_doc = self.admin_client.list_enabled_api_versions()[1]
+                # The version document was updated to match OpenStack
+                # version discovery standards in Zed. Accomodate the legacy
+                # format for backward compatibility.
+                try:
+                    versions = ver_doc['versions']['values']
+                except TypeError:
+                    versions = ver_doc['versions']
             if user == 'primary':
-                versions = self.primary_client.list_enabled_api_versions()[1][
-                    'versions']['values']
+                ver_doc = self.primary_client.list_enabled_api_versions()[1]
+                # The version document was updated to match OpenStack
+                # version discovery standards in Zed. Accomodate the legacy
+                # format for backward compatibility.
+                try:
+                    versions = ver_doc['versions']['values']
+                except TypeError:
+                    versions = ver_doc['versions']
             if user == 'not_auth_user':
                 response = requests.get(self.primary_client.base_url,
                                         verify=False)
                 headers = {
                     k.lower(): v.lower() for k, v in response.headers.items()}
-                versions = self.deserialize(
-                    headers, str(response.text))['versions']['values']
+                # The version document was updated to match OpenStack
+                # version discovery standards in Zed. Accomodate the legacy
+                # format for backward compatibility.
+                try:
+                    versions = self.deserialize(
+                        headers, str(response.text))['versions']['values']
+                except TypeError:
+                    versions = self.deserialize(
+                        headers, str(response.text))['versions']
 
             LOG.info('Received enabled API versions for {} '
                      'user are:{}'.format(user, versions))
@@ -64,7 +83,7 @@ class DesignateApiVersion(base.BaseDnsV2Test, service_base.DnsClientV2Base):
                 enabled_ids = [
                     item['id'] for key in item.keys() if key == 'id']
             LOG.info('Enabled versions IDs are:{}'.format(enabled_ids))
-            possible_options = [['v1'], ['v2'], ['v1', 'v2']]
+            possible_options = [['v1'], ['v2'], ['v1', 'v2'], ['v2.0']]
             self.assertIn(
                 enabled_ids, possible_options,
                 'Failed, received version: {} is not in possible options'
