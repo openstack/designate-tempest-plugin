@@ -1,0 +1,5 @@
+---
+deprecations:
+  - |
+    The ``[dns_feature_enabled] bug_1573141_fixed`` parameter has been
+    deprecated and will be removed in a future release.
