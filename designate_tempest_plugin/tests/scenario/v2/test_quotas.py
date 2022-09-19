@@ -16,10 +16,14 @@ from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+from tempest.lib.common.utils import data_utils
+
+import tempest.test
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
 from designate_tempest_plugin.common import constants as const
+from designate_tempest_plugin.common import exceptions
 
 
 LOG = logging.getLogger(__name__)
@@ -277,3 +281,98 @@ class QuotasV2Test(base.BaseDnsV2Test):
             self.zone_client.project_id, quotas)
         LOG.info('Try to create Zones. Expected:"413 over_quota"')
         self._reach_quota_limit(self.test_quota_limit, 'zones_quota')
+
+
+class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
+
+    credentials = ['admin', 'system_admin']
+
+    @classmethod
+    def setup_credentials(cls):
+        # Do not create network resources for these test.
+        cls.set_network_resources()
+        super(QuotasBoundary, cls).setup_credentials()
+
+    @classmethod
+    def skip_checks(cls):
+        super(QuotasBoundary, cls).skip_checks()
+        if not CONF.dns_feature_enabled.api_v2_quotas:
+            skip_msg = ("%s skipped as designate V2 Quotas API is not "
+                        "available" % cls.__name__)
+            raise cls.skipException(skip_msg)
+
+    @classmethod
+    def setup_clients(cls):
+        super(QuotasBoundary, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+            cls.quota_client = cls.os_system_admin.dns_v2.QuotasClient()
+            cls.project_client = cls.os_system_admin.projects_client
+            cls.zone_client = cls.os_system_admin.dns_v2.ZonesClient()
+            cls.recordset_client = \
+                cls.os_system_admin.dns_v2.RecordsetClient()
+            cls.export_zone_client = \
+                cls.os_system_admin.dns_v2.ZoneExportsClient()
+        else:
+            cls.quota_client = cls.os_admin.dns_v2.QuotasClient()
+            cls.project_client = cls.os_admin.projects_client
+            cls.zone_client = cls.os_admin.dns_v2.ZonesClient()
+            cls.recordset_client = cls.os_admin.dns_v2.RecordsetClient()
+            cls.export_zone_client = cls.os_admin.dns_v2.ZoneExportsClient()
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(QuotasBoundary, cls).resource_setup()
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name="QuotasBoundary")
+        cls.tld_name = f".{tld_name}"
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(QuotasBoundary, cls).resource_cleanup()
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('e4981eb2-3803-11ed-9d3c-201e8823901f')
+    def test_zone_quota_boundary(self):
+        # Create a dedicated Project for Boundary tests
+        tenant_id = self.project_client.create_project(
+            name=data_utils.rand_name(name='BoundaryZone'))['project']['id']
+        self.addCleanup(self.project_client.delete_project, tenant_id)
+
+        # Set Quotas (zones:1) for tested project
+        sudo_header = {'x-auth-sudo-project-id': tenant_id}
+        quotas = {
+            'zones': 1, 'zone_recordsets': 2, 'zone_records': 3,
+            'recordset_records': 2, 'api_export_size': 3}
+        self.quota_client.set_quotas(
+            project_id=tenant_id, quotas=quotas,
+            headers=sudo_header)
+
+        # Create a first Zone --> Should PASS
+        zone_name = dns_data_utils.rand_zone_name(
+            name="test_zone_quota_boundary_attempt_1", suffix=self.tld_name)
+        zone = self.zone_client.create_zone(
+            name=zone_name, project_id=tenant_id)[1]
+        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+
+        # Create a second zone --> should FAIL on: 413 over_quota
+        zone_name = dns_data_utils.rand_zone_name(
+            name="test_zone_quota_boundary_attempt_2", suffix=self.tld_name)
+        try:
+            response_headers, zone = self.zone_client.create_zone(
+                name=zone_name, project_id=tenant_id)
+            if response_headers['status'] != 413:
+                raise exceptions.InvalidStatusError(
+                    'Zone', zone['id'], zone['status'])
+        except Exception as e:
+            self.assertIn('over_quota', str(e),
+                          'Failed, over_quota for a zone was not raised')
+        finally:
+            self.addCleanup(
+                self.wait_zone_delete,
+                self.zone_client, zone['id'],
+                headers=sudo_header,
+                ignore_errors=lib_exc.NotFound)
