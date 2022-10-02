@@ -108,29 +108,45 @@ class BlacklistE2E(BaseBlacklistsTest):
 
     @decorators.idempotent_id('de030088-d97e-11eb-8ab8-74e5f9e2a801')
     def test_admin_creates_zone_matches_blacklist_name_or_regex(self):
-        LOG.info('Create a blacklists using: regex and exact string(name)')
-        zone_name = dns_data_utils.rand_zone_name(
-            name="admin_creates_zone_matches_blacklist1", suffix=self.tld_name)
+        LOG.info('Create two blacklists: by regex and by exact string')
+        zone_name_to_deny = dns_data_utils.rand_zone_name(
+            name="deny_by_name", suffix=self.tld_name)
         blacklists = [
-            {'pattern': '^blacklistnameregextest2.*',
+            {'pattern': '^a.*',
              'description': 'Zone starts with "a" char'},
-            {'pattern': zone_name,
-             'description': 'Deny if Zone named:{} '.format(zone_name)}]
+            {'pattern': zone_name_to_deny,
+             'description': 'Deny if Zone named:{} '.format(
+                 zone_name_to_deny)}]
         for blacklist in blacklists:
             body = self.admin_blacklist_client.create_blacklist(**blacklist)[1]
             self.addCleanup(
                 self.admin_blacklist_client.delete_blacklist, body['id'])
 
-        LOG.info('As Admin user try to create zones that are '
-                 'supposed to be blocked')
-        zone_name2 = dns_data_utils.rand_zone_name(
-            name="admin_creates_zone_matches_blacklist2", suffix=self.tld_name)
+        LOG.info('Primary tries to create a zone that is blacklisted by name.'
+                 ' Expected: FAIL')
+        with self.assertRaisesDns(
+                lib_exc.BadRequest, 'invalid_zone_name', 400):
+            self.primary_zone_client.create_zone(name=zone_name_to_deny)
+
+        LOG.info('Admin tries to create a zone that is blacklisted by name '
+                 'for a Primary user. Expected: FAIL')
         zone = self.admin_zone_client.create_zone(
-            name=zone_name2,
+            name=zone_name_to_deny,
             project_id=self.primary_zone_client.project_id)[1]
         self.addCleanup(
-            self.wait_zone_delete, self.admin_zone_client, zone['id'])
+            self.wait_zone_delete, self.primary_zone_client, zone['id'])
+
+        LOG.info('Primary tries to create a zone that is blacklisted by regex.'
+                 ' Expected: FAIL')
+        with self.assertRaisesDns(
+                lib_exc.BadRequest, 'invalid_zone_name', 400):
+            self.primary_zone_client.create_zone(
+                name='a{}'.format(zone_name_to_deny))
+
+        LOG.info('Admin tries to create a zone that is blacklisted by regex'
+                 ' for a Primary user. Expected: FAIL')
         zone = self.admin_zone_client.create_zone(
-            name=zone_name, project_id=self.primary_zone_client.project_id)[1]
+            name='a{}'.format(zone_name_to_deny),
+            project_id=self.primary_zone_client.project_id)[1]
         self.addCleanup(
-            self.wait_zone_delete, self.admin_zone_client, zone['id'])
+            self.wait_zone_delete, self.primary_zone_client, zone['id'])
