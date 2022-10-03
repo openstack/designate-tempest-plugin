@@ -24,13 +24,19 @@ class QueryClient(object):
 
     def __init__(self, nameservers=None, query_timeout=None,
                  build_interval=None, build_timeout=None):
-        self.nameservers = nameservers or []
+        self.nameservers = self._nameservers_not_empty(
+            nameservers or CONF.dns.nameservers)
         self.query_timeout = query_timeout or CONF.dns.query_timeout
         self.build_interval = build_interval or CONF.dns.build_interval
         self.build_timeout = build_timeout or CONF.dns.build_timeout
-
         self.clients = [SingleQueryClient(ns, query_timeout=query_timeout)
                         for ns in nameservers]
+
+    def _nameservers_not_empty(self, nameservers_list):
+        if not nameservers_list:
+            raise ValueError('Nameservers list cannot be empty and it should '
+                             'contain DNS backend IPs to "dig" for')
+        return nameservers_list
 
     def query(self, zone_name, rdatatype):
         return [c.query(zone_name, rdatatype) for c in self.clients]
