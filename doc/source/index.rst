@@ -31,28 +31,21 @@ Intro and References
 Quick Start
 ===========
 
-To run all tests from this plugin, install the plugin into your environment
-and from the tempest repo, run::
+From the tempest directory, setup the tempest virtual environment for the designate tempest plugin::
 
-    $ tox -e all-plugin -- designate
+    $ tox -e venv-tempest -- pip3 install -e <path to designate-tempest-plugin>
 
-If that doesn't run any tests, ensure that the designate-tempest-plugin is installed
-in the tox venv. Replace ``../designate-tempest-plugin/`` with the path to the plugin
-on your system. Then execute the above tox command again::
+To run all tests from this plugin, install designate into your environment and from the tempest repo, run::
 
-    $ .tox/all-plugin/bin/pip install ../designate-tempest-plugin/
-    $ tox -e all-plugin -- designate
-
-.. note:: This is not necessary if ``designate-tempest-plugin`` is installed to
-          site-packages before the ``all-plugin`` tox venv is created.
+    $ tox -e all -- designate
 
 To run a single test case, run with the test case name, for example::
 
-    $ tox -e all-plugin -- designate_tempest_plugin.tests.api.v2.test_zones.ZonesAdminTest.test_get_other_tenant_zone
+    $ tox -e all -- designate_tempest_plugin.tests.api.v2.test_zones.ZonesAdminTest.test_get_other_tenant_zone
 
 To run all tempest tests including this plugin, run::
 
-    $ tox -e all-plugin
+    $ tox -e all
 
 Writing new tests
 =================
