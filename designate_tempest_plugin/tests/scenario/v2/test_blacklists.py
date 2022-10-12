@@ -112,8 +112,8 @@ class BlacklistE2E(BaseBlacklistsTest):
         zone_name_to_deny = dns_data_utils.rand_zone_name(
             name="deny_by_name", suffix=self.tld_name)
         blacklists = [
-            {'pattern': '^a.*',
-             'description': 'Zone starts with "a" char'},
+            {'pattern': '^blacklistnameregextest2.*',
+             'description': 'Zone starts with "blacklistnameregextest2"'},
             {'pattern': zone_name_to_deny,
              'description': 'Deny if Zone named:{} '.format(
                  zone_name_to_deny)}]
@@ -141,12 +141,12 @@ class BlacklistE2E(BaseBlacklistsTest):
         with self.assertRaisesDns(
                 lib_exc.BadRequest, 'invalid_zone_name', 400):
             self.primary_zone_client.create_zone(
-                name='a{}'.format(zone_name_to_deny))
+                name='blacklistnameregextest2{}'.format(zone_name_to_deny))
 
         LOG.info('Admin tries to create a zone that is blacklisted by regex'
                  ' for a Primary user. Expected: FAIL')
         zone = self.admin_zone_client.create_zone(
-            name='a{}'.format(zone_name_to_deny),
+            name='blacklistnameregextest2{}'.format(zone_name_to_deny),
             project_id=self.primary_zone_client.project_id)[1]
         self.addCleanup(
             self.wait_zone_delete, self.primary_zone_client, zone['id'])
