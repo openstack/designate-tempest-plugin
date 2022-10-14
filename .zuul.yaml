@@ -26,4 +26,3 @@
         - designate-bind9-stable-xena
         - designate-bind9-stable-wallaby
         - neutron-tempest-plugin-designate-scenario
-    queue: designate
