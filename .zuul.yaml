@@ -1,4 +1,9 @@
 - job:
+    name: designate-bind9-stable-zed
+    parent: designate-bind9
+    override-checkout: stable/zed
+
+- job:
     name: designate-bind9-stable-yoga
     parent: designate-bind9
     override-checkout: stable/yoga
@@ -22,6 +27,7 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - designate-bind9-stable-zed
         - designate-bind9-stable-yoga
         - designate-bind9-stable-xena
         - designate-bind9-stable-wallaby
