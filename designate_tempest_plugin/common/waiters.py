@@ -233,7 +233,7 @@ def wait_for_query(client, name, rdatatype, found=True):
         else:
             all_answers_good = all(not r.answer for r in responses)
 
-        if not client.nameservers or all_answers_good:
+        if all_answers_good:
             LOG.info("Record %s of type %s was successfully %s on nameservers "
                      "%s", name, rdatatype, state, client.nameservers)
             return
