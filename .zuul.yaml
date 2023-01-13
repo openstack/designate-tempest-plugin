@@ -1,21 +1,25 @@
 - job:
     name: designate-bind9-stable-zed
     parent: designate-bind9
+    nodeset: openstack-single-node-focal
     override-checkout: stable/zed
 
 - job:
     name: designate-bind9-stable-yoga
     parent: designate-bind9
+    nodeset: openstack-single-node-focal
     override-checkout: stable/yoga
 
 - job:
     name: designate-bind9-stable-xena
     parent: designate-bind9
+    nodeset: openstack-single-node-focal
     override-checkout: stable/xena
 
 - job:
     name: designate-bind9-stable-wallaby
     parent: designate-bind9
+    nodeset: openstack-single-node-focal
     override-checkout: stable/wallaby
 
 - project:
