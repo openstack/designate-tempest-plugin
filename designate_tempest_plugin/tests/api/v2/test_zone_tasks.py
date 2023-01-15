@@ -18,6 +18,7 @@ from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
+import testtools
 
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin import data_utils as dns_data_utils
@@ -79,6 +80,9 @@ class ZoneTasks(BaseZonesTest):
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('287e2cd0-a0e7-11eb-b962-74e5f9e2a801')
+    @testtools.skipUnless(
+        config.CONF.dns.nameservers,
+        "Config option dns.nameservers is missing or empty")
     def test_zone_abandon(self):
         LOG.info('Create a PRIMARY zone')
         zone_name = dns_data_utils.rand_zone_name(
@@ -121,6 +125,9 @@ class ZoneTasks(BaseZonesTest):
             self.query_client, pr_zone['name'], "SOA")
 
     @decorators.idempotent_id('90b21d1a-a1ba-11eb-84fa-74e5f9e2a801')
+    @testtools.skipUnless(
+        config.CONF.dns.nameservers,
+        "Config option dns.nameservers is missing or empty")
     def test_zone_abandon_forbidden(self):
 
         LOG.info('Create a PRIMARY zone and add to the cleanup')
