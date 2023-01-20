@@ -233,10 +233,11 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         self.assertGreater(len(body), 0)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
         expected_allowed = ['os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_project_reader',
+                                     'os_project_member'])
 
         self.check_list_show_RBAC_enforcement(
             'RecordsetClient', 'list_recordset', expected_allowed, True,
@@ -244,6 +245,9 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         # Test that users who should see the zone, can see it.
         expected_allowed = ['os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_project_reader',
+                                     'os_project_member'])
 
         self.check_list_IDs_RBAC_enforcement(
             'RecordsetClient', 'list_recordset',
@@ -282,10 +286,11 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Ensure the fetched response matches the expected one')
         self.assertExpected(body, record, self.excluded_keys)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
         expected_allowed = ['os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_project_member',
+                                     'os_project_reader'])
 
         self.check_list_show_RBAC_enforcement(
             'RecordsetClient', 'show_recordset', expected_allowed, True,
@@ -321,7 +326,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'RecordsetClient', 'delete_recordset', expected_allowed, True,
@@ -374,7 +379,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'RecordsetClient', 'update_recordset', expected_allowed, True,
@@ -383,7 +388,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'RecordsetClient', 'update_recordset', expected_allowed, False,

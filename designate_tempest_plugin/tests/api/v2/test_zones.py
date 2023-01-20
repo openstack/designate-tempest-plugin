@@ -160,10 +160,11 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Ensure the fetched response matches the created zone')
         self.assertExpected(zone, body, self.excluded_keys)
 
-        # TODO(johnsom) Test reader roles once this bug is fixed.
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test with no extra header overrides (all_projects, sudo-project-id)
         expected_allowed = ['os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_project_member',
+                                     'os_project_reader'])
 
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone', expected_allowed, True, zone['id'])
@@ -194,7 +195,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement('ZonesClient', 'delete_zone',
                                         expected_allowed, True, zone['id'])
@@ -202,7 +203,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement('ZonesClient', 'delete_zone',
                                         expected_allowed, False, zone['id'],
@@ -233,14 +234,11 @@ class ZonesTest(BaseZonesTest):
         #              present in the response.
         self.assertGreater(len(body['zones']), 0)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
             expected_allowed = ['os_system_admin', 'os_system_reader',
-                                'os_admin', 'os_project_member',
-                                'os_project_reader']
+                                'os_admin']
         else:
             expected_allowed = ['os_alt']
 
@@ -291,7 +289,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'update_zone', expected_allowed, True,
@@ -300,7 +298,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'update_zone', expected_allowed, False,
@@ -384,10 +382,11 @@ class ZonesTest(BaseZonesTest):
             pool_nameservers, zone_nameservers,
             'Failed - Pool and Zone nameservers should be the same')
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
         expected_allowed = ['os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_project_member',
+                                     'os_project_reader'])
 
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone_nameservers', expected_allowed,
