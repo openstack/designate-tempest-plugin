@@ -22,12 +22,6 @@
     nodeset: openstack-single-node-focal
     override-checkout: stable/xena
 
-- job:
-    name: designate-bind9-stable-wallaby
-    parent: designate-bind9
-    nodeset: openstack-single-node-focal
-    override-checkout: stable/wallaby
-
 - project:
     templates:
       - designate-devstack-jobs
@@ -41,5 +35,4 @@
         - designate-bind9-stable-zed
         - designate-bind9-stable-yoga
         - designate-bind9-stable-xena
-        - designate-bind9-stable-wallaby
         - neutron-tempest-plugin-designate-scenario
