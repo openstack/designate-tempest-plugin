@@ -232,9 +232,9 @@ class ZonesTest(base.BaseDnsV2Test):
 
         LOG.info("Update Zone's TTL, wait until ACTIVE and"
                  " ensure Zone's Serial has changed")
-        updated_zone = self.client.update_zone(
-            zone['id'], ttl=dns_data_utils.rand_ttl(), wait_until='ACTIVE')[1]
-        new_serial = updated_zone['serial']
+        self.client.update_zone(
+            zone['id'], ttl=dns_data_utils.rand_ttl(), wait_until='ACTIVE')
+        new_serial = self.client.show_zone(zone['id'])[1]['serial']
         self.assertNotEqual(
             new_serial, org_serial,
             "Failed, expected behaviour is that the Designate DNS changes the"
