@@ -79,12 +79,13 @@ class DesignateApiVersion(base.BaseDnsV2Test, service_base.DnsClientV2Base):
 
             LOG.info('Received enabled API versions for {} '
                      'user are:{}'.format(user, versions))
-            for item in versions:
-                enabled_ids = [
-                    item['id'] for key in item.keys() if key == 'id']
+
+            enabled_ids = {item['id'] for item in versions}
             LOG.info('Enabled versions IDs are:{}'.format(enabled_ids))
-            possible_options = [['v1'], ['v2'], ['v1', 'v2'], ['v2.0']]
-            self.assertIn(
-                enabled_ids, possible_options,
-                'Failed, received version: {} is not in possible options'
-                ' list:{}'.format(enabled_ids, possible_options))
+
+            # Expect at least one of these to be present in the API
+            base_versions = {'v1', 'v2', 'v2.0'}
+            self.assertFalse(
+                enabled_ids.isdisjoint(base_versions),
+                'Failed, at least one base API version: {} was not found in '
+                'the API version list: {}'.format(base_versions, enabled_ids))
