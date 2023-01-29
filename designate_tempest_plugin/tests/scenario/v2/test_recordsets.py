@@ -107,10 +107,12 @@ class RecordsetsTest(base.BaseDnsV2Test):
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual('PENDING', recordset['status'])
 
-        LOG.info('Wait until the recordset is active')
+        LOG.info('Wait until the recordset is active and propagated')
         waiters.wait_for_recordset_status(self.recordset_client,
                                           self.zone['id'], recordset['id'],
                                           'ACTIVE')
+        waiters.wait_for_query(
+            self.query_client, recordset_data['name'], type)
 
         LOG.info('Delete the recordset')
         body = self.recordset_client.delete_recordset(
@@ -120,10 +122,13 @@ class RecordsetsTest(base.BaseDnsV2Test):
         self.assertEqual('DELETE', body['action'])
         self.assertEqual('PENDING', body['status'])
 
-        LOG.info('Ensure successful deletion of Recordset')
+        LOG.info('Ensure successful deletion of Recordset from:'
+                 ' Designate and Backends')
         self.assertRaises(lib_exc.NotFound,
                           lambda: self.recordset_client.show_recordset(
                               self.zone['id'], recordset['id']))
+        waiters.wait_for_query(
+            self.query_client, recordset_data['name'], type, found=False)
 
     @decorators.attr(type='slow')
     @decorators.idempotent_id('cbf756b0-ba64-11ec-93d4-201e8823901f')
