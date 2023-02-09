@@ -195,7 +195,7 @@ class PoolAdminTest(BasePoolTest):
 
 class TestPoolNotFoundAdmin(BasePoolTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -241,7 +241,7 @@ class TestPoolNotFoundAdmin(BasePoolTest):
 
 class TestPoolInvalidIdAdmin(BasePoolTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -288,7 +288,7 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
 
 class TestPoolAdminNegative(BasePoolTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):

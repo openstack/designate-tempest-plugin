@@ -72,7 +72,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
             cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
             cls.pool_admin_client = cls.os_admin.dns_v2.PoolClient()
 
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.primary_client = cls.os_primary.dns_v2.TsigkeyClient()
 
     @decorators.idempotent_id('e7b484e3-7ed5-4840-89d7-1e696986f8e4')
@@ -80,8 +79,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Create a resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_tsigkey_for_zone", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name(
@@ -137,8 +136,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Create a resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="list_tsigkey", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         LOG.info('Create a tsigkey')
         tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])[1]
         self.addCleanup(self.admin_client.delete_tsigkey, tsigkey['id'])
@@ -159,9 +158,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
             LOG.info('As Primary user create a zone: {} '.format(i))
             zone_name = dns_data_utils.rand_zone_name(
                 name="list_tsigkey_limit", suffix=self.tld_name)
-            zone = self.zone_client.create_zone(name=zone_name)[1]
+            zone = self.zones_client.create_zone(name=zone_name)[1]
             self.addCleanup(
-                self.wait_zone_delete, self.zone_client, zone['id'])
+                self.wait_zone_delete, self.zones_client, zone['id'])
             LOG.info('As Admin user create a tsigkey: {} '.format(i))
             tsigkey = self.admin_client.create_tsigkey(
                 resource_id=zone['id'])[1]
@@ -183,9 +182,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
                      'for {}'.format(name))
             zone_name = dns_data_utils.rand_zone_name(
                 name="list_tsigkey_marker", suffix=self.tld_name)
-            zone = self.zone_client.create_zone(name=zone_name)[1]
+            zone = self.zones_client.create_zone(name=zone_name)[1]
             self.addCleanup(
-                self.wait_zone_delete, self.zone_client, zone['id'])
+                self.wait_zone_delete, self.zones_client, zone['id'])
             LOG.info('As Admin user create "{}" tsigkey'.format(name))
             tsigkey = self.admin_client.create_tsigkey(
                 resource_id=zone['id'], name=name)[1]
@@ -233,9 +232,9 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
             LOG.info('As Primary user create a zone for: {} '.format(name))
             zone_name = dns_data_utils.rand_zone_name(
                 name="list_tsigkey_sort", suffix=self.tld_name)
-            zone = self.zone_client.create_zone(name=zone_name)[1]
+            zone = self.zones_client.create_zone(name=zone_name)[1]
             self.addCleanup(
-                self.wait_zone_delete, self.zone_client, zone['id'])
+                self.wait_zone_delete, self.zones_client, zone['id'])
             LOG.info('As Admin user create a tsigkey: {} '.format(name))
             tsigkey = self.admin_client.create_tsigkey(
                 resource_id=zone['id'], name=name)[1]
@@ -289,8 +288,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('As Primary user create a zone for: {} '.format(tsigkey_name))
         zone_name = dns_data_utils.rand_zone_name(
             name="list_tsigkey_filter_name", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         LOG.info('As Admin user create a tsigkey: {} '.format(tsigkey_name))
         tsigkey = self.admin_client.create_tsigkey(
             resource_id=zone['id'], name=tsigkey_name)[1]
@@ -328,8 +327,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Create tsigkey for a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="list_tsigkey_filter_scope", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         zone_tsigkey = self.admin_client.create_tsigkey(
             resource_id=zone['id'], scope='ZONE')[1]
         self.addCleanup(self.admin_client.delete_tsigkey, zone_tsigkey['id'])
@@ -396,8 +395,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Create a resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="show_tsigkey", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a tsigkey')
         tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])[1]
@@ -423,8 +422,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Create a resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="update_tsigkey", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a tsigkey')
         tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])[1]
@@ -457,8 +456,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         LOG.info('Create a resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="delete_tsigkey", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a tsigkey')
         tsigkey = self.admin_client.create_tsigkey(resource_id=zone['id'])[1]
@@ -488,7 +487,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
 class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -551,7 +550,6 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
         else:
             cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
             cls.pool_admin_client = cls.os_admin.dns_v2.PoolClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('2a8dfc75-9884-4b1c-8f1f-ed835d96f2fe')
     def test_show_tsigkey_invalid_uuid(self):
@@ -585,8 +583,8 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     def test_create_tsigkey_for_zone_invalid_algorithm(self):
         zone_name = dns_data_utils.rand_zone_name(
             name="create_tsigkey_invalid_algo", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),
                         "algorithm": "zababun",
@@ -605,8 +603,8 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
         LOG.info('Create a zone resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_tsigkey_invalid_name", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name(
                             'Example_Key') * 1000,
@@ -627,8 +625,8 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
         LOG.info('Create a zone resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_tsigkey_empty_secret", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),
                         "algorithm": "hmac-sha256",
@@ -647,8 +645,8 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
         LOG.info('Create a zone resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_tsigkey_invalid_scope", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),
                         "algorithm": "hmac-sha256",
@@ -667,8 +665,8 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
         LOG.info('Create a resource')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_tsigkey_invalide_zone_id", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         tsigkey_data = {
                         "name": dns_data_utils.rand_zone_name('Example_Key'),
                         "algorithm": "hmac-sha256",

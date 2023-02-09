@@ -72,7 +72,6 @@ class ZonesExportTest(BaseZoneExportsTest):
             cls.admin_client = cls.os_system_admin.dns_v2.ZoneExportsClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
@@ -81,8 +80,8 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name=test_name, suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone export')
         zone_export = self.client.create_zone_export(zone['id'])[1]
@@ -143,8 +142,8 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name='show_zone_export_impersonate', suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone export using primary client')
         resp, zone_export = self.client.create_zone_export(zone['id'])
@@ -179,8 +178,8 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name='delete_zone_export', suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'],
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Create a zone export')
@@ -263,9 +262,9 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a primary zone and its export')
         zone_name = dns_data_utils.rand_zone_name(
             name='list_zone_exports_all_projects', suffix=self.tld_name)
-        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
+        primary_zone = self.zones_client.create_zone(name=zone_name)[1]
         self.addCleanup(
-            self.wait_zone_delete, self.zone_client, primary_zone['id'])
+            self.wait_zone_delete, self.zones_client, primary_zone['id'])
         primary_export = self.client.create_zone_export(primary_zone['id'])[1]
         self.addCleanup(self.client.delete_zone_export, primary_export['id'])
 
@@ -311,9 +310,9 @@ class ZonesExportTest(BaseZoneExportsTest):
         LOG.info('Create a primary zone and its export')
         zone_name = dns_data_utils.rand_zone_name(
             name='list_zone_exports_filter', suffix=self.tld_name)
-        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
+        primary_zone = self.zones_client.create_zone(name=zone_name)[1]
         self.addCleanup(
-            self.wait_zone_delete, self.zone_client, primary_zone['id'])
+            self.wait_zone_delete, self.zones_client, primary_zone['id'])
         primary_export = self.client.create_zone_export(primary_zone['id'])[1]
         self.addCleanup(self.client.delete_zone_export, primary_export['id'])
 
@@ -377,7 +376,6 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesExportTestNegative, cls).setup_clients()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
 
@@ -385,8 +383,8 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(name=test_name,
                                                   suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone export')
         zone_export = self.client.create_zone_export(zone['id'])[1]
@@ -406,9 +404,9 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
         LOG.info('Create a primary zone.')
         zone_name = dns_data_utils.rand_zone_name(name='export_not_your_zone',
                                                   suffix=self.tld_name)
-        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
+        primary_zone = self.zones_client.create_zone(name=zone_name)[1]
         self.addCleanup(
-            self.wait_zone_delete, self.zone_client, primary_zone['id'])
+            self.wait_zone_delete, self.zones_client, primary_zone['id'])
 
         LOG.info('Make sure that "404 NotFound" status code is raised.')
         self.assertRaises(
@@ -420,12 +418,12 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(name='export_deleted_zone',
                                                   suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'],
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
         LOG.info("Delete the zone and wait till it's done.")
-        self.zone_client.delete_zone(zone['id'])[1]
-        self.wait_zone_delete(self.zone_client, zone['id'])
+        self.zones_client.delete_zone(zone['id'])[1]
+        self.wait_zone_delete(self.zones_client, zone['id'])
 
         LOG.info('Ensure we respond with NotFound exception')
         self.assertRaises(

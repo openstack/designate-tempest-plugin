@@ -61,7 +61,6 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
         else:
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
-        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
 
     @property
     def zone(self):

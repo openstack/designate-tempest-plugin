@@ -53,11 +53,11 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
         zone_name = dns_data_utils.rand_zone_name(name="TestZone",
                                               suffix=cls.tld_name)
         LOG.info('Create a zone: %s', zone_name)
-        cls.zone = cls.zone_client.create_zone(name=zone_name)[1]
+        cls.zone = cls.zones_client.create_zone(name=zone_name)[1]
 
     @classmethod
     def resource_cleanup(cls):
-        cls.zone_client.delete_zone(
+        cls.zones_client.delete_zone(
             cls.zone['id'], ignore_errors=lib_exc.NotFound)
         cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
         super(BaseRecordsetsTest, cls).resource_cleanup()
@@ -86,7 +86,6 @@ class RecordsetsTest(BaseRecordsetsTest):
             cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.attr(type='smoke')
@@ -537,9 +536,9 @@ class RecordsetsTest(BaseRecordsetsTest):
         LOG.info('Create a Zone')
         zone_name = dns_data_utils.rand_zone_name(name="TestZone",
                                               suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name,
-                                            wait_until=const.ACTIVE)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a Recordset')
         recordset_data = dns_data_utils.rand_recordset_data(
@@ -548,13 +547,13 @@ class RecordsetsTest(BaseRecordsetsTest):
             zone['id'], recordset_data, wait_until=const.ACTIVE)[1]
 
         LOG.info("Delete a Zone and wait till it's done")
-        body = self.zone_client.delete_zone(zone['id'])[1]
+        body = self.zones_client.delete_zone(zone['id'])[1]
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual(const.DELETE, body['action'])
         self.assertEqual(const.PENDING, body['status'])
 
         LOG.info('Ensure successful deletion of Zone')
-        waiters.wait_for_zone_404(self.zone_client, zone['id'])
+        waiters.wait_for_zone_404(self.zones_client, zone['id'])
 
         LOG.info('Ensure successful deletion of Recordset')
         self.assertRaises(lib_exc.NotFound,
@@ -577,7 +576,6 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         super(RecordsetsNegativeTest, cls).setup_clients()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('98c94f8c-217a-4056-b996-b1f856d0753e')
     @ddt.file_data("recordset_data_invalid.json")
@@ -705,7 +703,6 @@ class RootRecordsetsTests(BaseRecordsetsTest):
     def setup_clients(cls):
         super(RootRecordsetsTests, cls).setup_clients()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @classmethod
     def skip_checks(cls):
@@ -752,8 +749,8 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         LOG.info('Create another zone')
         zone_name = dns_data_utils.rand_zone_name(name="list-filter",
                                               suffix=self.tld_name)
-        zone2 = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone2['id'])
+        zone2 = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone2['id'])
 
         LOG.info('Create another Recordset')
         recordset_data = dns_data_utils.rand_recordset_data(
@@ -786,10 +783,10 @@ class RootRecordsetsTests(BaseRecordsetsTest):
         LOG.info('List recordsets')
         zone_name = dns_data_utils.rand_zone_name(name="zone_names",
                                               suffix=self.tld_name)
-        alt_zone = self.zone_client.create_zone(
+        alt_zone = self.zones_client.create_zone(
             name=zone_name, wait_until=const.ACTIVE)[1]
         self.addCleanup(self.wait_zone_delete,
-                        self.zone_client,
+                        self.zones_client,
                         alt_zone['id'])
 
         body = self.client.list_zones_recordsets()[1]
@@ -821,7 +818,6 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
             cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
 
     def _create_client_recordset(self, clients_list):
@@ -835,12 +831,12 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
                 # Create a zone and wait till it's ACTIVE
                 zone_name = dns_data_utils.rand_zone_name(name="primary",
                                                       suffix=self.tld_name)
-                zone = self.zone_client.create_zone(name=zone_name)[1]
+                zone = self.zones_client.create_zone(name=zone_name)[1]
                 self.addCleanup(self.wait_zone_delete,
-                                self.zone_client,
+                                self.zones_client,
                                 zone['id'])
                 waiters.wait_for_zone_status(
-                    self.zone_client, zone['id'], const.ACTIVE)
+                    self.zones_client, zone['id'], const.ACTIVE)
 
                 # Create a recordset and wait till it's ACTIVE
                 recordset_data = dns_data_utils.rand_recordset_data(
@@ -919,8 +915,8 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
         zone_name = dns_data_utils.rand_zone_name(suffix=self.tld_name)
 
         LOG.info('Create a zone as a default user')
-        zone = self.zone_client.create_zone(name='a.b.' + zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name='a.b.' + zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         rrset_data = dns_data_utils.rand_recordset_data(
             record_type='A', zone_name=zone_name)
@@ -1034,7 +1030,6 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
         else:
             cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('84164ff4-8e68-11ec-983f-201e8823901f')
     def test_admin_updates_soa_and_ns_recordsets(self):
@@ -1047,11 +1042,11 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
         LOG.info('Primary user creates a Zone')
         zone_name = dns_data_utils.rand_zone_name(name="update_soa_ns",
                                               suffix=self.tld_name)
-        zone = self.zone_client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name,
             description='Zone for "managed recordsets update" test',
             wait_until=const.ACTIVE)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         recordsets = self.admin_client.list_recordset(
             zone['id'], headers=sudo_header)[1]['recordsets']
 
@@ -1089,7 +1084,6 @@ class RecordsetsManagedRecordsNegativeTest(BaseRecordsetsTest):
         else:
             cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @decorators.idempotent_id('083fa738-bb1b-11ec-b581-201e8823901f')

@@ -71,7 +71,6 @@ class TransferRequestTest(BaseTransferRequestTest):
                                 TransferRequestClient())
         else:
             cls.admin_client = cls.os_admin.dns_v2.TransferRequestClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.TransferRequestClient()
         cls.alt_client = cls.os_alt.dns_v2.TransferRequestClient()
@@ -81,8 +80,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_transfer_request", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
@@ -107,8 +106,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_transfer_request_scoped", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         transfer_request_data = dns_data_utils.rand_transfer_request_data(
             target_project_id=self.os_alt.credentials.project_id)
@@ -127,8 +126,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_transfer_request_empty", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         LOG.info('Create a zone transfer_request')
         transfer_request = self.client.create_transfer_request_empty_body(
             zone['id'])[1]
@@ -143,8 +142,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="show_transfer_request", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.client.create_transfer_request(zone['id'])[1]
@@ -194,8 +193,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="show_transfer_request_impersonate", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.client.create_transfer_request(zone['id'])[1]
@@ -225,8 +224,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_transfer_request_as_target", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         transfer_request_data = dns_data_utils.rand_transfer_request_data(
             target_project_id=self.os_alt.credentials.project_id)
@@ -264,8 +263,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="delete_transfer_request", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a transfer_request')
         transfer_request = self.client.create_transfer_request(zone['id'])[1]
@@ -293,8 +292,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="list_transfer_request", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.client.create_transfer_request(zone['id'])[1]
@@ -333,9 +332,9 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a Primary zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="list_transfer_request_all_projects", suffix=self.tld_name)
-        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
+        primary_zone = self.zones_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete,
-                        self.zone_client, primary_zone['id'])
+                        self.zones_client, primary_zone['id'])
 
         LOG.info('Create an Alt zone')
         alt_zone_name = dns_data_utils.rand_zone_name(
@@ -395,9 +394,9 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a Primary zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="list_transfer_request_impersonate", suffix=self.tld_name)
-        primary_zone = self.zone_client.create_zone(name=zone_name)[1]
+        primary_zone = self.zones_client.create_zone(name=zone_name)[1]
         self.addCleanup(self.wait_zone_delete,
-                        self.zone_client, primary_zone['id'])
+                        self.zones_client, primary_zone['id'])
 
         LOG.info('Create an Alt zone')
         alt_zone_name = dns_data_utils.rand_zone_name(
@@ -441,8 +440,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="update_transfer_request", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.client.create_transfer_request(zone['id'])[1]

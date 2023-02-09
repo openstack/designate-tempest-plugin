@@ -67,7 +67,6 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         super(TransferAcceptTest, cls).setup_clients()
 
         # Primary clients
-        cls.prm_zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.prm_request_client = cls.os_primary.dns_v2.TransferRequestClient()
         cls.prm_accept_client = cls.os_primary.dns_v2.TransferAcceptClient()
 
@@ -95,8 +94,8 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_transfer_accept", suffix=self.tld_name)
-        zone = self.prm_zone_client.create_zone(name=zone_name,
-                                                wait_until='ACTIVE')[1]
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers=self.all_projects_header,
@@ -142,8 +141,8 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(name="show_transfer_accept",
                                               suffix=self.tld_name)
-        zone = self.prm_zone_client.create_zone(name=zone_name,
-                                                wait_until='ACTIVE')[1]
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers=self.all_projects_header,
@@ -200,8 +199,8 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a Primary zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="ownership_transferred_zone", suffix=self.tld_name)
-        zone = self.prm_zone_client.create_zone(name=zone_name,
-                                                wait_until='ACTIVE')[1]
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until='ACTIVE')[1]
         self.addCleanup(
             self.wait_zone_delete, self.admin_zone_client, zone['id'],
             headers=self.all_projects_header,
@@ -248,8 +247,8 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             LOG.info('Create a Primary zone')
             zone_name = dns_data_utils.rand_zone_name(
                 name="list_transfer_accepts", suffix=self.tld_name)
-            zone = self.prm_zone_client.create_zone(name=zone_name,
-                                                    wait_until='ACTIVE')[1]
+            zone = self.zones_client.create_zone(name=zone_name,
+                                                 wait_until='ACTIVE')[1]
             self.addCleanup(
                 self.wait_zone_delete, self.admin_zone_client, zone['id'],
                 headers=self.all_projects_header,
@@ -353,8 +352,8 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         LOG.info('Create a zone as primary tenant')
         zone_name = dns_data_utils.rand_zone_name(
             name="show_transfer_accept_impersonate", suffix=self.tld_name)
-        zone = self.prm_zone_client.create_zone(name=zone_name,
-                                                wait_until='ACTIVE')[1]
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until='ACTIVE')[1]
 
         # In case when something goes wrong with the test and E2E
         # scenario fails for some reason, we'll use Admin tenant
@@ -427,7 +426,6 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
     @classmethod
     def setup_clients(cls):
         super(TransferAcceptTestNegative, cls).setup_clients()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.request_client = cls.os_primary.dns_v2.TransferRequestClient()
         cls.client = cls.os_primary.dns_v2.TransferAcceptClient()
 
@@ -436,9 +434,9 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_transfer_accept_invalid_key", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name,
-                                            wait_until='ACTIVE')[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until='ACTIVE')[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.request_client.create_transfer_request(
@@ -463,9 +461,9 @@ class TransferAcceptTestNegative(BaseTransferAcceptTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_transfer_accept_deleted_id", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(name=zone_name,
-                                            wait_until='ACTIVE')[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until='ACTIVE')[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone transfer_request')
         transfer_request = self.request_client.create_transfer_request(

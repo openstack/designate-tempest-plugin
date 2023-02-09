@@ -76,7 +76,6 @@ class ZoneTasks(BaseZonesTest):
             cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('287e2cd0-a0e7-11eb-b962-74e5f9e2a801')
@@ -87,16 +86,18 @@ class ZoneTasks(BaseZonesTest):
         LOG.info('Create a PRIMARY zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="zone_abandon", suffix=self.tld_name)
-        pr_zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
-        waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
+        pr_zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client,
+                        pr_zone['id'])
+        waiters.wait_for_zone_status(self.zones_client, pr_zone['id'],
+                                     'ACTIVE')
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual('CREATE', pr_zone['action'])
         self.assertEqual('PENDING', pr_zone['status'])
 
         LOG.info('Fetch the zone')
-        self.client.show_zone(pr_zone['id'])
+        self.zones_client.show_zone(pr_zone['id'])
 
         LOG.info('Check that the zone was created on Nameserver/BIND')
         waiters.wait_for_query(self.query_client, pr_zone['name'], "SOA")
@@ -118,7 +119,7 @@ class ZoneTasks(BaseZonesTest):
             headers={'x-auth-sudo-project-id': pr_zone['project_id']})
 
         LOG.info('Wait for the zone to become 404/NotFound in Designate')
-        waiters.wait_for_zone_404(self.client, pr_zone['id'])
+        waiters.wait_for_zone_404(self.zones_client, pr_zone['id'])
 
         LOG.info('Check that the zone is still exists in Nameserver/BIND')
         waiters.wait_for_query(
@@ -133,16 +134,18 @@ class ZoneTasks(BaseZonesTest):
         LOG.info('Create a PRIMARY zone and add to the cleanup')
         zone_name = dns_data_utils.rand_zone_name(
             name="zone_abandon_forbidden", suffix=self.tld_name)
-        pr_zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, pr_zone['id'])
-        waiters.wait_for_zone_status(self.client, pr_zone['id'], 'ACTIVE')
+        pr_zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client,
+                        pr_zone['id'])
+        waiters.wait_for_zone_status(self.zones_client, pr_zone['id'],
+                                     'ACTIVE')
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual('CREATE', pr_zone['action'])
         self.assertEqual('PENDING', pr_zone['status'])
 
         LOG.info('Fetch the zone')
-        self.client.show_zone(pr_zone['id'])
+        self.zones_client.show_zone(pr_zone['id'])
 
         LOG.info('Check that the zone was created on Nameserver/BIND')
         waiters.wait_for_query(self.query_client, pr_zone['name'], "SOA")
@@ -150,7 +153,7 @@ class ZoneTasks(BaseZonesTest):
         LOG.info('Abandon a zone as primary client, Expected: should '
                  'fail with: 403 forbidden')
         self.assertRaises(
-            lib_exc.Forbidden, self.client.abandon_zone,
+            lib_exc.Forbidden, self.zones_client.abandon_zone,
             zone_id=pr_zone['id'])
 
 
@@ -170,7 +173,6 @@ class ZoneTasksNegative(BaseZonesTest):
             cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     def _query_nameserver(self, nameserver, query_timeout,

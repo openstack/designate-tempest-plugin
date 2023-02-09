@@ -179,7 +179,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
 
 class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -225,7 +225,7 @@ class TestBlacklistNotFoundAdmin(BaseBlacklistsTest):
 
 class TestBlacklistInvalidIdAdmin(BaseBlacklistsTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):

@@ -43,7 +43,6 @@ class TldZoneTest(base.BaseDnsV2Test):
         else:
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.primary_tld_client = cls.os_primary.dns_v2.TldClient()
-        cls.primary_zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @classmethod
     def resource_setup(cls):
@@ -63,10 +62,10 @@ class TldZoneTest(base.BaseDnsV2Test):
         zone_name = dns_data_utils.rand_zone_name(
             name='existing_tld_zone', prefix='rand',
             suffix='.{}.'.format(self.tld_suffix))
-        zone = self.primary_zone_client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name, wait_until=const.ACTIVE)[1]
         self.addCleanup(
-            self.wait_zone_delete, self.primary_zone_client, zone['id'])
+            self.wait_zone_delete, self.zones_client, zone['id'])
 
     @decorators.idempotent_id('06deced8-d4de-11eb-b8ee-74e5f9e2a801')
     def test_create_zone_using_not_existing_tld(self):
@@ -76,5 +75,5 @@ class TldZoneTest(base.BaseDnsV2Test):
             name='not_existing_tld_zone', prefix='rand',
             suffix='.{}.'.format(self.tld_suffix)[::-1])
         self.assertRaises(
-            lib_exc.BadRequest, self.primary_zone_client.create_zone,
+            lib_exc.BadRequest, self.zones_client.create_zone,
             name=zone_name)

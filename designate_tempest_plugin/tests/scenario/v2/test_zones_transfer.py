@@ -40,7 +40,6 @@ class ZonesTransferTest(base.BaseDnsV2Test):
             cls.admin_accept_client = (
                 cls.os_admin.dns_v2.TransferAcceptClient())
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zones_client = cls.os_alt.dns_v2.ZonesClient()
         cls.request_client = cls.os_primary.dns_v2.TransferRequestClient()
         cls.alt_request_client = cls.os_alt.dns_v2.TransferRequestClient()

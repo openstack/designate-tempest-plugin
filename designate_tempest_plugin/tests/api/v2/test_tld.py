@@ -49,7 +49,6 @@ class TldAdminTest(BaseTldTest):
         else:
             cls.admin_client = cls.os_admin.dns_v2.TldClient()
         cls.primary_client = cls.os_primary.dns_v2.TldClient()
-        cls.primary_zone_client = cls.os_primary.dns_v2.ZonesClient()
 
     @classmethod
     def _generate_tld_name(cls, test_name):
@@ -240,7 +239,7 @@ class TldAdminTest(BaseTldTest):
 
 class TestTldNotFoundAdmin(BaseTldTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -286,7 +285,7 @@ class TestTldNotFoundAdmin(BaseTldTest):
 
 class TestTldInvalidIdAdmin(BaseTldTest):
 
-    credentials = ["admin", "system_admin"]
+    credentials = ["admin", "system_admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):

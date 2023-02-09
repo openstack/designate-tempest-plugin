@@ -103,6 +103,17 @@ class BaseDnsTest(rbac_utils.RBACTestsMixin, test.BaseTestCase):
             build_interval=CONF.dns.build_interval,
             build_timeout=CONF.dns.build_timeout,
         )
+        # Most tests need a "primary" zones client and we need it for the
+        # API version check, so create one instance here.
+        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
+
+    @classmethod
+    def resource_setup(cls):
+        """Setup resources needed by the tests."""
+        super(BaseDnsTest, cls).resource_setup()
+
+        # The credential does not matter here.
+        cls.api_version = cls.zones_client.get_max_api_version()
 
     def assertExpected(self, expected, actual, excluded_keys):
         for key, value in expected.items():

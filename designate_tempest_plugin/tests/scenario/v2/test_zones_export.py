@@ -46,7 +46,6 @@ class ZonesExportTest(BaseZoneExportsTest):
         else:
             cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
-        cls.zones_client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     def _create_zone_export(self, test_name):

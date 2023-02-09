@@ -71,7 +71,6 @@ class ZonesTest(BaseZonesTest):
             cls.pool_client = cls.os_system_admin.dns_v2.PoolClient()
         else:
             cls.pool_client = cls.os_admin.dns_v2.PoolClient()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @decorators.idempotent_id('9d2e20fc-e56f-4a62-9c61-9752a9ec615c')
@@ -80,25 +79,25 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Create a PRIMARY zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_zones_primary", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual(const.CREATE, zone['action'])
         self.assertEqual(const.PENDING, zone['status'])
 
         # Get the Name Servers (hosts) created in PRIMARY zone
-        nameservers = self.client.show_zone_nameservers(zone['id'])[1]
+        nameservers = self.zones_client.show_zone_nameservers(zone['id'])[1]
         nameservers = [dic['hostname'] for dic in nameservers['nameservers']]
 
         # Create a SECONDARY zone
         LOG.info('Create a SECONDARY zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_zones_secondary", suffix=self.tld_name)
-        zone = self.client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name, zone_type=const.SECONDARY_ZONE_TYPE,
             primaries=nameservers)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual(const.CREATE, zone['action'])
@@ -120,7 +119,7 @@ class ZonesTest(BaseZonesTest):
 
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'create_zone', expected_allowed, False,
-            project_id=self.client.project_id)
+            project_id=self.zones_client.project_id)
 
     @decorators.idempotent_id('ec150c22-f52e-11eb-b09b-74e5f9e2a801')
     def test_create_zone_validate_recordsets_created(self):
@@ -128,9 +127,9 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Create a PRIMARY zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_zone_validate_recordsets", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name,
+        zone = self.zones_client.create_zone(name=zone_name,
                                        wait_until=const.ACTIVE)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual(const.CREATE, zone['action'])
@@ -152,11 +151,11 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="show_zones", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Fetch the zone')
-        body = self.client.show_zone(zone['id'])[1]
+        body = self.zones_client.show_zone(zone['id'])[1]
 
         LOG.info('Ensure the fetched response matches the created zone')
         self.assertExpected(zone, body, self.excluded_keys)
@@ -180,7 +179,7 @@ class ZonesTest(BaseZonesTest):
             headers=self.all_projects_header)
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone', expected_allowed, False, zone['id'],
-            headers={'x-auth-sudo-project-id': self.client.project_id})
+            headers={'x-auth-sudo-project-id': self.zones_client.project_id})
 
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
@@ -188,8 +187,8 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="delete_zones", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         # Test RBAC
@@ -210,10 +209,10 @@ class ZonesTest(BaseZonesTest):
                                         headers=self.all_projects_header)
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'delete_zone', expected_allowed, False, zone['id'],
-            headers={'x-auth-sudo-project-id': self.client.project_id})
+            headers={'x-auth-sudo-project-id': self.zones_client.project_id})
 
         LOG.info('Delete the zone')
-        body = self.client.delete_zone(zone['id'])[1]
+        body = self.zones_client.delete_zone(zone['id'])[1]
 
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual(const.DELETE, body['action'])
@@ -224,11 +223,11 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="list_zones", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('List zones')
-        body = self.client.list_zones()[1]
+        body = self.zones_client.list_zones()[1]
 
         # TODO(kiall): We really want to assert that out newly created zone is
         #              present in the response.
@@ -265,21 +264,21 @@ class ZonesTest(BaseZonesTest):
             headers=self.all_projects_header)
         self.check_list_IDs_RBAC_enforcement(
             'ZonesClient', 'list_zones', expected_allowed, [zone['id']],
-            headers={'x-auth-sudo-project-id': self.client.project_id})
+            headers={'x-auth-sudo-project-id': self.zones_client.project_id})
 
     @decorators.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')
     def test_update_zone(self):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="update_zone", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         # Generate a random description
         description = data_utils.rand_name()
 
         LOG.info('Update the zone')
-        zone = self.client.update_zone(
+        zone = self.zones_client.update_zone(
             zone['id'], description=description)[1]
 
         LOG.info('Ensure we respond with UPDATE+PENDING')
@@ -310,7 +309,7 @@ class ZonesTest(BaseZonesTest):
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'update_zone', expected_allowed, False,
             zone['id'], description=description,
-            headers={'x-auth-sudo-project-id': self.client.project_id})
+            headers={'x-auth-sudo-project-id': self.zones_client.project_id})
 
     @decorators.idempotent_id('3acddc86-62cc-4bfa-8589-b99e5d239bf2')
     @decorators.skip_because(bug="1960487")
@@ -318,12 +317,12 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="serial_changes_on_update", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name,
+        zone = self.zones_client.create_zone(name=zone_name,
                                        wait_until=const.ACTIVE)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info("Update Zone's email")
-        update_email = self.client.update_zone(
+        update_email = self.zones_client.update_zone(
             zone['id'], email=dns_data_utils.rand_email())[1]
         self.assertNotEqual(
             zone['serial'], update_email['serial'],
@@ -331,7 +330,7 @@ class ZonesTest(BaseZonesTest):
             "on Email update.")
 
         LOG.info("Update Zone's TTL")
-        update_ttl = self.client.update_zone(
+        update_ttl = self.zones_client.update_zone(
             zone['id'], ttl=dns_data_utils.rand_ttl())[1]
         self.assertNotEqual(
             update_email['serial'], update_ttl['serial'],
@@ -339,7 +338,7 @@ class ZonesTest(BaseZonesTest):
             "on TTL update.")
 
         LOG.info("Update Zone's email and description")
-        update_email_description = self.client.update_zone(
+        update_email_description = self.zones_client.update_zone(
             zone['id'],
             email=dns_data_utils.rand_email(),
             description=data_utils.rand_name())[1]
@@ -349,7 +348,7 @@ class ZonesTest(BaseZonesTest):
             "when the Email and Description are updated")
 
         LOG.info("Update Zone's description")
-        update_description = self.client.update_zone(
+        update_description = self.zones_client.update_zone(
             zone['id'], description=data_utils.rand_name())[1]
         self.assertEqual(
             update_email_description['serial'], update_description['serial'],
@@ -362,12 +361,13 @@ class ZonesTest(BaseZonesTest):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="get_primary_nameservers", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         zone_pool_id = zone['pool_id']
 
         # Get zone's Name Servers using dedicated API request
-        zone_nameservers = self.client.show_zone_nameservers(zone['id'])[1]
+        zone_nameservers = self.zones_client.show_zone_nameservers(
+            zone['id'])[1]
         zone_nameservers = zone_nameservers['nameservers']
         LOG.info('Zone Name Servers are: {}'.format(zone_nameservers))
         self.assertIsNot(
@@ -405,22 +405,22 @@ class ZonesTest(BaseZonesTest):
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone_nameservers', expected_allowed,
             False, zone['id'],
-            headers={'x-auth-sudo-project-id': self.client.project_id})
+            headers={'x-auth-sudo-project-id': self.zones_client.project_id})
 
     @decorators.idempotent_id('9970b632-f2db-11ec-a757-201e8823901f')
     def test_create_zone_ttl_zero(self):
         LOG.info('Create a PRIMARY zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="test_create_zone_ttl_zero", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name, ttl=0)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name, ttl=0)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Ensure we respond with CREATE+PENDING')
         self.assertEqual(const.CREATE, zone['action'])
         self.assertEqual(const.PENDING, zone['status'])
 
         LOG.info('Fetch the zone, ensure TTL is Zero')
-        body = self.client.show_zone(zone['id'])[1]
+        body = self.zones_client.show_zone(zone['id'])[1]
         self.assertEqual(
             0, body['ttl'],
             "Failed, actual Zone's TTL:{} "
@@ -443,7 +443,6 @@ class ZonesAdminTest(BaseZonesTest):
             cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('f6fe8cce-8b04-11eb-a861-74e5f9e2a801')
@@ -451,8 +450,8 @@ class ZonesAdminTest(BaseZonesTest):
         LOG.info('Create zone "A" using primary client')
         zone_name = dns_data_utils.rand_zone_name(
             name="show_zone_impersonate", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('As Alt tenant show zone created by Primary tenant. '
                  'Expected: 404 NotFound')
@@ -488,10 +487,10 @@ class ZonesAdminTest(BaseZonesTest):
         LOG.info('Create zone "A" using Primary client')
         zone_name = dns_data_utils.rand_zone_name(
             name="list_zone_all_projects_A", suffix=self.tld_name)
-        primary_zone = self.client.create_zone(name=zone_name,
+        primary_zone = self.zones_client.create_zone(name=zone_name,
                                                wait_until=const.ACTIVE)[1]
         self.addCleanup(
-            self.wait_zone_delete, self.client, primary_zone['id'])
+            self.wait_zone_delete, self.zones_client, primary_zone['id'])
 
         LOG.info('Create zone "B" using Alt client')
         zone_name = dns_data_utils.rand_zone_name(
@@ -542,7 +541,6 @@ class ZoneOwnershipTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneOwnershipTest, cls).setup_clients()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('5d28580a-a012-4b57-b211-e077b1a01340')
@@ -550,12 +548,12 @@ class ZoneOwnershipTest(BaseZonesTest):
         LOG.info('Create a zone as a default user')
         zone_name = dns_data_utils.rand_zone_name(
             name="no_create_duplicate", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone as an default with existing domain')
         self.assertRaises(lib_exc.Conflict,
-            self.client.create_zone, name=zone['name'])
+            self.zones_client.create_zone, name=zone['name'])
 
         LOG.info('Create a zone as an alt user with existing domain')
         self.assertRaises(lib_exc.Conflict,
@@ -566,8 +564,8 @@ class ZoneOwnershipTest(BaseZonesTest):
         LOG.info('Create a zone as a default user')
         zone_name = dns_data_utils.rand_zone_name(
             name="no_create_subdomain_by_alt", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone as an alt user with existing subdomain')
         self.assertRaises(lib_exc.Forbidden,
@@ -581,8 +579,8 @@ class ZoneOwnershipTest(BaseZonesTest):
             name="no_create_superdomain_by_alt", suffix=self.tld_name)
 
         LOG.info('Create a zone as a default user')
-        zone = self.client.create_zone(name='a.b.' + zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name='a.b.' + zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
         LOG.info('Create a zone as an alt user with existing superdomain')
         self.assertRaises(lib_exc.Forbidden,
@@ -598,11 +596,6 @@ class ZonesNegativeTest(BaseZonesTest):
         cls.set_network_resources()
         super(ZonesNegativeTest, cls).setup_credentials()
 
-    @classmethod
-    def setup_clients(cls):
-        super(ZonesNegativeTest, cls).setup_clients()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
-
     @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
     def test_no_valid_zone_name(self):
         no_valid_names = ['a' * 1000, '___', '!^%&^#%^!@#', 'ggg', '.a', '']
@@ -610,7 +603,7 @@ class ZonesNegativeTest(BaseZonesTest):
             LOG.info('Trying to create a zone named: {} '.format(name))
             self.assertRaisesDns(
                 lib_exc.BadRequest, 'invalid_object', 400,
-                self.client.create_zone, name=name)
+                self.zones_client.create_zone, name=name)
 
     @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
     def test_no_valid_email(self):
@@ -622,7 +615,7 @@ class ZonesNegativeTest(BaseZonesTest):
                 ' value: '.format(email))
             self.assertRaisesDns(
                 lib_exc.BadRequest, 'invalid_object', 400,
-                self.client.create_zone, email=email)
+                self.zones_client.create_zone, email=email)
 
     @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
     def test_no_valid_ttl(self):
@@ -635,44 +628,44 @@ class ZonesNegativeTest(BaseZonesTest):
                 ' value: '.format(ttl))
             self.assertRaisesDns(
                 lib_exc.BadRequest, 'invalid_object', 400,
-                self.client.create_zone, ttl=ttl)
+                self.zones_client.create_zone, ttl=ttl)
 
     @decorators.idempotent_id('a3b0a928-a682-11eb-9899-74e5f9e2a801')
     def test_huge_size_description(self):
         LOG.info('Trying to create a zone using huge size description')
         self.assertRaisesDns(
             lib_exc.BadRequest, 'invalid_object', 400,
-            self.client.create_zone,
+            self.zones_client.create_zone,
             description=dns_data_utils.rand_zone_name() * 10000)
 
     @decorators.idempotent_id('49268b24-92de-11eb-9d02-74e5f9e2a801')
     def test_show_not_existing_zone(self):
         LOG.info('Fetch non existing zone')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.show_zone(uuid.uuid1()))
+            lambda: self.zones_client.show_zone(uuid.uuid1()))
 
     @decorators.idempotent_id('736e3b50-92e0-11eb-9d02-74e5f9e2a801')
     def test_use_invalid_id_to_show_zone(self):
         LOG.info('Fetch the zone using invalid zone ID')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_uuid', 400):
-            self.client.show_zone(uuid='zahlabut')
+            self.zones_client.show_zone(uuid='zahlabut')
 
     @decorators.idempotent_id('79921370-92e1-11eb-9d02-74e5f9e2a801')
     def test_delete_non_existing_zone(self):
         LOG.info('Delete non existing zone')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.delete_zone(uuid.uuid1()))
+            lambda: self.zones_client.delete_zone(uuid.uuid1()))
 
     @decorators.idempotent_id('e391e30a-92e0-11eb-9d02-74e5f9e2a801')
     def test_update_non_existing_zone(self):
         LOG.info('Update non existing zone')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.update_zone(
+            lambda: self.zones_client.update_zone(
                 uuid.uuid1(), description=data_utils.rand_name()))
 
     @decorators.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
     def test_list_zones_dot_json_fails(self):
-        uri = self.client.get_uri('zones.json')
+        uri = self.zones_client.get_uri('zones.json')
 
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.client.get(uri))
+            lambda: self.zones_client.get(uri))

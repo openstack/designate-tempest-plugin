@@ -276,3 +276,41 @@ class DnsClientBase(rest_client.RestClient):
             body = self.deserialize(resp, body)
 
         return resp, body
+
+    def get_max_api_version(self):
+        """Get the maximum version available on the API endpoint.
+        :return: Maximum version string available on the endpoint.
+        """
+        response, body = self.get('/')
+        self.expected_success(200, response.status)
+
+        versions_list = json.loads(body)['versions']
+
+        # Handle the legacy version document format
+        if 'values' in versions_list:
+            versions_list = versions_list['values']
+
+        current_versions = (version for version in versions_list if
+                            version['status'] == 'CURRENT')
+        max_version = '0.0'
+        for version in current_versions:
+
+            ver_string = version['id']
+            if ver_string.startswith("v"):
+                ver_string = ver_string[1:]
+
+            ver_split = list(map(int, ver_string.split('.')))
+            max_split = list(map(int, max_version.split('.')))
+
+            if len(ver_split) > 2:
+                raise lib_exc.InvalidAPIVersionString(version=ver_string)
+
+            if ver_split[0] > max_split[0] or (
+                    ver_split[0] == max_split[0] and
+                    ver_split[1] >= max_split[1]):
+                max_version = ver_string
+
+        if max_version == '0.0':
+            raise lib_exc.InvalidAPIVersionString(version=max_version)
+
+        return max_version

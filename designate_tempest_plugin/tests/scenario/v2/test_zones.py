@@ -46,7 +46,6 @@ class ZonesTest(base.BaseDnsV2Test):
         else:
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
             cls.rec_client = cls.os_admin.dns_v2.RecordsetClient()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.primary_client = cls.os_primary.dns_v2.BlacklistsClient()
 
     @classmethod
@@ -69,8 +68,8 @@ class ZonesTest(base.BaseDnsV2Test):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="create_and_delete_zone", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info('Ensure we respond with CREATE+PENDING')
@@ -78,23 +77,23 @@ class ZonesTest(base.BaseDnsV2Test):
         self.assertEqual(const.PENDING, zone['status'])
 
         waiters.wait_for_zone_status(
-            self.client, zone['id'], const.ACTIVE)
+            self.zones_client, zone['id'], const.ACTIVE)
 
         LOG.info('Re-Fetch the zone')
-        zone = self.client.show_zone(zone['id'])[1]
+        zone = self.zones_client.show_zone(zone['id'])[1]
 
         LOG.info('Ensure we respond with NONE+ACTIVE')
         self.assertEqual(const.NONE, zone['action'])
         self.assertEqual(const.ACTIVE, zone['status'])
 
         LOG.info('Delete the zone')
-        zone = self.client.delete_zone(zone['id'])[1]
+        zone = self.zones_client.delete_zone(zone['id'])[1]
 
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual(const.DELETE, zone['action'])
         self.assertEqual(const.PENDING, zone['status'])
 
-        waiters.wait_for_zone_404(self.client, zone['id'])
+        waiters.wait_for_zone_404(self.zones_client, zone['id'])
 
     @decorators.attr(type='slow')
     @decorators.idempotent_id('cabd6334-ba37-11ec-9d8c-201e8823901f')
@@ -105,22 +104,22 @@ class ZonesTest(base.BaseDnsV2Test):
         orig_description = 'test_create_and_update_zone: org description'
         zone_name = dns_data_utils.rand_zone_name(
             name="create_and_update_zone", suffix=self.tld_name)
-        zone = self.client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name,
             ttl=orig_ttl, description=orig_description,
             wait_until=const.ACTIVE)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         LOG.info("Update zone's: TTL and Description, wait until ACTIVE")
         updated_ttl = 777
         updated_description = dns_data_utils.rand_string(20)
-        self.client.update_zone(
+        self.zones_client.update_zone(
             zone['id'], ttl=updated_ttl, description=updated_description,
             wait_until=const.ACTIVE)
 
         LOG.info('Re-Fetch/Show the zone')
-        show_zone = self.client.show_zone(zone['id'])[1]
+        show_zone = self.zones_client.show_zone(zone['id'])[1]
 
         LOG.info('Ensure that the Description and TLL has been updated')
         self.assertEqual(
@@ -138,8 +137,8 @@ class ZonesTest(base.BaseDnsV2Test):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="delete_zone_pending_create", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
         # NOTE(kiall): This is certainly a little racey, it's entirely
@@ -148,13 +147,13 @@ class ZonesTest(base.BaseDnsV2Test):
         #              Theres not a huge amount we can do, given this is
         #              black-box testing.
         LOG.info('Delete the zone while it is still pending')
-        zone = self.client.delete_zone(zone['id'])[1]
+        zone = self.zones_client.delete_zone(zone['id'])[1]
 
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual(const.DELETE, zone['action'])
         self.assertEqual(const.PENDING, zone['status'])
 
-        waiters.wait_for_zone_404(self.client, zone['id'])
+        waiters.wait_for_zone_404(self.zones_client, zone['id'])
 
     @decorators.attr(type='slow')
     @decorators.idempotent_id('ad8d1f5b-da66-46a0-bbee-14dc84a5d791')
@@ -165,10 +164,11 @@ class ZonesTest(base.BaseDnsV2Test):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="zone_create_propagates", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
 
-        waiters.wait_for_zone_status(self.client, zone['id'], const.ACTIVE)
+        waiters.wait_for_zone_status(self.zones_client, zone['id'],
+                                     const.ACTIVE)
         waiters.wait_for_query(self.query_client, zone['name'], const.SOA)
 
     @decorators.attr(type='slow')
@@ -180,17 +180,18 @@ class ZonesTest(base.BaseDnsV2Test):
         LOG.info('Create a zone')
         zone_name = dns_data_utils.rand_zone_name(
             name="zone_delete_propagates", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name)[1]
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'],
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
                         ignore_errors=lib_exc.NotFound)
 
-        waiters.wait_for_zone_status(self.client, zone['id'], const.ACTIVE)
+        waiters.wait_for_zone_status(self.zones_client, zone['id'],
+                                     const.ACTIVE)
         waiters.wait_for_query(self.query_client, zone['name'], const.SOA)
 
         LOG.info('Delete the zone')
-        self.client.delete_zone(zone['id'])
+        self.zones_client.delete_zone(zone['id'])
 
-        waiters.wait_for_zone_404(self.client, zone['id'])
+        waiters.wait_for_zone_404(self.zones_client, zone['id'])
         waiters.wait_for_query(self.query_client, zone['name'], const.SOA,
                                found=False)
 
@@ -210,10 +211,11 @@ class ZonesTest(base.BaseDnsV2Test):
                  ' and SOA Refresh values')
         zone_name = dns_data_utils.rand_zone_name(
             name="test_notify_msg_sent_to_nameservers", suffix=self.tld_name)
-        zone = self.client.create_zone(name=zone_name, wait_until='ACTIVE')[1]
+        zone = self.zones_client.create_zone(name=zone_name,
+                                             wait_until='ACTIVE')[1]
 
         org_serial = zone['serial']
-        self.addCleanup(self.wait_zone_delete, self.client, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         try:
             soa = [
                 rec['records'] for rec in self.rec_client.list_recordset(
@@ -232,9 +234,9 @@ class ZonesTest(base.BaseDnsV2Test):
 
         LOG.info("Update Zone's TTL, wait until ACTIVE and"
                  " ensure Zone's Serial has changed")
-        self.client.update_zone(
+        self.zones_client.update_zone(
             zone['id'], ttl=dns_data_utils.rand_ttl(), wait_until='ACTIVE')
-        new_serial = self.client.show_zone(zone['id'])[1]['serial']
+        new_serial = self.zones_client.show_zone(zone['id'])[1]['serial']
         self.assertNotEqual(
             new_serial, org_serial,
             "Failed, expected behaviour is that the Designate DNS changes the"

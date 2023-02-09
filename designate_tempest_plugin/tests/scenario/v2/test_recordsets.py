@@ -45,7 +45,6 @@ class RecordsetsTest(base.BaseDnsV2Test):
         else:
             cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-        cls.client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @classmethod
@@ -55,7 +54,7 @@ class RecordsetsTest(base.BaseDnsV2Test):
         zone_id = CONF.dns.zone_id
         if zone_id:
             LOG.info('Retrieve info from a zone')
-            zone = cls.client.show_zone(zone_id)[1]
+            zone = cls.zones_client.show_zone(zone_id)[1]
         else:
             # Make sure we have an allowed TLD available
             tld_name = dns_data_utils.rand_zone_name(name="RecordsetsTest")
@@ -65,13 +64,13 @@ class RecordsetsTest(base.BaseDnsV2Test):
             LOG.info('Create a new zone')
             zone_name = dns_data_utils.rand_zone_name(
                 name="recordsets_test_setup", suffix=cls.tld_name)
-            zone = cls.client.create_zone(name=zone_name)[1]
+            zone = cls.zones_client.create_zone(name=zone_name)[1]
             cls.addClassResourceCleanup(
                 test_utils.call_and_ignore_notfound_exc,
-                cls.client.delete_zone, zone['id'])
+                cls.zones_client.delete_zone, zone['id'])
 
         LOG.info('Ensure we respond with ACTIVE')
-        waiters.wait_for_zone_status(cls.client, zone['id'], 'ACTIVE')
+        waiters.wait_for_zone_status(cls.zones_client, zone['id'], 'ACTIVE')
 
         cls.zone = zone
 

@@ -71,7 +71,6 @@ class ZonesImportTest(BaseZonesImportTest):
             cls.admin_client = cls.os_system_admin.dns_v2.ZoneImportsClient()
         else:
             cls.admin_client = cls.os_admin.dns_v2.ZoneImportsClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZoneImportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneImportsClient()
 
@@ -81,7 +80,7 @@ class ZonesImportTest(BaseZonesImportTest):
             waiters.wait_for_zone_import_status(
                 self.client, zone_import_id, const.COMPLETE)
             self.client.delete_zone_import(zone_import['id'])
-            self.wait_zone_delete(self.zone_client, zone_import['zone_id'])
+            self.wait_zone_delete(self.zones_client, zone_import['zone_id'])
         else:  # Import has failed and zone wasn't created.
             self.client.delete_zone_import(zone_import['id'])
 
@@ -180,7 +179,7 @@ class ZonesImportTest(BaseZonesImportTest):
                                             const.COMPLETE)
         zone_import = self.client.show_zone_import(zone_import['id'])[1]
         self.addCleanup(self.wait_zone_delete,
-                        self.zone_client,
+                        self.zones_client,
                         zone_import['zone_id'])
 
         # Test RBAC
@@ -387,7 +386,6 @@ class ZonesImportTestNegative(BaseZonesImportTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesImportTestNegative, cls).setup_clients()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZoneImportsClient()
 
     def _clean_up_resources(self, zone_import_id):
@@ -396,7 +394,7 @@ class ZonesImportTestNegative(BaseZonesImportTest):
             waiters.wait_for_zone_import_status(
                 self.client, zone_import_id, const.COMPLETE)
             self.client.delete_zone_import(zone_import['id'])
-            self.wait_zone_delete(self.zone_client, zone_import['zone_id'])
+            self.wait_zone_delete(self.zones_client, zone_import['zone_id'])
         else:  # Import has failed and zone wasn't created.
             self.client.delete_zone_import(zone_import['id'])
 
@@ -434,9 +432,9 @@ class ZonesImportTestNegative(BaseZonesImportTest):
         LOG.info('Create a Zone named: "...zone_to_update..."')
         zone_name = dns_data_utils.rand_zone_name(
             name='zone_to_update', suffix=self.tld_name)
-        zone = self.zone_client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name, wait_until=const.ACTIVE)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
         LOG.info('Use zone import to update an existing zone, expected: zone'
                  ' import gets into the ERROR status ')
         zone_import_data = dns_data_utils.rand_zonefile_data(name=zone_name)

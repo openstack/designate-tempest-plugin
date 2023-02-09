@@ -63,7 +63,6 @@ class QuotasV2Test(base.BaseDnsV2Test):
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
         cls.alt_client = cls.os_alt.dns_v2.QuotasClient()
-        cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
@@ -101,17 +100,17 @@ class QuotasV2Test(base.BaseDnsV2Test):
                 if quota_type == 'zones_quota':
                     zone_name = dns_data_utils.rand_zone_name(
                         name="_reach_quota_limit", suffix=self.tld_name)
-                    zone = self.zone_client.create_zone(
+                    zone = self.zones_client.create_zone(
                         name=zone_name,
                         description='Test zone for:{}'.format(quota_type))[1]
                     self.addCleanup(
                         self.wait_zone_delete,
-                        self.zone_client, zone['id'])
+                        self.zones_client, zone['id'])
                 else:
                     if quota_type == 'zone_recordsets':
                         max_number_of_records = 10
                         prj_quota = self.admin_client.show_quotas(
-                            project_id=self.zone_client.project_id,
+                            project_id=self.zones_client.project_id,
                             headers=self.all_projects_header)[1][
                             'zone_records']
                         if max_number_of_records > prj_quota:
@@ -152,15 +151,15 @@ class QuotasV2Test(base.BaseDnsV2Test):
         quotas = dns_data_utils.rand_quotas()
         quotas['api_export_size'] = self.test_quota_limit
         self._set_quota_for_project(
-            self.zone_client.project_id, quotas)
+            self.zones_client.project_id, quotas)
         LOG.info('Create a Zone, wait until ACTIVE and add:{}'
                  ' Recordsets'.format(self.test_quota_limit + 1))
-        zone = self.zone_client.create_zone(
+        zone = self.zones_client.create_zone(
             description='Zone for test_api_export_size_quota',
             wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete,
-            self.zone_client, zone['id'])
+            self.zones_client, zone['id'])
         for i in range(self.test_quota_limit + 1):
             recordset_data = dns_data_utils.rand_recordset_data(
                 record_type='A', zone_name=zone['name'])
@@ -194,17 +193,17 @@ class QuotasV2Test(base.BaseDnsV2Test):
         quotas = dns_data_utils.rand_quotas()
         quotas['recordset_records'] = self.test_quota_limit
         self._set_quota_for_project(
-            self.zone_client.project_id, quotas)
+            self.zones_client.project_id, quotas)
         LOG.info('Create a Zone and wait until ACTIVE')
         zone_name = dns_data_utils.rand_zone_name(
             name="test_recordset_records_quota", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name,
             description='Zone for test_recordset_records_quota',
             wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete,
-            self.zone_client, zone['id'])
+            self.zones_client, zone['id'])
         LOG.info(
             'Create recordset data with:{} records and try to create'
             ' a recordset. Expected:"413 over_quota"'.format(
@@ -224,19 +223,19 @@ class QuotasV2Test(base.BaseDnsV2Test):
         LOG.info('Create a Zone and wait until ACTIVE')
         zone_name = dns_data_utils.rand_zone_name(
             name="test_zone_records_quota", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name,
             description='Zone for test_zone_records_quota',
             wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete,
-            self.zone_client, zone['id'])
+            self.zones_client, zone['id'])
         LOG.info('Admin sets "zone_records:{}" quota for Primary '
                  'user'.format(self.test_quota_limit))
         quotas = dns_data_utils.rand_quotas()
         quotas['zone_records'] = self.test_quota_limit
         self._set_quota_for_project(
-            self.zone_client.project_id, quotas)
+            self.zones_client.project_id, quotas)
         LOG.info(
             'Try to add:{} recordsets (with a single record) to the Zone in'
             ' loop. Expected:"413 over_quota"'.format(
@@ -250,19 +249,19 @@ class QuotasV2Test(base.BaseDnsV2Test):
         LOG.info('Create a Zone and wait until ACTIVE')
         zone_name = dns_data_utils.rand_zone_name(
             name="test_zone_recordsets_quota", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(
+        zone = self.zones_client.create_zone(
             name=zone_name,
             description='Zone for test_zone_recordsets_quota',
             wait_until=const.ACTIVE)[1]
         self.addCleanup(
             self.wait_zone_delete,
-            self.zone_client, zone['id'])
+            self.zones_client, zone['id'])
         LOG.info('Admin sets "zone_recordsets:{}" quota for Primary '
                  'user'.format(self.test_quota_limit))
         quotas = dns_data_utils.rand_quotas()
         quotas['zone_recordsets'] = self.test_quota_limit
         self._set_quota_for_project(
-            self.zone_client.project_id, quotas)
+            self.zones_client.project_id, quotas)
         LOG.info(
             'Try to add:{} recordsets (with a random number of records) to a'
             ' Zone in loop. Expected:"413 over_quota"'.format(
@@ -278,14 +277,14 @@ class QuotasV2Test(base.BaseDnsV2Test):
         quotas = dns_data_utils.rand_quotas()
         quotas['zones'] = self.test_quota_limit
         self._set_quota_for_project(
-            self.zone_client.project_id, quotas)
+            self.zones_client.project_id, quotas)
         LOG.info('Try to create Zones. Expected:"413 over_quota"')
         self._reach_quota_limit(self.test_quota_limit, 'zones_quota')
 
 
 class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
 
-    credentials = ['admin', 'system_admin']
+    credentials = ['admin', 'system_admin', 'primary']
 
     @classmethod
     def setup_credentials(cls):
@@ -308,14 +307,14 @@ class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
             cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
             cls.quota_client = cls.os_system_admin.dns_v2.QuotasClient()
             cls.project_client = cls.os_system_admin.projects_client
-            cls.zone_client = cls.os_system_admin.dns_v2.ZonesClient()
             cls.recordset_client = cls.os_system_admin.dns_v2.RecordsetClient()
             cls.export_zone_client = (
                 cls.os_system_admin.dns_v2.ZoneExportsClient())
+            cls.admin_zones_client = cls.os_system_admin.dns_v2.ZonesClient()
         else:
             cls.quota_client = cls.os_admin.dns_v2.QuotasClient()
             cls.project_client = cls.os_admin.projects_client
-            cls.zone_client = cls.os_admin.dns_v2.ZonesClient()
+            cls.admin_zones_client = cls.os_admin.dns_v2.ZonesClient()
             cls.recordset_client = cls.os_admin.dns_v2.RecordsetClient()
             cls.export_zone_client = cls.os_admin.dns_v2.ZoneExportsClient()
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
@@ -353,15 +352,16 @@ class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
         # Create a first Zone --> Should PASS
         zone_name = dns_data_utils.rand_zone_name(
             name="test_zone_quota_boundary_attempt_1", suffix=self.tld_name)
-        zone = self.zone_client.create_zone(
+        zone = self.admin_zones_client.create_zone(
             name=zone_name, project_id=tenant_id)[1]
-        self.addCleanup(self.wait_zone_delete, self.zone_client, zone['id'])
+        self.addCleanup(self.wait_zone_delete, self.admin_zones_client,
+                        zone['id'])
 
         # Create a second zone --> should FAIL on: 413 over_quota
         zone_name = dns_data_utils.rand_zone_name(
             name="test_zone_quota_boundary_attempt_2", suffix=self.tld_name)
         try:
-            response_headers, zone = self.zone_client.create_zone(
+            response_headers, zone = self.admin_zones_client.create_zone(
                 name=zone_name, project_id=tenant_id)
             if response_headers['status'] != 413:
                 raise exceptions.InvalidStatusError(
@@ -372,6 +372,6 @@ class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
         finally:
             self.addCleanup(
                 self.wait_zone_delete,
-                self.zone_client, zone['id'],
+                self.admin_zones_client, zone['id'],
                 headers=sudo_header,
                 ignore_errors=lib_exc.NotFound)
