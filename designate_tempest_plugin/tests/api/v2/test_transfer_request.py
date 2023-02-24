@@ -157,8 +157,6 @@ class TransferRequestTest(BaseTransferRequestTest):
                  'created transfer_request')
         self.assertExpected(transfer_request, body, self.excluded_keys)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
         # Note: The create service client does not define a target project
         #       ID, so everyone should be able to see it.
@@ -245,12 +243,10 @@ class TransferRequestTest(BaseTransferRequestTest):
                                               "project_id"]
         self.assertExpected(transfer_request, body, excluded_keys)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC when a transfer target project is specified.
         expected_allowed = ['os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
         else:
             expected_allowed.append('os_admin')
 
@@ -305,14 +301,11 @@ class TransferRequestTest(BaseTransferRequestTest):
 
         self.assertGreater(len(body['transfer_requests']), 0)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
             expected_allowed = ['os_system_admin', 'os_system_reader',
-                                'os_admin', 'os_project_member',
-                                'os_project_reader']
+                                'os_admin']
         else:
             expected_allowed = ['os_alt']
 
@@ -461,7 +454,7 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'TransferRequestClient', 'update_transfer_request',

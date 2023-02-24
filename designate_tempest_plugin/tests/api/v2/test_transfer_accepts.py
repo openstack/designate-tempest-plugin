@@ -174,10 +174,11 @@ class TransferAcceptTest(BaseTransferAcceptTest):
                  'created transfer_accept')
         self.assertExpected(transfer_accept, body, self.excluded_keys)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
         expected_allowed = ['os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_project_member',
+                                     'os_project_reader'])
 
         self.check_list_show_RBAC_enforcement(
             'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
@@ -275,8 +276,6 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             self.assertEqual('COMPLETE', transfer_accept['status'])
             transfer_request_ids.append(transfer_accept['id'])
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:

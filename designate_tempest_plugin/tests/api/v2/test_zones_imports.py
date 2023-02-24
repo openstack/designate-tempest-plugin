@@ -148,10 +148,11 @@ class ZonesImportTest(BaseZonesImportTest):
         LOG.info('Ensure the fetched response matches the expected one')
         self.assertExpected(zone_import, body, self.excluded_keys)
 
-        # TODO(johnsom) Test reader roles once this bug is fixed.
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test with no extra header overrides (all_projects, sudo-project-id)
         expected_allowed = ['os_primary']
+        if CONF.dns_feature_enabled.enforce_new_defaults:
+            expected_allowed.extend(['os_project_member',
+                                     'os_project_reader'])
 
         self.check_list_show_RBAC_enforcement(
             'ZoneImportsClient', 'show_zone_import', expected_allowed, True,
@@ -185,7 +186,7 @@ class ZonesImportTest(BaseZonesImportTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZoneImportsClient', 'delete_zone_import', expected_allowed, True,
@@ -194,7 +195,7 @@ class ZonesImportTest(BaseZonesImportTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
+            expected_allowed.extend(['os_system_admin', 'os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZoneImportsClient', 'delete_zone_import', expected_allowed, False,
@@ -229,14 +230,11 @@ class ZonesImportTest(BaseZonesImportTest):
 
         self.assertGreater(len(body['imports']), 0)
 
-        # TODO(johnsom) Test reader role once this bug is fixed:
-        #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
             expected_allowed = ['os_system_admin', 'os_system_reader',
-                                'os_admin', 'os_project_member',
-                                'os_project_reader']
+                                'os_admin']
         else:
             expected_allowed = ['os_alt']
 
