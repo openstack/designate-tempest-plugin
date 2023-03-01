@@ -48,7 +48,7 @@ class ZonesClient(base.DnsClientV2Base):
             Default: PRIMARY
         :param primaries: List of Primary nameservers. Required for SECONDARY
             Default: None
-        :param params: A Python dict that represents the query paramaters to
+        :param params: A Python dict that represents the query parameters to
                        include in the request URI.
         :param project_id: When specified, overrides the project ID the zone
                            will be associated with.
@@ -102,7 +102,7 @@ class ZonesClient(base.DnsClientV2Base):
     def show_zone(self, uuid, params=None, headers=None):
         """Gets a specific zone.
         :param uuid: Unique identifier of the zone in UUID format.
-        :param params: A Python dict that represents the query paramaters to
+        :param params: A Python dict that represents the query parameters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
         :return: Serialized zone as a dictionary.
@@ -114,7 +114,7 @@ class ZonesClient(base.DnsClientV2Base):
     def show_zone_nameservers(self, zone_uuid, params=None, headers=None):
         """Gets list of Zone Name Servers
         :param zone_uuid: Unique identifier of the zone in UUID format.
-        :param params: A Python dict that represents the query paramaters to
+        :param params: A Python dict that represents the query parameters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
         :return: Serialized nameservers as a list.
@@ -126,7 +126,7 @@ class ZonesClient(base.DnsClientV2Base):
     @base.handle_errors
     def list_zones(self, params=None, headers=None):
         """Gets a list of zones.
-        :param params: A Python dict that represents the query paramaters to
+        :param params: A Python dict that represents the query parameters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
         :return: Serialized zones as a list.
@@ -134,14 +134,20 @@ class ZonesClient(base.DnsClientV2Base):
         return self._list_request('zones', params=params, headers=headers)
 
     @base.handle_errors
-    def delete_zone(self, uuid, params=None, headers=None):
+    def delete_zone(self, uuid, params=None, headers=None, delete_shares=None):
         """Deletes a zone having the specified UUID.
         :param uuid: The unique identifier of the zone.
-        :param params: A Python dict that represents the query paramaters to
+        :param params: A Python dict that represents the query parameters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
+        :param delete_shares: if set, delete-shares modifier will be activated
         :return: A tuple with the server response and the response body.
         """
+        if delete_shares:
+            if headers:
+                headers['x-designate-delete-shares'] = True
+            else:
+                headers = {'x-designate-delete-shares': True}
         resp, body = self._delete_request(
             'zones', uuid, params=params, headers=headers)
 
@@ -163,7 +169,7 @@ class ZonesClient(base.DnsClientV2Base):
         :param description: A description of the zone.
             Default: Random Value
         :param wait_until: Block until the zone reaches the desiered status
-        :param params: A Python dict that represents the query paramaters to
+        :param params: A Python dict that represents the query parameters to
                        include in the request URI.
         :param headers (dict): The headers to use for the request.
         :return: A tuple with the server response and the updated zone.
