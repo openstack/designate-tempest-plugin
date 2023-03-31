@@ -160,20 +160,16 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC
         # Note: The create service client does not define a target project
         #       ID, so everyone should be able to see it.
-        expected_allowed = ['os_admin', 'os_primary', 'os_alt']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_system_reader',
-                                     'os_project_member', 'os_project_reader'])
+        expected_allowed = ['os_admin', 'os_primary', 'os_alt',
+                            'os_system_admin', 'os_system_reader',
+                            'os_project_member', 'os_project_reader']
 
         self.check_list_show_RBAC_enforcement(
             'TransferRequestClient', 'show_transfer_request', expected_allowed,
             True, transfer_request['id'])
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferRequestClient', 'show_transfer_request', expected_allowed,
@@ -244,11 +240,8 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.assertExpected(transfer_request, body, excluded_keys)
 
         # Test RBAC when a transfer target project is specified.
-        expected_allowed = ['os_primary', 'os_alt']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
-        else:
-            expected_allowed.append('os_admin')
+        expected_allowed = ['os_primary', 'os_alt', 'os_admin',
+                            'os_system_admin', 'os_project_member']
 
         self.check_list_show_RBAC_enforcement(
             'TransferRequestClient', 'show_transfer_request', expected_allowed,
@@ -304,8 +297,7 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_system_reader',
-                                'os_admin']
+            expected_allowed = ['os_system_admin', 'os_admin']
         else:
             expected_allowed = ['os_alt']
 

@@ -121,6 +121,9 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
             expected_allowed.append('os_system_admin')
+            # Note: system_reader is allowed because this API RBAC is based
+            #       on the target project ID. It will return a 401 instead of
+            #       a 403.
             expected_allowed.append('os_system_reader')
             expected_allowed.append('os_project_member')
             expected_allowed.append('os_project_reader')
@@ -185,10 +188,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             True, transfer_accept['id'])
 
         # Test RBAC with x-auth-all-projects
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
@@ -278,20 +278,14 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_RBAC_enforcement_count(
             'TransferAcceptClient', 'list_transfer_accept',
             expected_allowed, 0)
 
         # Test that users who should see the zone, can see it.
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TransferAcceptClient', 'list_transfer_accept',
@@ -400,10 +394,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             self.wait_zone_delete, self.alt_zone_client, zone['id'])
 
         # Test RBAC with x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferAcceptClient', 'show_transfer_accept', expected_allowed,

@@ -58,9 +58,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
 
         self.assertExpected(blacklist, body, self.excluded_keys)
 
-        expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_CUD_RBAC_enforcement('BlacklistsClient', 'create_blacklist',
                                         expected_allowed, False)
@@ -100,9 +98,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         LOG.info('Ensure the fetched response matches the created blacklist')
         self.assertExpected(blacklist, body, self.excluded_keys)
 
-        expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'BlacklistsClient', 'show_blacklist', expected_allowed, False,
@@ -121,9 +117,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         # A blacklist delete returns an empty body
         self.assertEqual(body.strip(), b"")
 
-        expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_CUD_RBAC_enforcement(
             'BlacklistsClient', 'delete_blacklist', expected_allowed, False,
@@ -141,9 +135,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         # TODO(pglass): Assert that the created blacklist is in the response
         self.assertGreater(len(body['blacklists']), 0)
 
-        expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'BlacklistsClient', 'list_blacklists',
@@ -168,9 +160,7 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         self.assertEqual(pattern, body['pattern'])
         self.assertEqual(description, body['description'])
 
-        expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_CUD_RBAC_enforcement(
             'BlacklistsClient', 'update_blacklist', expected_allowed, False,

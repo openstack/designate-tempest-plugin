@@ -148,10 +148,7 @@ class TldAdminTest(BaseTldTest):
         self.assertExpected(tld, body, self.excluded_keys)
 
         # Test RBAC
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TldClient', 'show_tld', expected_allowed, False, tld['id'])
@@ -191,10 +188,7 @@ class TldAdminTest(BaseTldTest):
         self.assertGreater(len(body['tlds']), 0)
 
         # Test RBAC
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TldClient', 'list_tlds', expected_allowed, [tld['id']],

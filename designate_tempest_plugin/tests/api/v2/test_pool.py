@@ -102,10 +102,7 @@ class PoolAdminTest(BasePoolTest):
         # TODO(johnsom) Test reader roles once this bug is fixed.
         #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         # TODO(johnsom) The pools API seems inconsistent with the requirement
         #               of the all-projects header.

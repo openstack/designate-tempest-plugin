@@ -172,10 +172,7 @@ class ZonesTest(BaseZonesTest):
             'ZonesClient', 'show_zone', expected_allowed, True, zone['id'])
 
         # Test with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone', expected_allowed, False, zone['id'],
@@ -282,8 +279,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_system_reader',
-                                'os_admin']
+            expected_allowed = ['os_system_admin', 'os_admin']
         else:
             expected_allowed = ['os_alt']
 
@@ -438,10 +434,7 @@ class ZonesTest(BaseZonesTest):
             True, zone['id'])
 
         # Test with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone_nameservers', expected_allowed,

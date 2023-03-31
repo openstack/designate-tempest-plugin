@@ -122,7 +122,6 @@ class SharedZonesTest(BaseSharedZoneTest):
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
             expected_allowed.append('os_system_admin')
-            expected_allowed.append('os_system_reader')
             expected_allowed.append('os_project_member')
             expected_allowed.append('os_project_reader')
         self.check_CUD_RBAC_enforcement(
@@ -175,7 +174,6 @@ class SharedZonesTest(BaseSharedZoneTest):
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
             expected_allowed.append('os_system_admin')
-            expected_allowed.append('os_system_reader')
             expected_allowed.append('os_project_member')
             expected_allowed.append('os_project_reader')
         self.check_CUD_RBAC_enforcement(
