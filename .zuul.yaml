@@ -1,4 +1,10 @@
 - job:
+    name: designate-bind9-stable-antelope
+    parent: designate-bind9
+    nodeset: openstack-single-node-focal
+    override-checkout: stable/2023.1
+
+- job:
     name: designate-bind9-stable-zed
     parent: designate-bind9
     nodeset: openstack-single-node-focal
@@ -24,35 +30,16 @@
 
 - project:
     templates:
-# Temporary removed to transition the scoped tokens job
-#      - designate-devstack-jobs
+      - designate-devstack-jobs
       - check-requirements
       - publish-openstack-docs-pti
       - tempest-plugin-jobs
       - release-notes-jobs-python3
     check:
       jobs:
+        - designate-bind9-stable-antelope
         - designate-bind9-stable-zed
         - designate-bind9-stable-yoga
         - designate-bind9-stable-xena
         - designate-bind9-stable-wallaby
         - neutron-tempest-plugin-designate-scenario
-# Temporary expand template to remove scoped tokens job that is changing
-        - designate-bind9
-        - designate-bind9-centos9stream-fips:
-            voting: false
-        - designate-bind9-centos-9-stream:
-            voting: false
-        - designate-pdns4
-        - designate-grenade-bind9
-        - designate-grenade-pdns4
-        - designate-ipv6-only-pdns4
-        - designate-ipv6-only-bind9
-    gate:
-      fail-fast: true
-      jobs:
-        - designate-bind9
-        - designate-pdns4
-        - designate-grenade-pdns4
-        - designate-ipv6-only-pdns4
-        - designate-ipv6-only-bind9
