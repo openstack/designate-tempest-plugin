@@ -188,7 +188,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             True, transfer_accept['id'])
 
         # Test RBAC with x-auth-all-projects
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
@@ -278,14 +281,20 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_RBAC_enforcement_count(
             'TransferAcceptClient', 'list_transfer_accept',
             expected_allowed, 0)
 
         # Test that users who should see the zone, can see it.
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TransferAcceptClient', 'list_transfer_accept',
@@ -394,7 +403,10 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             self.wait_zone_delete, self.alt_zone_client, zone['id'])
 
         # Test RBAC with x-auth-sudo-project-id header
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferAcceptClient', 'show_transfer_accept', expected_allowed,

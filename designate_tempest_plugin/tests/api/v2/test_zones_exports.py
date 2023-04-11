@@ -129,7 +129,10 @@ class ZonesExportTest(BaseZoneExportsTest):
             zone_export['id'])
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZoneExportsClient', 'show_zone_export', expected_allowed, True,
@@ -161,7 +164,10 @@ class ZonesExportTest(BaseZoneExportsTest):
                 zone_export['id'], listed_export_ids))
 
         # Test RBAC with x-auth-sudo-project-id header
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZoneExportsClient', 'show_zone_export', expected_allowed, True,

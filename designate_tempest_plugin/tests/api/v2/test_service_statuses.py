@@ -73,7 +73,10 @@ class ServiceStatusAdmin(base.BaseDnsV2Test):
             "services: {}".format(services_statuses_tup))
 
         # Test RBAC
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ServiceClient', 'list_statuses', expected_allowed, False)

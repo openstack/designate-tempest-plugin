@@ -98,7 +98,10 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         LOG.info('Ensure the fetched response matches the created blacklist')
         self.assertExpected(blacklist, body, self.excluded_keys)
 
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'BlacklistsClient', 'show_blacklist', expected_allowed, False,
@@ -135,7 +138,10 @@ class BlacklistsAdminTest(BaseBlacklistsTest):
         # TODO(pglass): Assert that the created blacklist is in the response
         self.assertGreater(len(body['blacklists']), 0)
 
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'BlacklistsClient', 'list_blacklists',

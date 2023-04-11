@@ -145,7 +145,11 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertGreater(len(body['tsigkeys']), 0)
 
         # Test RBAC
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
+
         self.check_list_IDs_RBAC_enforcement(
             'TsigkeyClient', 'list_tsigkeys', expected_allowed,
             [tsigkey['id']])
@@ -407,7 +411,10 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertExpected(tsigkey, body, self.excluded_keys)
 
         # Test RBAC
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin', 'os_system_reader']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TsigkeyClient', 'show_tsigkey', expected_allowed, True,

@@ -297,7 +297,10 @@ class RecordsetsTest(BaseRecordsetsTest):
             self.zone['id'], recordset_id)
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'RecordsetClient', 'show_recordset', expected_allowed, True,

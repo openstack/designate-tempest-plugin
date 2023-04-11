@@ -159,7 +159,10 @@ class ZonesImportTest(BaseZonesImportTest):
             zone_import['id'])
 
         # Test with x-auth-all-projects
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZoneImportsClient', 'show_zone_import', expected_allowed, False,
@@ -303,7 +306,10 @@ class ZonesImportTest(BaseZonesImportTest):
             zone_import, resp_body['imports'][0], self.excluded_keys)
 
         # Test with x-auth-sudo-project-id header
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZoneImportsClient', 'show_zone_import', expected_allowed, False,

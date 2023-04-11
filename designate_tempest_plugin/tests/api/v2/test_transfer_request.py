@@ -169,7 +169,10 @@ class TransferRequestTest(BaseTransferRequestTest):
             True, transfer_request['id'])
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        expected_allowed = ['os_admin', 'os_system_admin']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_system_admin']
+        else:
+            expected_allowed = ['os_admin', 'os_system_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferRequestClient', 'show_transfer_request', expected_allowed,
@@ -240,8 +243,12 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.assertExpected(transfer_request, body, excluded_keys)
 
         # Test RBAC when a transfer target project is specified.
-        expected_allowed = ['os_primary', 'os_alt', 'os_admin',
-                            'os_system_admin', 'os_project_member']
+        if CONF.enforce_scope.designate:
+            expected_allowed = ['os_primary', 'os_alt',
+                                'os_system_admin', 'os_project_member']
+        else:
+            expected_allowed = ['os_primary', 'os_alt', 'os_admin',
+                                'os_system_admin', 'os_project_member']
 
         self.check_list_show_RBAC_enforcement(
             'TransferRequestClient', 'show_transfer_request', expected_allowed,
