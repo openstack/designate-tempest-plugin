@@ -13,6 +13,7 @@
 # under the License.
 import random
 from oslo_log import log as logging
+from oslo_utils import versionutils
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
@@ -375,3 +376,186 @@ class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
                 self.admin_zones_client, zone['id'],
                 headers=sudo_header,
                 ignore_errors=lib_exc.NotFound)
+
+
+class SharedZonesQuotaTest(base.BaseDnsV2Test):
+    credentials = ['primary', 'admin', 'system_admin']
+
+    @classmethod
+    def setup_clients(cls):
+        super(SharedZonesQuotaTest, cls).setup_clients()
+        if CONF.enforce_scope.designate:
+            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
+            cls.adm_project_client = cls.os_system_admin.projects_client
+            cls.adm_quota_client = cls.os_system_admin.dns_v2.QuotasClient()
+            cls.adm_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
+            cls.adm_shr_client = cls.os_system_admin.dns_v2.SharedZonesClient()
+        else:
+            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+            cls.adm_project_client = cls.os_admin.projects_client
+            cls.adm_quota_client = cls.os_admin.dns_v2.QuotasClient()
+            cls.adm_zone_client = cls.os_admin.dns_v2.ZonesClient()
+            cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
+        cls.share_zone_client = cls.os_primary.dns_v2.SharedZonesClient()
+        cls.rec_client = cls.os_primary.dns_v2.RecordsetClient()
+        cls.export_zone_client = cls.os_primary.dns_v2.ZoneExportsClient()
+
+    @classmethod
+    def resource_setup(cls):
+        super(SharedZonesQuotaTest, cls).resource_setup()
+
+        if not versionutils.is_compatible('2.1', cls.api_version,
+                                          same_major=False):
+            raise cls.skipException(
+                'The shared zones scenario tests require Designate API '
+                'version 2.1 or newer. Skipping Shared Zones scenario tests.')
+
+        # Make sure we have an allowed TLD available
+        tld_name = dns_data_utils.rand_zone_name(name='SharedZonesTest')
+        cls.tld_name = f'.{tld_name}'
+        cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
+        super(SharedZonesQuotaTest, cls).resource_cleanup()
+
+    def _create_shared_zone_for_project(
+            self, zone_name, project_id, sudo_header):
+        """Admin creates Zone for project ID and shares it with Primary"""
+        zone_name = dns_data_utils.rand_zone_name(
+            name=zone_name,
+            suffix=self.tld_name)
+        zone = self.adm_zone_client.create_zone(
+            name=zone_name, project_id=project_id, wait_until=const.ACTIVE)[1]
+        self.addCleanup(
+            self.wait_zone_delete, self.adm_zone_client, zone['id'],
+            headers=sudo_header, delete_shares=True)
+        shared_zone = self.adm_shr_client.create_zone_share(
+            zone['id'], self.rec_client.project_id,
+            headers=sudo_header)[1]
+        self.addCleanup(self.adm_shr_client.delete_zone_share,
+                        zone['id'], shared_zone['id'], headers=sudo_header)
+        return zone, shared_zone
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('31968688-c0d3-11ed-b04f-201e8823901f')
+    @decorators.skip_because(bug="1992445")
+    def test_zone_recordsets_enforced_against_owner(self):
+
+        # Create a dedicated Project "A" for shared zone test
+        tenant_id = self.adm_project_client.create_project(
+            name=data_utils.rand_name(
+                name='SharedZonesQuotaTest'))['project']['id']
+        self.addCleanup(self.adm_project_client.delete_project, tenant_id)
+
+        # Set Quotas "zone_recordsets:1" for a project "A"
+        sudo_header = {'x-auth-sudo-project-id': tenant_id}
+        quotas = {
+            'zones': 7, 'zone_recordsets': 1, 'zone_records': 7,
+            'recordset_records': 7, 'api_export_size': 7}
+        self.adm_quota_client.set_quotas(
+            project_id=tenant_id, quotas=quotas,
+            headers=sudo_header)
+
+        # Admin creates a zone for project "A" and shares it Primary
+        zone = self._create_shared_zone_for_project(
+            zone_name='test_zone_recordsets_enforced_against_owner',
+            project_id=tenant_id, sudo_header=sudo_header)[0]
+
+        # Primary creates a first recodset - should PASS
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        recordset = self.rec_client.create_recordset(
+            zone['id'], recordset_data)[1]
+        self.addCleanup(self.wait_recordset_delete, self.rec_client,
+            zone['id'], recordset['id'], ignore_errors=lib_exc.NotFound)
+
+        # Primary creates a second recodset - should FAIL
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        with self.assertRaisesDns(
+                lib_exc.OverLimit, 'over_quota', 413):
+            self.rec_client.create_recordset(zone['id'], recordset_data)
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('cbb8d6b4-c64e-11ed-80d8-201e8823901f')
+    def test_zone_recocrds_enforced_against_owner(self):
+
+        # Create a dedicated Project "A" for shared zone test
+        tenant_id = self.adm_project_client.create_project(
+            name=data_utils.rand_name(
+                name='SharedZonesQuotaTest'))['project']['id']
+        self.addCleanup(self.adm_project_client.delete_project, tenant_id)
+
+        # Set Quotas "zone_records:1" for a project "A"
+        sudo_header = {'x-auth-sudo-project-id': tenant_id}
+        quotas = {
+            'zones': 7, 'zone_recordsets': 7, 'zone_records': 1,
+            'recordset_records': 7, 'api_export_size': 7}
+        self.adm_quota_client.set_quotas(
+            project_id=tenant_id, quotas=quotas,
+            headers=sudo_header)
+
+        # Admin creates a zone for project "A" and share it with Primary
+        zone = self._create_shared_zone_for_project(
+            zone_name='test_zone_recocrds_enforced_against_owner',
+            project_id=tenant_id, sudo_header=sudo_header)[0]
+
+        # Primary creates recordset with (single record) --> Should PASS
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        body = self.rec_client.create_recordset(
+            zone['id'], recordset_data)[1]
+        self.addCleanup(
+            self.wait_recordset_delete, self.rec_client,
+            zone['id'], body['id'])
+
+        # Primary creates one more recordset (single record) --> Should FAIL
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        with self.assertRaisesDns(
+                lib_exc.OverLimit, 'over_quota', 413):
+            self.rec_client.create_recordset(
+                zone['id'], recordset_data)
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('40b436f0-c895-11ed-8900-201e8823901f')
+    def test_recordset_records_enforced_against_owner(self):
+
+        # Create a dedicated Project "A" for shared zone test
+        tenant_id = self.adm_project_client.create_project(
+            name=data_utils.rand_name(
+                name='SharedZonesQuotaTest'))['project']['id']
+        self.addCleanup(self.adm_project_client.delete_project, tenant_id)
+
+        # Set Quotas "zone_records:1" for a project "A"
+        sudo_header = {'x-auth-sudo-project-id': tenant_id}
+        quotas = {
+            'zones': 7, 'zone_recordsets': 7, 'zone_records': 7,
+            'recordset_records': 1, 'api_export_size': 7}
+        self.adm_quota_client.set_quotas(
+            project_id=tenant_id, quotas=quotas,
+            headers=sudo_header)
+
+        # Admin creates a zone for project "A" and share it with Primary
+        zone = self._create_shared_zone_for_project(
+            zone_name='test_recordset_records_enforced_against_owner',
+            project_id=tenant_id, sudo_header=sudo_header)[0]
+
+        # Primary creates recordset with (single record) --> Should PASS
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        body = self.rec_client.create_recordset(
+            zone['id'], recordset_data)[1]
+        self.addCleanup(
+            self.wait_recordset_delete, self.rec_client,
+            zone['id'], body['id'])
+
+        # Primary creates one more recordset (two records) --> Should FAIL
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'], number_of_records=2)
+        with self.assertRaisesDns(
+                lib_exc.OverLimit, 'over_quota', 413):
+            self.rec_client.create_recordset(
+                zone['id'], recordset_data)

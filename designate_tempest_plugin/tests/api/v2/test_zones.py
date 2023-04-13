@@ -11,7 +11,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import uuid
 from oslo_log import log as logging
 from oslo_utils import versionutils
 from tempest import config
@@ -254,7 +253,7 @@ class ZonesTest(BaseZonesTest):
 
         LOG.info('Delete the zone using delete-shares')
         body = self.zones_client.delete_zone(
-            zone['id'], headers={'x-designate-delete-shares': True})[1]
+            zone['id'], delete_shares=True)[1]
 
         LOG.info('Ensure we respond with DELETE+PENDING')
         self.assertEqual(const.DELETE, body['action'])
@@ -685,7 +684,7 @@ class ZonesNegativeTest(BaseZonesTest):
     def test_show_not_existing_zone(self):
         LOG.info('Fetch non existing zone')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.zones_client.show_zone(uuid.uuid1()))
+            lambda: self.zones_client.show_zone(data_utils.rand_uuid()))
 
     @decorators.idempotent_id('736e3b50-92e0-11eb-9d02-74e5f9e2a801')
     def test_use_invalid_id_to_show_zone(self):
@@ -697,14 +696,15 @@ class ZonesNegativeTest(BaseZonesTest):
     def test_delete_non_existing_zone(self):
         LOG.info('Delete non existing zone')
         self.assertRaises(lib_exc.NotFound,
-            lambda: self.zones_client.delete_zone(uuid.uuid1()))
+            lambda: self.zones_client.delete_zone(data_utils.rand_uuid()))
 
     @decorators.idempotent_id('e391e30a-92e0-11eb-9d02-74e5f9e2a801')
     def test_update_non_existing_zone(self):
         LOG.info('Update non existing zone')
         self.assertRaises(lib_exc.NotFound,
             lambda: self.zones_client.update_zone(
-                uuid.uuid1(), description=data_utils.rand_name()))
+                data_utils.rand_uuid(),
+                description=data_utils.rand_name()))
 
     @decorators.idempotent_id('925192f2-0ed8-4591-8fe7-a9fa028f90a0')
     def test_list_zones_dot_json_fails(self):
