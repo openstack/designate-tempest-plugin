@@ -12,12 +12,13 @@
 
 import time
 
+import ddt
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
-import ddt
+import testtools
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
@@ -124,10 +125,10 @@ class RecordsetsTest(base.BaseDnsV2Test):
                           lambda: self.recordset_client.show_recordset(
                               self.zone['id'], recordset['id']))
 
-    @decorators.attr(type='slow')
-    @decorators.idempotent_id('cbf756b0-ba64-11ec-93d4-201e8823901f')
-    @ddt.file_data("recordset_data.json")
-    def test_update_records_propagated_to_backends(self, name, type, records):
+    @testtools.skipUnless(
+        config.CONF.dns.nameservers,
+        "Config option dns.nameservers is missing or empty")
+    def _test_update_records_propagated_to_backends(self, name, type, records):
         if name:
             recordset_name = name + "." + self.zone['name']
         else:
@@ -171,3 +172,98 @@ class RecordsetsTest(base.BaseDnsV2Test):
                         ' detected on Nameserver:{} within a timeout of:{}'
                         ' seconds.'.format(
                             updated_ttl, ns, config.CONF.dns.build_timeout))
+
+    # These tests were unrolled from DDT to allow accurate tracking by
+    # idempotent_id's. The naming convention for the tests has been preserved.
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('cbf756b0-ba64-11ec-93d4-201e8823901f')
+    def test_update_records_propagated_to_backends_01_A(self):
+        self._test_update_records_propagated_to_backends(
+            "www", "A", ["192.0.2.1", "192.0.2.2", "192.0.2.3"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('258f7f57-9a74-4e72-bbfb-c709c411af14')
+    def test_update_records_propagated_to_backends_02_AAAA(self):
+        self._test_update_records_propagated_to_backends(
+            "www", "AAAA", ["2001:db8::1", "2001:db8::1", "2001:db8::"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('304adbc5-668a-457e-9496-8efd20b8ae82')
+    def test_update_records_propagated_to_backends_03_SRV_TCP(self):
+        self._test_update_records_propagated_to_backends(
+            "_sip._tcp", "SRV", ["10 60 5060 server1.example.com.",
+                                 "20 60 5060 server2.example.com.",
+                                 "20 30 5060 server3.example.com."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('bd1283b3-423c-4bb9-8c4f-a205f31f1c2d')
+    def test_update_records_propagated_to_backends_04_SRV_UDP(self):
+        self._test_update_records_propagated_to_backends(
+            "_sip._udp", "SRV", ["10 60 5060 server1.example.com.",
+                                 "10 60 5060 server2.example.com.",
+                                 "20 30 5060 server3.example.com."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('8b53ae20-d096-4651-a6cf-efd7c98ae8d1')
+    def test_update_records_propagated_to_backends_05_CNAME(self):
+        self._test_update_records_propagated_to_backends(
+            "alias-of-target", "CNAME", ["target.example.org."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('0fd0046a-ac5a-468d-94b3-8a6bde790589')
+    def test_update_records_propagated_to_backends_06_MX_at_APEX(self):
+        self._test_update_records_propagated_to_backends(
+            None, "MX", ["10 mail1.example.org.",
+                         "20 mail2.example.org."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('31176def-3f95-459d-8bdd-b9994335b2d9')
+    def test_update_records_propagated_to_backends_07_MX_under_APEX(self):
+        self._test_update_records_propagated_to_backends(
+            "under", "MX", ["10 mail.example.org."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('0009d787-c590-4149-9f30-082195326fad')
+    def test_update_records_propagated_to_backends_08_SSHFP(self):
+        self._test_update_records_propagated_to_backends(
+            "www", "SSHFP", ["2 1 123456789abcdef67890123456789abcdef67890"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('af7cec16-dfad-4071-aa05-cafa60bf12a5')
+    def test_update_records_propagated_to_backends_09_TXT(self):
+        self._test_update_records_propagated_to_backends(
+            "www", "TXT", ["\"Any Old Text Goes Here\""])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('b3fd1f77-c318-4ab0-b18d-34611e51e9e4')
+    def test_update_records_propagated_to_backends_10_SPF(self):
+        self._test_update_records_propagated_to_backends(
+            "*.sub", "SPF", ["\"v=spf1; a -all\""])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('c310b94b-f3a5-4d26-bab6-2529e6f29fbf')
+    def test_update_records_propagated_to_backends_11_PTR_IPV4(self):
+        self._test_update_records_propagated_to_backends(
+            "PTR_Record_IPV4", "PTR", ["34.216.184.93.in-addr.arpa."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('3e31e406-621f-4f89-b401-b6f38aa63347')
+    def test_update_records_propagated_to_backends_12_PTR_IPV6(self):
+        self._test_update_records_propagated_to_backends(
+            "PTR_Record_IPV6", "PTR",
+            ["6.4.9.1.8.c.5.2.3.9.8.1.8.4.2.0.1.0.0.0.0.2.2.0.0.0.8.2.6.0.6.2"
+             ".ip6.arpa."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('6fd96280-fb62-4eaf-81f9-609cdb7c126e')
+    def test_update_records_propagated_to_backends_13_CAA_Record(self):
+        self._test_update_records_propagated_to_backends(
+            "CAA_Record", "CAA", ["0 issue letsencrypt.org"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('45a11efe-bee3-4896-ab7c-daee1cb5eb3a')
+    def test_update_records_propagated_to_backends_14_NAPTR_Record(self):
+        self._test_update_records_propagated_to_backends(
+            "NAPTR_Record", "NAPTR",
+            ["0 0 S SIP+D2U !^.*$!sip:customer-service@example.com! "
+             "_sip._udp.example.com."])
