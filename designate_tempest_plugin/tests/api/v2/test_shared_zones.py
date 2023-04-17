@@ -301,19 +301,30 @@ class AdminSharedZonesTest(BaseSharedZoneTest):
     @decorators.idempotent_id('2bb7bcb2-b824-11ed-9e56-201e8823901f')
     def test_create_zone_share_all_projects_header(self):
         LOG.info(
-            'Admin user creates shared zone for Alt tenant'
-            ' using "x-auth-all-projects" header')
-        all_projects_header = self.all_projects_header
+            'Admin user creates shared zone for Alt tenant '
+            'using "x-auth-all-projects" header')
+        # Scoped tokens do not have a project ID, work around that here
+        if CONF.enforce_scope.designate:
+            headers = self.all_projects_header.copy()
+            headers.update(
+                {'x-auth-sudo-project-id': self.share_zone_client.project_id})
+        else:
+            headers = self.all_projects_header
+
         shared_zone = self.adm_shr_client.create_zone_share(
             self.zone['id'], self.alt_zone_client.project_id,
-            headers=all_projects_header)[1]
+            headers=headers)[1]
         self.addCleanup(
             self.adm_shr_client.delete_zone_share, self.zone['id'],
-            shared_zone['id'], headers=all_projects_header)
+            shared_zone['id'], headers=self.all_projects_header)
         self.assertTrue(uuidutils.is_uuid_like(shared_zone['id']))
         self.assertEqual(self.zone['id'], shared_zone['zone_id'])
-        self.assertEqual(self.adm_shr_client.project_id,
-                         shared_zone['project_id'])
+        if CONF.enforce_scope.designate:
+            self.assertEqual(self.share_zone_client.project_id,
+                             shared_zone['project_id'])
+        else:
+            self.assertEqual(self.adm_shr_client.project_id,
+                             shared_zone['project_id'])
         self.assertEqual(self.alt_zone_client.project_id,
                          shared_zone['target_project_id'])
         self.assertIsNotNone(shared_zone['created_at'])
@@ -348,17 +359,25 @@ class AdminSharedZonesTest(BaseSharedZoneTest):
         LOG.info(
             'Admin user creates shared zone for Alt tenant'
             ' using "x-auth-all-projects" header')
-        all_projects_header = self.all_projects_header
+        # Scoped tokens do not have a project ID, work around that here
+        if CONF.enforce_scope.designate:
+            headers = self.all_projects_header.copy()
+            headers.update(
+                {'x-auth-sudo-project-id': self.share_zone_client.project_id})
+        else:
+            headers = self.all_projects_header
+
         shared_zone = self.adm_shr_client.create_zone_share(
             self.zone['id'], self.alt_zone_client.project_id,
-            headers=all_projects_header)[1]
+            headers=headers)[1]
         self.addCleanup(
             self.adm_shr_client.delete_zone_share, self.zone['id'],
-            shared_zone['id'], headers=all_projects_header)
+            shared_zone['id'], headers=self.all_projects_header)
 
         LOG.info('Admin user shows shared zone and validates its content')
         body = self.adm_shr_client.show_zone_share(
-            self.zone['id'], shared_zone['id'], headers=all_projects_header)[1]
+            self.zone['id'], shared_zone['id'],
+            headers=self.all_projects_header)[1]
         self.assertExpected(shared_zone, body, self.excluded_keys)
 
     @decorators.idempotent_id('46f7db22-b90c-11ed-b4ca-201e8823901f')
@@ -388,27 +407,34 @@ class AdminSharedZonesTest(BaseSharedZoneTest):
         LOG.info(
             "Admin user shares Primary's zone with Alt tenant"
             " using 'x-auth-all-projects' header")
-        all_projects_header = self.all_projects_header
+        # Scoped tokens do not have a project ID, work around that here
+        if CONF.enforce_scope.designate:
+            headers = self.all_projects_header.copy()
+            headers.update(
+                {'x-auth-sudo-project-id': self.share_zone_client.project_id})
+        else:
+            headers = self.all_projects_header
+
         shared_zone = self.adm_shr_client.create_zone_share(
             self.zone['id'], self.alt_zone_client.project_id,
-            headers=all_projects_header)[1]
+            headers=headers)[1]
         self.addCleanup(
             self.adm_shr_client.delete_zone_share, self.zone['id'],
-            shared_zone['id'], headers=all_projects_header)
+            shared_zone['id'], headers=self.all_projects_header)
 
         LOG.info(
             "Admin user shares Primary's zone with Demo tenant"
             " using 'x-auth-all-projects' header")
         shared_zone = self.adm_shr_client.create_zone_share(
             self.zone['id'], self.demo_zone_client.project_id,
-            headers=all_projects_header)[1]
+            headers=headers)[1]
         self.addCleanup(
             self.adm_shr_client.delete_zone_share, self.zone['id'],
-            shared_zone['id'], headers=all_projects_header)
+            shared_zone['id'], headers=self.all_projects_header)
 
         LOG.info('Admin user lists zone shares')
         body = self.adm_shr_client.list_zone_shares(
-            self.zone['id'], headers=all_projects_header)[1]
+            self.zone['id'], headers=self.all_projects_header)[1]
 
         self.assertEqual(2, len(body['shared_zones']))
         targets = []
