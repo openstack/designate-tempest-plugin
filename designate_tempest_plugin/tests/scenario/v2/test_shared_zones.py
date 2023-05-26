@@ -357,7 +357,7 @@ class SharedZonesTestNegative(base.BaseDnsV2Test):
         zone = self._create_shared_zone(
             'test_alt_create_export_for_shared_zone')[0]
         self.assertRaises(
-            lib_exc.NotFound,
+            lib_exc.Forbidden,
             self.alt_export_client.create_zone_export, zone['id'])
 
     @decorators.attr(type='slow')
@@ -414,7 +414,7 @@ class SharedZonesTestNegative(base.BaseDnsV2Test):
         zone = self._create_shared_zone(
             'test_alt_shows_shared_zones_nameservers')[0]
         self.assertRaises(
-            lib_exc.NotFound,
+            lib_exc.Forbidden,
             self.alt_zone_client.show_zone_nameservers, zone['id'])
 
     @decorators.attr(type='slow')
@@ -425,7 +425,7 @@ class SharedZonesTestNegative(base.BaseDnsV2Test):
             'test_alt_transfers_shared_zone')[0]
         # Alt creates a zone transfer_request
         self.assertRaises(
-            lib_exc.NotFound,
+            lib_exc.Forbidden,
             self.alt_transfer_client.create_transfer_request, zone['id'])
 
     @decorators.attr(type='slow')

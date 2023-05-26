@@ -215,32 +215,9 @@ class NegativeSharedZonesTest(BaseSharedZoneTest):
                         self.zone['id'], shared_zone['id'])
 
         LOG.info('Ensure target project cannot delete zone')
-        self.assertRaises(lib_exc.NotFound,
+        self.assertRaises(lib_exc.Forbidden,
                           self.alt_zone_client.delete_zone,
                           self.zone['id'])
-
-    @decorators.idempotent_id('5c5e8551-1398-447d-a490-9cf1b16de129')
-    def test_target_project_cannot_show_zone(self):
-        shared_zone = self.share_zone_client.create_zone_share(
-            self.zone['id'], self.alt_zone_client.project_id)[1]
-        self.addCleanup(self.share_zone_client.delete_zone_share,
-                        self.zone['id'], shared_zone['id'])
-
-        LOG.info('Ensure target project cannot show zone')
-        self.assertRaises(lib_exc.NotFound,
-                          self.alt_zone_client.show_zone,
-                          self.zone['id'])
-
-    @decorators.idempotent_id('ab9bf257-ea5d-4362-973e-767055a316dd')
-    def test_target_project_cannot_list_zone(self):
-        shared_zone = self.share_zone_client.create_zone_share(
-            self.zone['id'], self.alt_zone_client.project_id)[1]
-        self.addCleanup(self.share_zone_client.delete_zone_share,
-                        self.zone['id'], shared_zone['id'])
-
-        LOG.info('Ensure target project cannot see the zone in list zones')
-        body = self.alt_zone_client.list_zones()[1]
-        self.assertEqual([], body['zones'])
 
     @decorators.idempotent_id('f4354b5c-8dbb-4bb9-8025-f65f8f2b21fb')
     def test_target_project_cannot_update_zone(self):
@@ -250,7 +227,7 @@ class NegativeSharedZonesTest(BaseSharedZoneTest):
                         self.zone['id'], shared_zone['id'])
 
         LOG.info('Ensure target project cannot update the zone')
-        self.assertRaises(lib_exc.NotFound,
+        self.assertRaises(lib_exc.Forbidden,
                           self.alt_zone_client.update_zone,
                           self.zone['id'], ttl=5)
 
@@ -263,7 +240,7 @@ class NegativeSharedZonesTest(BaseSharedZoneTest):
 
         LOG.info('Ensure target project cannot share shared zone')
         self.assertRaises(
-            lib_exc.NotFound,
+            lib_exc.Forbidden,
             self.alt_share_zone_client.create_zone_share,
             self.zone['id'],
             self.demo_zone_client.project_id)

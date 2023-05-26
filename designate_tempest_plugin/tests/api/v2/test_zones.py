@@ -183,6 +183,35 @@ class ZonesTest(BaseZonesTest):
             'ZonesClient', 'show_zone', expected_allowed, False, zone['id'],
             headers={'x-auth-sudo-project-id': self.zones_client.project_id})
 
+    @decorators.idempotent_id('81bff0fb-a5d1-4c64-84db-56ca751c17fc')
+    def test_show_shared_zone(self):
+        if not versionutils.is_compatible('2.1', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'Zone share tests require Designate API version 2.1 or newer. '
+                'Skipping test_show_shared_zone test.')
+
+        LOG.info('Create a zone')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="show_shared_zone", suffix=self.tld_name)
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
+
+        LOG.info('Share the zone with alt')
+        shared_zone = self.share_zone_client.create_zone_share(
+            zone['id'], self.alt_zone_client.project_id)[1]
+        self.addCleanup(self.share_zone_client.delete_zone_share,
+                        zone['id'], shared_zone['id'])
+
+        LOG.info('Fetch the zone as alt')
+        body = self.alt_zone_client.show_zone(zone['id'])[1]
+
+        # Account for the zone now being shared
+        zone['shared'] = True
+
+        LOG.info('Ensure the fetched response matches the created zone')
+        self.assertExpected(zone, body, self.excluded_keys)
+
     @decorators.attr(type='smoke')
     @decorators.idempotent_id('a4791906-6cd6-4d27-9f15-32273db8bb3d')
     def test_delete_zone(self):
@@ -274,7 +303,7 @@ class ZonesTest(BaseZonesTest):
         LOG.info('List zones')
         body = self.zones_client.list_zones()[1]
 
-        # TODO(kiall): We really want to assert that out newly created zone is
+        # TODO(kiall): We really want to assert that our newly created zone is
         #              present in the response.
         self.assertGreater(len(body['zones']), 0)
 
@@ -306,6 +335,48 @@ class ZonesTest(BaseZonesTest):
         self.check_list_IDs_RBAC_enforcement(
             'ZonesClient', 'list_zones', expected_allowed, [zone['id']],
             headers={'x-auth-sudo-project-id': self.zones_client.project_id})
+
+    @decorators.idempotent_id('ad2eed2f-6335-4bc0-87b2-7df7fc4cd82d')
+    def test_list_shared_zone(self):
+        if not versionutils.is_compatible('2.1', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'Zone share tests require Designate API version 2.1 or newer. '
+                'Skipping test_list_shared_zone test.')
+
+        LOG.info('Create zone 1')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="list_shared_zone_1", suffix=self.tld_name)
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'])
+
+        LOG.info('Create zone 2')
+        zone_2_name = dns_data_utils.rand_zone_name(
+            name="list_shared_zone_2", suffix=self.tld_name)
+        zone_2 = self.zones_client.create_zone(name=zone_2_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone_2['id'])
+
+        LOG.info('Share zone 2 with alt')
+        shared_zone = self.share_zone_client.create_zone_share(
+            zone_2['id'], self.alt_zone_client.project_id)[1]
+        self.addCleanup(self.share_zone_client.delete_zone_share,
+                        zone_2['id'], shared_zone['id'])
+
+        LOG.info('List zones')
+        body = self.zones_client.list_zones()[1]
+
+        # Check that primary can see all of the zones
+        zone_ids = [item['id'] for item in body['zones']]
+        self.assertIn(zone['id'], zone_ids)
+        self.assertIn(zone_2['id'], zone_ids)
+
+        LOG.info('List zones as alt')
+        body = self.alt_zone_client.list_zones()[1]
+
+        # Make sure alt can only see the zone that was shared with alt
+        zone_ids = [item['id'] for item in body['zones']]
+        self.assertNotIn(zone['id'], zone_ids)
+        self.assertIn(zone_2['id'], zone_ids)
 
     @decorators.idempotent_id('123f51cb-19d5-48a9-aacc-476742c02141')
     def test_update_zone(self):
