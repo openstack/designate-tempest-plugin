@@ -15,6 +15,7 @@ import dns
 import dns.exception
 import dns.query
 from tempest import config
+from oslo_utils import netutils
 
 CONF = config.CONF
 
@@ -78,7 +79,7 @@ class Nameserver(object):
 
     @classmethod
     def from_str(self, nameserver):
-        if ':' in nameserver:
-            ip, port = nameserver.rsplit(':', 1)
-            return Nameserver(ip, int(port))
+        ip, port = netutils.parse_host_port(nameserver)
+        if port:
+            return Nameserver(ip, port)
         return Nameserver(nameserver)
