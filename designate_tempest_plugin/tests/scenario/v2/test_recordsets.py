@@ -12,7 +12,6 @@
 
 import time
 
-import ddt
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib.common.utils import test_utils
@@ -32,7 +31,6 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-@ddt.ddt
 class RecordsetsTest(base.BaseDnsV2Test):
 
     credentials = ["admin", "system_admin", "primary"]
@@ -80,11 +78,8 @@ class RecordsetsTest(base.BaseDnsV2Test):
         cls.admin_tld_client.delete_tld(cls.class_tld[1]['id'])
         super(RecordsetsTest, cls).resource_cleanup()
 
-    @decorators.attr(type='slow')
-    @decorators.idempotent_id('4664ed66-9ff1-45f2-9e60-d4913195c505')
-    @ddt.file_data("recordset_data.json")
-    def test_create_and_delete_records_on_existing_zone(self, name,
-                                                        type, records):
+    def _test_create_and_delete_records_on_existing_zone(
+            self, name, type, records):
         if name is not None:
             recordset_name = name + "." + self.zone['name']
 
@@ -124,6 +119,99 @@ class RecordsetsTest(base.BaseDnsV2Test):
         self.assertRaises(lib_exc.NotFound,
                           lambda: self.recordset_client.show_recordset(
                               self.zone['id'], recordset['id']))
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('4664ed66-9ff1-45f2-9e60-d4913195c505')
+    def test_create_and_delete_records_on_existing_zone_01_A(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "www", "A", ["192.0.2.1", "192.0.2.2", "192.0.2.3"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('cecd9f20-0b62-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_02_AAAA(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "www", "AAAA", ["2001:db8::1", "2001:db8::1", "2001:db8::"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('f5368d7a-0b62-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_03_SRV(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "_sip._tcp", "SRV", ["10 60 5060 server1.example.com.",
+                    "20 60 5060 server2.example.com.",
+                    "20 30 5060 server3.example.com."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('74ff9efc-0b63-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_04_SRV(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "_sip._udp", "SRV", ["10 60 5060 server1.example.com.",
+                    "10 60 5060 server2.example.com.",
+                    "20 30 5060 server3.example.com."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('82a14a2e-0b63-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_05_CNAME(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "alias-of-target", "CNAME", ["target.example.org."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('ae7a295e-0b63-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_06_MX(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            None, "MX", ["10 mail1.example.org.",
+                    "20 mail2.example.org."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('f9aa8512-0b64-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_07_MX(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "under", "MX", ["10 mail.example.org."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('fa6cbd12-0b64-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_08_SSHFP(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "www", "SSHFP", ["2 1 123456789abcdef67890123456789abcdef67890"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('fa124a1c-0b64-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_09_TXT(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "www", "TXT", ["\"Any Old Text Goes Here\""])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('3e347c28-0b66-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_10_SPF(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "*.sub", "SPF", ["\"v=spf1; a -all\""])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('88f6c2ac-0b66-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_11_PTR(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "PTR_Record_IPV4", "PTR", ["34.216.184.93.in-addr.arpa."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('b9591eea-0b66-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_12_PTR(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "PTR_Record_IPV6", "PTR",
+            ["6.4.9.1.8.c.5.2.3.9.8.1.8.4.2.0.1.0.0.0.0.2.2.0.0.0.8"
+             ".2.6.0.6.2.ip6.arpa."])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('c98cd9b4-0b66-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_13_CAA(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "CAA_Record", "CAA", ["0 issue letsencrypt.org"])
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('f78d6e8c-0b66-11ee-bbcc-201e8823901f')
+    def test_create_and_delete_records_on_existing_zone_14_NAPTR(self):
+        self._test_create_and_delete_records_on_existing_zone(
+            "NAPTR_Record", "NAPTR",
+            ["0 0 S SIP+D2U !^.*$!sip:customer-service@example"
+             ".com! _sip._udp.example.com."])
 
     @testtools.skipUnless(
         config.CONF.dns.nameservers,
