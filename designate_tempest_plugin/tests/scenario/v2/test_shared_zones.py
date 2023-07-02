@@ -294,6 +294,76 @@ class SharedZonesTest(base.BaseDnsV2Test):
         self.addCleanup(self.share_zone_client.delete_zone_share,
                         zone_id, shared_zone['id'])
 
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('c5d83684-18cb-11ee-a872-201e8823901f')
+    def test_list_zones_shared_with_more_then_two_projects(self):
+        # Create a zone to share with the alt credentialzones_client
+        zone_name = dns_data_utils.rand_zone_name(name='TestZone',
+                                                  suffix=self.tld_name)
+        LOG.info('Create a zone: %s', zone_name)
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        zone_id = zone['id']
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
+                        ignore_errors=lib_exc.NotFound)
+
+        # Share the zone with the alt credential
+        shared_zone = self.share_zone_client.create_zone_share(
+            zone['id'], self.alt_rec_client.project_id)[1]
+        self.addCleanup(self.share_zone_client.delete_zone_share,
+                        zone['id'], shared_zone['id'])
+
+        # Share the zone with the demo credential
+        shared_zone = self.share_zone_client.create_zone_share(
+            zone['id'], self.demo_rec_client.project_id)[1]
+        self.addCleanup(self.share_zone_client.delete_zone_share,
+                        zone['id'], shared_zone['id'])
+
+        zones = self.zones_client.list_zones()[1]['zones']
+        zones_ids = [zone['id'] for zone in zones]
+        self.assertEqual(
+            1, zones_ids.count(zone_id),
+            'Failed, ID:{} counted in zones listed:{} must be one'.format(
+                zone_id, zones))
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('78b77c6c-18cf-11ee-a872-201e8823901f')
+    def test_create_recordset_for_zone_shared_with_two_projects(self):
+        # Create a zone to share with the alt credential
+        zone_name = dns_data_utils.rand_zone_name(name='TestZone',
+                                                  suffix=self.tld_name)
+        LOG.info('Create a zone: %s', zone_name)
+        zone = self.zones_client.create_zone(name=zone_name)[1]
+        self.addCleanup(self.wait_zone_delete, self.zones_client, zone['id'],
+                        ignore_errors=lib_exc.NotFound)
+
+        # Share the zone with the alt credential
+        shared_zone = self.share_zone_client.create_zone_share(
+            zone['id'], self.alt_rec_client.project_id)[1]
+        self.addCleanup(self.share_zone_client.delete_zone_share,
+                        zone['id'], shared_zone['id'])
+
+        # Check that the alt user can create a recordset on the shared zone
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        recordset = self.alt_rec_client.create_recordset(
+            zone['id'], recordset_data)[1]
+        self.addCleanup(self.wait_recordset_delete, self.alt_rec_client,
+            zone['id'], recordset['id'], ignore_errors=lib_exc.NotFound)
+
+        # Share the zone with the demo credential
+        shared_zone = self.share_zone_client.create_zone_share(
+            zone['id'], self.demo_rec_client.project_id)[1]
+        self.addCleanup(self.share_zone_client.delete_zone_share,
+                        zone['id'], shared_zone['id'])
+
+        # Check that the demo user can create a recordset on the shared zone
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        recordset = self.demo_rec_client.create_recordset(
+            zone['id'], recordset_data)[1]
+        self.addCleanup(self.wait_recordset_delete, self.demo_rec_client,
+            zone['id'], recordset['id'], ignore_errors=lib_exc.NotFound)
+
 
 class SharedZonesTestNegative(base.BaseDnsV2Test):
     credentials = ['primary', 'admin', 'system_admin', 'alt',
