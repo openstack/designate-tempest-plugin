@@ -16,7 +16,6 @@ from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.common.utils import data_utils
-import ddt
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
@@ -63,7 +62,6 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
         super(BaseRecordsetsTest, cls).resource_cleanup()
 
 
-@ddt.ddt
 class RecordsetsTest(BaseRecordsetsTest):
 
     credentials = ["admin", "system_admin", "system_reader", "primary", "alt",
@@ -190,9 +188,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         self._test_create_recordset_type(
             "www", "TXT", ["\"Any Old Text Goes Here\""])
 
-    @decorators.idempotent_id('69f002e5-6511-43d3-abae-7abdd45ae03e')
-    @ddt.file_data("recordset_wildcard_data.json")
-    def test_create_wildcard_recordset(self, name, type, records):
+    def _test_create_wildcard_recordset(self, name, type, records):
         if name is not None:
             recordset_name = name + "." + self.zone['name']
 
@@ -214,6 +210,56 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         LOG.info('Ensure we respond with PENDING')
         self.assertEqual(const.PENDING, body['status'])
+
+    @decorators.idempotent_id('69f002e5-6511-43d3-abae-7abdd45ae03e')
+    def test_create_wildcard_recordset_A_at_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*", "A", ["192.0.2.1", "192.0.2.2", "192.0.2.3"])
+
+    @decorators.idempotent_id('d97ee452-0dc3-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_A_under_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*.sub", "A", ["192.0.2.1", "192.0.2.2", "192.0.2.3"])
+
+    @decorators.idempotent_id('1b3c1cc0-0dc4-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_AAAA_at_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*", "AAAA", ["2001:db8::1", "2001:db8::1", "2001:db8::"])
+
+    @decorators.idempotent_id('928e735e-0dc4-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_AAAA_under_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*.sub", "AAAA", ["2001:db8::1", "2001:db8::1", "2001:db8::"])
+
+    @decorators.idempotent_id('d96138f2-0dc4-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_MX_at_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*", "MX", ["10 mail1.example.org.", "20 mail2.example.org."])
+
+    @decorators.idempotent_id('ff273c94-0dc4-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_MX_under_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*.sub", "MX", ["10 mail.example.org."])
+
+    @decorators.idempotent_id('3097f16a-0dc5-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_SPF_at_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*", "SPF", ["\"v=spf1; a -all\""])
+
+    @decorators.idempotent_id('50b3f390-0dc5-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_SPF_under_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*.sub", "SPF", ["\"v=spf1; a -all\""])
+
+    @decorators.idempotent_id('5b73981c-0dc5-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_TXT_at_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*", "TXT", ["\"Can you read me?\""])
+
+    @decorators.idempotent_id('5b73981c-0dc5-11ee-8b75-201e8823901f')
+    def test_create_wildcard_recordset_TXT_under_APEX(self):
+        self._test_create_wildcard_recordset(
+            "*.sub", "TXT", ["\"Can you read me?\""])
 
     @decorators.idempotent_id('5964f730-5546-46e6-9105-5030e9c492b2')
     def test_list_recordsets(self):
@@ -565,7 +611,6 @@ class RecordsetsTest(BaseRecordsetsTest):
             lambda: self.client.show_recordset(zone['id'], record['id']))
 
 
-@ddt.ddt
 class RecordsetsNegativeTest(BaseRecordsetsTest):
 
     credentials = ["admin", "system_admin", "primary", "alt"]
@@ -582,9 +627,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
 
-    @decorators.idempotent_id('98c94f8c-217a-4056-b996-b1f856d0753e')
-    @ddt.file_data("recordset_data_invalid.json")
-    def test_create_recordset_invalid(self, name, type, records):
+    def _test_create_recordset_invalid(self, name, type, records):
         if name is not None:
             recordset_name = name + "." + self.zone['name']
 
@@ -601,6 +644,16 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         self.assertRaises(lib_exc.BadRequest,
             lambda: self.client.create_recordset(
                 self.zone['id'], recordset_data))
+
+    @decorators.idempotent_id('98c94f8c-217a-4056-b996-b1f856d0753e')
+    def test_create_recordset_invalid_CNAME_multiple(self):
+        self._test_create_recordset_invalid(
+            'www', 'CNAME', ["target1.example.org.", "target2.example.org."])
+
+    @decorators.idempotent_id('43385ce8-0dd3-11ee-8b75-201e8823901f')
+    def test_create_recordset_invalid_CNAME_at_Apex(self):
+        self._test_create_recordset_invalid(
+            None, 'CNAME', ["target1.example.org."])
 
     @decorators.idempotent_id('b6dad57e-5ce9-4fa5-8d66-aebbcd23b4ad')
     def test_get_nonexistent_recordset(self):
