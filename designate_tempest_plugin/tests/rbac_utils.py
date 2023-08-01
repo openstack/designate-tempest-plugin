@@ -302,7 +302,7 @@ class RBACTestsMixin(test.BaseTestCase):
 
             self.assertEqual(expected_count, len(result_objs),
                              message='Credential {} saw {} objects when {} '
-                             'was expected.'.format(cred, len(result),
+                             'was expected.'.format(cred, len(result_objs),
                                                     expected_count))
 
     def check_list_IDs_RBAC_enforcement(
