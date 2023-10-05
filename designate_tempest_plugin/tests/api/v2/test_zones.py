@@ -749,7 +749,7 @@ class ZonesNegativeTest(BaseZonesTest):
         self.assertRaisesDns(
             lib_exc.BadRequest, 'invalid_object', 400,
             self.zones_client.create_zone,
-            description=dns_data_utils.rand_zone_name() * 10000)
+            description=dns_data_utils.rand_zone_name() * 100)
 
     @decorators.idempotent_id('49268b24-92de-11eb-9d02-74e5f9e2a801')
     def test_show_not_existing_zone(self):

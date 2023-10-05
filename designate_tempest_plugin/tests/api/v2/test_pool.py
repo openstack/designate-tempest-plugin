@@ -309,7 +309,7 @@ class TestPoolAdminNegative(BasePoolTest):
         LOG.info('Create a pool using a huge size string for name)')
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
             self.admin_client.create_pool(
-                pool_name=data_utils.rand_name(name="Huge_size_name") * 10000)
+                pool_name=data_utils.rand_name(name="Huge_size_name") * 100)
 
     @decorators.idempotent_id('9a787d0e-ac04-11eb-ae06-74e5f9e2a801')
     def test_create_pool_invalid_hostname_in_ns_records(self):
@@ -337,7 +337,7 @@ class TestPoolAdminNegative(BasePoolTest):
         with self.assertRaisesDns(lib_exc.BadRequest, 'invalid_object', 400):
             self.admin_client.update_pool(
                 pool['id'],
-                pool_name=data_utils.rand_name(name="Huge_size_name") * 10000,
+                pool_name=data_utils.rand_name(name="Huge_size_name") * 100,
                 headers=self.all_projects_header, extra_headers=True)
 
     @decorators.idempotent_id('2e496596-ac07-11eb-ae06-74e5f9e2a801')
