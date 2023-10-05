@@ -1,4 +1,10 @@
 - job:
+    name: designate-bind9-stable-bobcat
+    parent: designate-bind9
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2023.2
+
+- job:
     name: designate-bind9-stable-antelope
     parent: designate-bind9
     nodeset: openstack-single-node-focal
@@ -25,6 +31,7 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - designate-bind9-stable-bobcat
         - designate-bind9-stable-antelope
         - designate-bind9-stable-zed
         - designate-bind9-stable-yoga
