@@ -47,7 +47,7 @@ DnsGroup = [
                 default=[],
                 help="The nameservers to check for change going live"),
     cfg.IntOpt('query_timeout',
-               default=1,
+               default=3,
                help="The timeout on a single dns query to a nameserver"),
     cfg.StrOpt('zone_id',
                help="The target zone to test the dns recordsets "
