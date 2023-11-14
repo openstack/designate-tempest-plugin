@@ -580,19 +580,19 @@ class ZonesAdminTest(BaseZonesTest):
                  '"x-auth-sudo-project-id" HTTP header. '
                  'Expected: 403 Forbidden')
         self.assertRaises(
-            lib_exc.Forbidden, self.alt_client.show_zone, uuid=None,
+            lib_exc.Forbidden, self.alt_client.show_zone, uuid=zone['id'],
             headers={'x-auth-sudo-project-id': zone['project_id']})
 
         LOG.info('As Admin user impersonate another project '
                  '(using "x-auth-sudo-project-id" HTTP header) to show '
                  'a Primary tenant zone.')
         body = self.admin_client.show_zone(
-            uuid=None, headers={
+            uuid=zone['id'], headers={
                 'x-auth-sudo-project-id': zone['project_id']})[1]
 
         LOG.info('Ensure the fetched response matches the impersonated'
                  ' project, it means the ID of a zone "A"')
-        self.assertExpected(zone, body['zones'][0], self.excluded_keys)
+        self.assertExpected(zone, body, self.excluded_keys)
 
     @decorators.idempotent_id('e1cf7104-8b06-11eb-a861-74e5f9e2a801')
     def test_list_all_projects_zones(self):
