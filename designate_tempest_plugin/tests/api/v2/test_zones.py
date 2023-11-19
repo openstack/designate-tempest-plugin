@@ -743,6 +743,13 @@ class ZonesNegativeTest(BaseZonesTest):
                 lib_exc.BadRequest, 'invalid_object', 400,
                 self.zones_client.create_zone, ttl=ttl)
 
+    @decorators.idempotent_id('c4d4b92a-86e3-11ee-965f-201e8823901f')
+    def test_not_existing_project_id(self):
+        LOG.info('Trying to create a zone using not existing project_id')
+        self.assertRaises(
+            lib_exc.Forbidden, self.zones_client.create_zone,
+            project_id=data_utils.rand_uuid())
+
     @decorators.idempotent_id('a3b0a928-a682-11eb-9899-74e5f9e2a801')
     def test_huge_size_description(self):
         LOG.info('Trying to create a zone using huge size description')
