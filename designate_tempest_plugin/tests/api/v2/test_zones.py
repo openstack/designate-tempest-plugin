@@ -732,10 +732,10 @@ class ZonesNegativeTest(BaseZonesTest):
 
     @decorators.idempotent_id('551853c0-8593-11eb-8c8a-74e5f9e2a801')
     def test_no_valid_ttl(self):
-        no_valid_tls = ['zahlabut', -60000,
+        no_valid_ttl = ['zahlabut', -60000,
                         2147483647 + 10]  # Max valid TTL is 2147483647
 
-        for ttl in no_valid_tls:
+        for ttl in no_valid_ttl:
             LOG.info(
                 'Trying to create a zone using: {} as TTL'
                 ' value: '.format(ttl))

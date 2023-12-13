@@ -42,7 +42,7 @@ DnsGroup = [
                help="Timeout in seconds to wait for an resource to build."),
     cfg.IntOpt('min_ttl',
                default=0,
-               help="The minimum value to respect when generating ttls"),
+               help="The minimum value to respect when generating ttl"),
     cfg.ListOpt('nameservers',
                 default=[],
                 help="The nameservers to check for change going live"),
