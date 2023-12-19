@@ -13,6 +13,7 @@
 # under the License.
 from oslo_log import log as logging
 from tempest import config
+from tempest.lib.common.utils import test_utils
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
@@ -23,7 +24,7 @@ from designate_tempest_plugin.common import constants as const
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin import data_utils as dns_data_utils
 
-import tempest.test
+import tempest.api.network.base
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -41,6 +42,8 @@ class BasePtrTest(base.BaseDnsV2Test):
             cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
         else:
             cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_network_client = cls.os_admin.networks_client
+        cls.admin_subnet_client = cls.os_admin.subnets_client
 
     @classmethod
     def resource_setup(cls):
@@ -50,6 +53,26 @@ class BasePtrTest(base.BaseDnsV2Test):
         tld_name = dns_data_utils.rand_zone_name(name='BasePtrTest')
         cls.tld_name = tld_name[:-1]
         cls.class_tld = cls.admin_tld_client.create_tld(tld_name=tld_name[:-1])
+
+        # Create dedicated External network for PTRs tests
+        network_name = data_utils.rand_name('designate-tempest-fips-external')
+        cls.external_network = cls.admin_network_client.create_network(
+            name=network_name, **{'router:external': True})['network']
+        cls.addClassResourceCleanup(
+            test_utils.call_and_ignore_notfound_exc,
+            cls.admin_network_client.delete_network,
+            cls.external_network['id'])
+
+        # Create subnet for External network
+        cls.external_subnet = cls.admin_subnet_client.create_subnet(
+            network_id=cls.external_network['id'],
+            allocation_pools=[
+                {'start': '198.51.100.10', 'end': '198.51.100.200'}],
+            cidr='198.51.100.0/24', ip_version=4, enable_dhcp=False)
+        cls.addClassResourceCleanup(
+            test_utils.call_and_ignore_notfound_exc,
+            cls.admin_subnet_client.delete_subnet,
+            cls.external_subnet['subnet']['id'])
 
     @classmethod
     def resource_cleanup(cls):
@@ -97,7 +120,7 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
             tld = self.tld_name
         if not fip_id:
             fip = self.primary_floating_ip_client.create_floatingip(
-                floating_network_id=CONF.network.public_network_id)[
+                floating_network_id=self.external_network['id'])[
                 'floatingip']
             fip_id = fip['id']
             self.addCleanup(
@@ -221,7 +244,7 @@ class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
             tld = self.tld_name
         if not fip_id:
             fip = self.primary_floating_ip_client.create_floatingip(
-                floating_network_id=CONF.network.public_network_id)[
+                floating_network_id=self.external_network['id'])[
                 'floatingip']
             fip_id = fip['id']
             self.addCleanup(
