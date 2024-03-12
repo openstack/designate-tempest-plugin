@@ -16,12 +16,6 @@
     nodeset: openstack-single-node-focal
     override-checkout: stable/zed
 
-- job:
-    name: designate-bind9-stable-yoga
-    parent: designate-bind9
-    nodeset: openstack-single-node-focal
-    override-checkout: stable/yoga
-
 - project:
     templates:
       - designate-devstack-jobs
@@ -34,5 +28,4 @@
         - designate-bind9-stable-bobcat
         - designate-bind9-stable-antelope
         - designate-bind9-stable-zed
-        - designate-bind9-stable-yoga
         - neutron-tempest-plugin-designate-scenario
