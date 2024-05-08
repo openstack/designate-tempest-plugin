@@ -14,6 +14,7 @@
 
 from operator import itemgetter
 
+import testtools
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib import decorators
@@ -51,6 +52,10 @@ class PoolAdminTest(BasePoolTest):
         cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('69257f7c-b3d5-4e1b-998e-0677ad12f125')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_create_pool(self):
         pool_data = {
                       "name": "Example Pool",
@@ -79,6 +84,10 @@ class PoolAdminTest(BasePoolTest):
             project_id=pool_data["project_id"])
 
     @decorators.idempotent_id('e80eb70a-8ee5-40eb-b06e-599597a8ab7e')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_show_pool(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool(project_id="1")
@@ -106,6 +115,10 @@ class PoolAdminTest(BasePoolTest):
             headers=self.all_projects_header)
 
     @decorators.idempotent_id('d8c4c377-5d88-452d-a4d2-c004d72e1abe')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_delete_pool(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool(project_id="1")
@@ -128,6 +141,10 @@ class PoolAdminTest(BasePoolTest):
             'PoolClient', 'delete_pool', expected_allowed, False, pool['id'])
 
     @decorators.idempotent_id('77c85b40-83b2-4c17-9fbf-e6d516cfce90')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_list_pools(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool(project_id="1")
@@ -150,6 +167,10 @@ class PoolAdminTest(BasePoolTest):
             headers=self.all_projects_header)
 
     @decorators.idempotent_id('fdcc84ce-af65-4af6-a5fc-6c50acbea0f0')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_update_pool(self):
         LOG.info('Create a pool')
         _, pool = self.admin_client.create_pool(project_id="1")
@@ -302,6 +323,10 @@ class TestPoolAdminNegative(BasePoolTest):
                 ns_records=[{"hostname": "ns1.example.org.", "priority": -1}])
 
     @decorators.idempotent_id('cc378e4c-ac05-11eb-ae06-74e5f9e2a801')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     # Note: Update pool API is deprecated for removal.
     def test_update_pool_with_invalid_name(self):
         LOG.info('Create a pool')
@@ -317,6 +342,10 @@ class TestPoolAdminNegative(BasePoolTest):
                 headers=self.all_projects_header, extra_headers=True)
 
     @decorators.idempotent_id('2e496596-ac07-11eb-ae06-74e5f9e2a801')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_update_pool_with_invalid_hostname_in_ns_records(self):
         # Note: Update pool API is deprecated for removal.
         LOG.info('Create a pool')
@@ -332,6 +361,10 @@ class TestPoolAdminNegative(BasePoolTest):
                 headers=self.all_projects_header, extra_headers=True)
 
     @decorators.idempotent_id('3e934624-ac07-11eb-ae06-74e5f9e2a801')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_update_pool_with_invalid_priority_in_ns_records(self):
         # Note: Update pool API is deprecated for removal.
         LOG.info('Create a pool')

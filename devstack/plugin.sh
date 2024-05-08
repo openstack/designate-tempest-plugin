@@ -12,6 +12,10 @@ function _configure_tempest {
     if [ -n "$DESIGNATE_BIN_DIR" ]; then
         iniset $TEMPEST_CONFIG dns_feature_enabled designate_manage_path ${DESIGNATE_BIN_DIR}/designate-manage
     fi
+
+    POOLS_YAML_PATH=/etc/designate/multiple-pools.yaml
+    cp /etc/designate/pools.yaml ${POOLS_YAML_PATH}
+    sed -i 's/"pool_level": "secondary"/"pool_level": "tertiary"/' ${POOLS_YAML_PATH}
 }
 
 if [[ "$1" == "stack" ]]; then

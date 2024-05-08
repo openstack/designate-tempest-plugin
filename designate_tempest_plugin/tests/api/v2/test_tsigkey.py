@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import testtools
 from oslo_log import log as logging
 from tempest import config
 from tempest.lib.common.utils import data_utils
@@ -300,6 +300,10 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
             0, len(listed_tsigkeys), 'Failed, no tsigkey should be listed')
 
     @decorators.idempotent_id('e8bcf80a-d8b4-11eb-b95a-74e5f9e2a801')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_list_tsigkey_filter_by_scope(self):
 
         LOG.info('Create tsigkey for a pool')
@@ -348,6 +352,10 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
             'Failed, no tsigkey is expected to be listed')
 
     @decorators.idempotent_id('794554f0-d8b8-11eb-b95a-74e5f9e2a801')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     def test_list_tsigkey_filter_by_algorithm(self):
 
         LOG.info('Create tsigkey for a pool')
@@ -658,6 +666,10 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
             tsigkey_data['secret'], tsigkey_data['scope'])
 
     @decorators.idempotent_id('0dfbc2f8-d8bb-11eb-b95a-74e5f9e2a801')
+    @testtools.skipIf(CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+                      'Multipools feature is being tested with --delete '
+                      'option. It might delete pools that were created in '
+                      'other tests.')
     @decorators.skip_because(bug="1934120")
     def test_create_tsigkey_for_pool_with_scope_zone(self):
         pool = self.pool_admin_client.create_pool()[1]

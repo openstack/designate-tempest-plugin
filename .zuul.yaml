@@ -16,6 +16,18 @@
     nodeset: openstack-single-node-jammy
     override-checkout: stable/2023.2
 
+- job:
+    name: designate-multipool
+    parent: designate-base
+    nodeset: openstack-single-node-jammy
+    vars:
+      devstack_local_conf:
+        test-config:
+          "$TEMPEST_CONFIG":
+            dns_feature_enabled:
+              test_multipool_with_delete_opt: True
+      tempest_test_regex: ^designate_tempest_plugin.tests.scenario.v2.test_designate_multipool
+
 - project:
     templates:
       - designate-devstack-jobs
@@ -28,4 +40,5 @@
         - designate-bind9-stable-2024-2
         - designate-bind9-stable-2024-1
         - designate-bind9-stable-2023-2
+        - designate-multipool
         - neutron-tempest-plugin-designate-scenario

@@ -1,0 +1,61 @@
+---
+- name: other_pool2
+  id: f2e9d8c7-6b5a-4f3e-8d2c-1b7a9e4d3f2e
+  description: The first BIND9 pool of the other multipools file
+  attributes:
+    type: internal
+
+  ns_records:
+    - hostname: ns1-1.example.org.
+      priority: 1
+    - hostname: ns1-2.example.org.
+      priority: 2
+
+  nameservers:
+    - host: 192.0.2.2
+      port: 1053
+    # - host: 192.0.2.3
+    #   port: 53
+
+  targets:
+    - type: bind9
+      description: BIND9 Server 1
+      masters:
+        - host: 192.0.2.1
+          port: 5354
+      options:
+        host: 192.0.2.2
+        port: 1053
+        rndc_host: 192.0.2.2
+        rndc_port: 1953
+        rndc_key_file: /etc/designate/rndc.key
+        tsigkey_name: other-pools-pool-2
+
+- name: default
+  description: Default BIND9 Pool
+  attributes: {}
+
+  ns_records:
+    - hostname: ns1-1.example.org.
+      priority: 1
+    - hostname: ns1-2.example.org.
+      priority: 2
+
+  nameservers:
+    - host: 192.0.2.2
+      port: 53
+    # - host: 192.0.2.3
+    #   port: 53
+
+  targets:
+    - type: bind9
+      description: Default BIND9 Server
+      masters:
+        - host: 192.0.2.1
+          port: 5354
+      options:
+        host: 192.0.2.2
+        port: 53
+        rndc_host: 192.0.2.2
+        rndc_port: 953
+        rndc_key_file: /etc/designate/rndc.key

@@ -98,6 +98,11 @@ DnsFeatureGroup = [
                      'the new keystone default roles? This configuration '
                      'value should be same as designate.conf: '
                      '[oslo_policy].enforce_new_defaults option.'),
+    cfg.BoolOpt('test_multipool_with_delete_opt',
+                default=False,
+                help="Is multipool feature being tested with --delete option?"
+                     "If it is, it might delete pools that were created in "
+                     "other tests."),
 ]
 
 # Extending this enforce_scope group defined in tempest
