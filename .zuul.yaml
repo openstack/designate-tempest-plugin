@@ -1,4 +1,10 @@
 - job:
+    name: designate-bind9-stable-caracal
+    parent: designate-bind9
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2024.1
+
+- job:
     name: designate-bind9-stable-bobcat
     parent: designate-bind9
     nodeset: openstack-single-node-jammy
@@ -10,12 +16,6 @@
     nodeset: openstack-single-node-focal
     override-checkout: stable/2023.1
 
-- job:
-    name: designate-bind9-stable-zed
-    parent: designate-bind9
-    nodeset: openstack-single-node-focal
-    override-checkout: stable/zed
-
 - project:
     templates:
       - designate-devstack-jobs
@@ -25,7 +25,7 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - designate-bind9-stable-caracal
         - designate-bind9-stable-bobcat
         - designate-bind9-stable-antelope
-        - designate-bind9-stable-zed
         - neutron-tempest-plugin-designate-scenario
