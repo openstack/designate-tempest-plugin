@@ -87,6 +87,9 @@ DnsFeatureGroup = [
                 default=False,
                 help="Is https://bugs.launchpad.net/designate/+bug/1932026 "
                      "fixed"),
+    cfg.StrOpt('designate_manage_path',
+               default=None,
+               help="The designate-manage command path"),
     # Note: Also see the enforce_scope section (from tempest) for Designate API
     #       scope checking setting.
     cfg.BoolOpt('enforce_new_defaults',

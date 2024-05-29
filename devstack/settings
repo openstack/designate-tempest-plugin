@@ -1,0 +1,3 @@
+GITREPO["designate-tempest-plugin"]=${DESIGNATE_TEMPEST_REPO:-${GIT_BASE}/openstack/designate-tempest-plugin.git}
+GITDIR["designate-tempest-plugin"]=$DEST/designate-tempest-plugin
+GITBRANCH["designate-tempest-plugin"]=${DESIGNATE_TEMPEST_REF:-master}
