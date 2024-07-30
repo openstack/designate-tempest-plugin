@@ -260,8 +260,8 @@ Example:
        def test_something_else(self):
            pass
 
-@test.services
-~~~~~~~~~~~~~~
+@utils.services
+~~~~~~~~~~~~~~~
 
 The `services` decorator is used to indicate which services are exercised by
 a given test. The `services` decorator may only be used on scenario tests, and
@@ -274,7 +274,7 @@ Example:
 .. code-block:: python
 
    class ReverseTest(BaseDnsTest):
-       @test.services('network')
+       @utils.services('network')
        def test_reverse_dns_for_fips(self):
            pass
 
