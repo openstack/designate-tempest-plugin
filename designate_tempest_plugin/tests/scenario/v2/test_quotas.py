@@ -35,7 +35,7 @@ CONF = config.CONF
 
 class QuotasV2Test(base.BaseDnsV2Test):
 
-    credentials = ['primary', 'admin', 'system_admin', 'alt']
+    credentials = ['primary', 'admin', 'alt']
     test_quota_limit = 3
 
     @classmethod
@@ -56,12 +56,8 @@ class QuotasV2Test(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(QuotasV2Test, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.QuotasClient()
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
         cls.alt_client = cls.os_alt.dns_v2.QuotasClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
@@ -285,7 +281,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
 class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
 
-    credentials = ['admin', 'system_admin', 'primary']
+    credentials = ['admin', 'primary']
 
     @classmethod
     def setup_credentials(cls):
@@ -304,21 +300,12 @@ class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
     @classmethod
     def setup_clients(cls):
         super(QuotasBoundary, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-            cls.quota_client = cls.os_system_admin.dns_v2.QuotasClient()
-            cls.project_client = cls.os_system_admin.projects_client
-            cls.recordset_client = cls.os_system_admin.dns_v2.RecordsetClient()
-            cls.export_zone_client = (
-                cls.os_system_admin.dns_v2.ZoneExportsClient())
-            cls.admin_zones_client = cls.os_system_admin.dns_v2.ZonesClient()
-        else:
-            cls.quota_client = cls.os_admin.dns_v2.QuotasClient()
-            cls.project_client = cls.os_admin.projects_client
-            cls.admin_zones_client = cls.os_admin.dns_v2.ZonesClient()
-            cls.recordset_client = cls.os_admin.dns_v2.RecordsetClient()
-            cls.export_zone_client = cls.os_admin.dns_v2.ZoneExportsClient()
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.quota_client = cls.os_admin.dns_v2.QuotasClient()
+        cls.project_client = cls.os_admin.projects_client
+        cls.admin_zones_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.recordset_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.export_zone_client = cls.os_admin.dns_v2.ZoneExportsClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -379,23 +366,16 @@ class QuotasBoundary(base.BaseDnsV2Test, tempest.test.BaseTestCase):
 
 
 class SharedZonesQuotaTest(base.BaseDnsV2Test):
-    credentials = ['primary', 'admin', 'system_admin']
+    credentials = ['primary', 'admin']
 
     @classmethod
     def setup_clients(cls):
         super(SharedZonesQuotaTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-            cls.adm_project_client = cls.os_system_admin.projects_client
-            cls.adm_quota_client = cls.os_system_admin.dns_v2.QuotasClient()
-            cls.adm_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
-            cls.adm_shr_client = cls.os_system_admin.dns_v2.SharedZonesClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-            cls.adm_project_client = cls.os_admin.projects_client
-            cls.adm_quota_client = cls.os_admin.dns_v2.QuotasClient()
-            cls.adm_zone_client = cls.os_admin.dns_v2.ZonesClient()
-            cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.adm_project_client = cls.os_admin.projects_client
+        cls.adm_quota_client = cls.os_admin.dns_v2.QuotasClient()
+        cls.adm_zone_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
         cls.share_zone_client = cls.os_primary.dns_v2.SharedZonesClient()
         cls.rec_client = cls.os_primary.dns_v2.RecordsetClient()
         cls.export_zone_client = cls.os_primary.dns_v2.ZoneExportsClient()

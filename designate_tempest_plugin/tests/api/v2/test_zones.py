@@ -34,11 +34,7 @@ class BaseZonesTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(BaseZonesTest, cls).setup_clients()
-
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -66,10 +62,7 @@ class ZonesTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.pool_client = cls.os_system_admin.dns_v2.PoolClient()
-        else:
-            cls.pool_client = cls.os_admin.dns_v2.PoolClient()
+        cls.pool_client = cls.os_admin.dns_v2.PoolClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.share_zone_client = cls.os_primary.dns_v2.SharedZonesClient()
@@ -107,7 +100,6 @@ class ZonesTest(BaseZonesTest):
         # Test with no extra header overrides (sudo-project-id)
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
 
         self.check_CUD_RBAC_enforcement('ZonesClient', 'create_zone',
@@ -115,8 +107,6 @@ class ZonesTest(BaseZonesTest):
 
         # Test with x-auth-sudo-project-id header
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'create_zone', expected_allowed, False,
@@ -171,10 +161,7 @@ class ZonesTest(BaseZonesTest):
             'ZonesClient', 'show_zone', expected_allowed, True, zone['id'])
 
         # Test with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone', expected_allowed, False, zone['id'],
@@ -225,7 +212,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement('ZonesClient', 'delete_zone',
                                         expected_allowed, True, zone['id'])
@@ -233,7 +220,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement('ZonesClient', 'delete_zone',
                                         expected_allowed, False, zone['id'],
@@ -310,7 +297,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_admin']
+            expected_allowed = ['os_admin']
         else:
             expected_allowed = ['os_alt']
 
@@ -324,10 +311,7 @@ class ZonesTest(BaseZonesTest):
             'ZonesClient', 'list_zones', expected_allowed, [zone['id']])
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'ZonesClient', 'list_zones', expected_allowed, [zone['id']],
@@ -403,7 +387,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'update_zone', expected_allowed, True,
@@ -412,7 +396,7 @@ class ZonesTest(BaseZonesTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'update_zone', expected_allowed, False,
@@ -507,10 +491,7 @@ class ZonesTest(BaseZonesTest):
             True, zone['id'])
 
         # Test with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZonesClient', 'show_zone_nameservers', expected_allowed,
@@ -541,7 +522,7 @@ class ZonesTest(BaseZonesTest):
 
 
 class ZonesAdminTest(BaseZonesTest):
-    credentials = ["primary", "admin", "system_admin", "alt"]
+    credentials = ["primary", "admin", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -552,10 +533,7 @@ class ZonesAdminTest(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesAdminTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('f6fe8cce-8b04-11eb-a861-74e5f9e2a801')
@@ -643,7 +621,7 @@ class ZonesAdminTest(BaseZonesTest):
 
 
 class ZoneOwnershipTest(BaseZonesTest):
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -701,7 +679,7 @@ class ZoneOwnershipTest(BaseZonesTest):
 
 
 class ZonesNegativeTest(BaseZonesTest):
-    credentials = ["admin", "primary", "system_admin"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):

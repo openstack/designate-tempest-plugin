@@ -32,10 +32,7 @@ class BaseTsigkeyTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(BaseTsigkeyTest, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -53,8 +50,8 @@ class BaseTsigkeyTest(base.BaseDnsV2Test):
 
 
 class TsigkeyAdminTest(BaseTsigkeyTest):
-    credentials = ["primary", "admin", "system_admin", "system_reader",
-                   "project_member", "project_reader", "alt"]
+    credentials = ["primary", "admin", "project_member",
+                   "project_reader", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -65,12 +62,8 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TsigkeyAdminTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.TsigkeyClient()
-            cls.pool_admin_client = cls.os_system_admin.dns_v2.PoolClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
-            cls.pool_admin_client = cls.os_admin.dns_v2.PoolClient()
+        cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
+        cls.pool_admin_client = cls.os_admin.dns_v2.PoolClient()
 
         cls.primary_client = cls.os_primary.dns_v2.TsigkeyClient()
 
@@ -122,8 +115,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'TsigkeyClient', 'create_tsigkey', expected_allowed, False,
@@ -145,10 +136,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertGreater(len(body['tsigkeys']), 0)
 
         # Test RBAC
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TsigkeyClient', 'list_tsigkeys', expected_allowed,
@@ -411,10 +399,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
         self.assertExpected(tsigkey, body, self.excluded_keys)
 
         # Test RBAC
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TsigkeyClient', 'show_tsigkey', expected_allowed, True,
@@ -446,8 +431,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'TsigkeyClient', 'update_tsigkey', expected_allowed, False,
@@ -467,8 +450,6 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'TsigkeyClient', 'delete_tsigkey', expected_allowed, False,
@@ -490,7 +471,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
 
 class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -501,10 +482,7 @@ class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TestTsigkeyNotFoundAdmin, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.TsigkeyClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
+        cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
 
     @decorators.idempotent_id('824c9b49-edc5-4282-929e-467a158d23e4')
     def test_show_tsigkey_404(self):
@@ -536,7 +514,7 @@ class TestTsigkeyNotFoundAdmin(BaseTsigkeyTest):
 
 class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
 
-    credentials = ["admin", "primary", "system_admin"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -547,12 +525,8 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
     @classmethod
     def setup_clients(cls):
         super(TestTsigkeyInvalidIdAdmin, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.TsigkeyClient()
-            cls.pool_admin_client = cls.os_system_admin.dns_v2.PoolClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
-            cls.pool_admin_client = cls.os_admin.dns_v2.PoolClient()
+        cls.admin_client = cls.os_admin.dns_v2.TsigkeyClient()
+        cls.pool_admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('2a8dfc75-9884-4b1c-8f1f-ed835d96f2fe')
     def test_show_tsigkey_invalid_uuid(self):

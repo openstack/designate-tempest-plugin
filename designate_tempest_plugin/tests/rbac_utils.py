@@ -64,18 +64,10 @@ class RBACTestsMixin(test.BaseTestCase):
             try:
                 cred_obj = getattr(self, cred)
             except AttributeError:
-                # TODO(johnsom) Remove once scoped tokens is the default.
-                if ((cred == 'os_system_admin' or
-                     cred == 'os_system_reader') and
-                        not CONF.enforce_scope.designate):
-                    LOG.info('Skipping %s allowed RBAC test because '
-                             'enforce_scope.designate is not True', cred)
-                    continue
-                else:
-                    self.fail('Credential {} "expected_allowed" for RBAC '
-                              'testing was not created by tempest '
-                              'credentials setup. This is likely a bug in the '
-                              'test.'.format(cred))
+                self.fail('Credential {} "expected_allowed" for RBAC '
+                          'testing was not created by tempest '
+                          'credentials setup. This is likely a bug in the '
+                          'test.'.format(cred))
             method = self._get_client_method(cred_obj, client_str, method_str)
             project_id = self._get_client_project_id(cred_obj, client_str)
             try:
@@ -277,18 +269,10 @@ class RBACTestsMixin(test.BaseTestCase):
             try:
                 cred_obj = getattr(self, cred)
             except AttributeError:
-                # TODO(johnsom) Remove once scoped tokens is the default.
-                if ((cred == 'os_system_admin' or
-                     cred == 'os_system_reader') and
-                        not CONF.enforce_scope.designate):
-                    LOG.info('Skipping %s allowed RBAC test because '
-                             'enforce_scope.designate is not True', cred)
-                    continue
-                else:
-                    self.fail('Credential {} "expected_allowed" for RBAC '
-                              'testing was not created by tempest '
-                              'credentials setup. This is likely a bug in the '
-                              'test.'.format(cred))
+                self.fail('Credential {} "expected_allowed" for RBAC '
+                          'testing was not created by tempest '
+                          'credentials setup. This is likely a bug in the '
+                          'test.'.format(cred))
             method = self._get_client_method(cred_obj, client_str, method_str)
             try:
                 # Get the result body
@@ -341,18 +325,10 @@ class RBACTestsMixin(test.BaseTestCase):
             try:
                 cred_obj = getattr(self, cred)
             except AttributeError:
-                # TODO(johnsom) Remove once scoped tokens is the default.
-                if ((cred == 'os_system_admin' or
-                     cred == 'os_system_reader') and
-                        not CONF.enforce_scope.designate):
-                    LOG.info('Skipping %s allowed RBAC test because '
-                             'enforce_scope.designate is not True', cred)
-                    continue
-                else:
-                    self.fail('Credential {} "expected_allowed" for RBAC '
-                              'testing was not created by tempest '
-                              'credentials setup. This is likely a bug in the '
-                              'test.'.format(cred))
+                self.fail('Credential {} "expected_allowed" for RBAC '
+                          'testing was not created by tempest '
+                          'credentials setup. This is likely a bug in the '
+                          'test.'.format(cred))
             method = self._get_client_method(cred_obj, client_str, method_str)
             try:
                 # Get the result body

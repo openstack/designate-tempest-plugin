@@ -30,11 +30,7 @@ class BaseTransferRequestTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(BaseTransferRequestTest, cls).setup_clients()
-
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -53,7 +49,7 @@ class BaseTransferRequestTest(base.BaseDnsV2Test):
 
 
 class TransferRequestTest(BaseTransferRequestTest):
-    credentials = ["primary", "alt", "admin", "system_admin", "system_reader",
+    credentials = ["primary", "alt", "admin",
                    "project_member", "project_reader"]
 
     @classmethod
@@ -65,12 +61,7 @@ class TransferRequestTest(BaseTransferRequestTest):
     @classmethod
     def setup_clients(cls):
         super(TransferRequestTest, cls).setup_clients()
-
-        if CONF.enforce_scope.designate:
-            cls.admin_client = (cls.os_system_admin.dns_v2.
-                                TransferRequestClient())
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.TransferRequestClient()
+        cls.admin_client = cls.os_admin.dns_v2.TransferRequestClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.TransferRequestClient()
         cls.alt_client = cls.os_alt.dns_v2.TransferRequestClient()
@@ -86,7 +77,6 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
 
         self.check_CUD_RBAC_enforcement(
@@ -161,7 +151,6 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Note: The create service client does not define a target project
         #       ID, so everyone should be able to see it.
         expected_allowed = ['os_admin', 'os_primary', 'os_alt',
-                            'os_system_admin', 'os_system_reader',
                             'os_project_member', 'os_project_reader']
 
         self.check_list_show_RBAC_enforcement(
@@ -169,10 +158,7 @@ class TransferRequestTest(BaseTransferRequestTest):
             True, transfer_request['id'])
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferRequestClient', 'show_transfer_request', expected_allowed,
@@ -245,10 +231,10 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC when a transfer target project is specified.
         if CONF.enforce_scope.designate:
             expected_allowed = ['os_primary', 'os_alt',
-                                'os_system_admin', 'os_project_member']
+                                'os_project_member']
         else:
             expected_allowed = ['os_primary', 'os_alt', 'os_admin',
-                                'os_system_admin', 'os_project_member']
+                                'os_project_member']
 
         self.check_list_show_RBAC_enforcement(
             'TransferRequestClient', 'show_transfer_request', expected_allowed,
@@ -271,7 +257,6 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
 
         self.check_CUD_RBAC_enforcement(
@@ -304,7 +289,7 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_admin']
+            expected_allowed = ['os_admin']
         else:
             expected_allowed = ['os_alt']
 
@@ -371,10 +356,7 @@ class TransferRequestTest(BaseTransferRequestTest):
                           "listed IDs{}".format(request_id, request_ids))
 
         # Test RBAC with x-auth-all-projects
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TransferRequestClient', 'list_transfer_requests',
@@ -417,10 +399,7 @@ class TransferRequestTest(BaseTransferRequestTest):
         self.assertEqual([alt_transfer_request['id']], request_ids)
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TransferRequestClient', 'list_transfer_requests',
@@ -453,7 +432,7 @@ class TransferRequestTest(BaseTransferRequestTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'TransferRequestClient', 'update_transfer_request',
@@ -462,8 +441,6 @@ class TransferRequestTest(BaseTransferRequestTest):
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'TransferRequestClient', 'update_transfer_request',
@@ -485,7 +462,7 @@ class TransferRequestTest(BaseTransferRequestTest):
 
 
 class TestTransferRequestNotFound(BaseTransferRequestTest):
-    credentials = ["admin", "primary", "system_admin"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -535,7 +512,7 @@ class TestTransferRequestNotFound(BaseTransferRequestTest):
 
 
 class TestTransferRequestInvalidId(BaseTransferRequestTest):
-    credentials = ["admin", "primary", "system_admin"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):

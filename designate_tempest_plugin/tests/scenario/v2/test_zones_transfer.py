@@ -25,21 +25,15 @@ LOG = logging.getLogger(__name__)
 
 
 class ZonesTransferTest(base.BaseDnsV2Test):
-    credentials = ['primary', 'alt', 'admin', 'system_admin']
+    credentials = ['primary', 'alt', 'admin']
 
     @classmethod
     def setup_clients(cls):
         super(ZonesTransferTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_zones_client = cls.os_system_admin.dns_v2.ZonesClient()
-            cls.admin_accept_client = (
-                cls.os_system_admin.dns_v2.TransferAcceptClient())
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_zones_client = cls.os_admin.dns_v2.ZonesClient()
-            cls.admin_accept_client = (
-                cls.os_admin.dns_v2.TransferAcceptClient())
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_zones_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_accept_client = (
+            cls.os_admin.dns_v2.TransferAcceptClient())
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.alt_zones_client = cls.os_alt.dns_v2.ZonesClient()
         cls.request_client = cls.os_primary.dns_v2.TransferRequestClient()
         cls.alt_request_client = cls.os_alt.dns_v2.TransferRequestClient()

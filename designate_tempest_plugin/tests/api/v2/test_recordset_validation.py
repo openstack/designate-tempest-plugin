@@ -57,7 +57,7 @@ INVALID_SSHFP_DATASET = {
 
 class RecordsetValidationTest(base.BaseDnsV2Test):
 
-    credentials = ["admin", "primary", "system_admin"]
+    credentials = ["admin", "primary"]
 
     def setUp(self):
         super(RecordsetValidationTest, self).setUp()
@@ -73,10 +73,7 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(RecordsetValidationTest, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @property

@@ -35,10 +35,7 @@ class BaseZoneExportsTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(BaseZoneExportsTest, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -56,7 +53,7 @@ class BaseZoneExportsTest(base.BaseDnsV2Test):
 
 
 class ZonesExportTest(BaseZoneExportsTest):
-    credentials = ["primary", "admin", "system_admin", "system_reader", "alt",
+    credentials = ["primary", "admin", "alt",
                    "project_member", "project_reader"]
 
     @classmethod
@@ -68,10 +65,7 @@ class ZonesExportTest(BaseZoneExportsTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesExportTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.ZoneExportsClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.alt_client = cls.os_alt.dns_v2.ZoneExportsClient()
@@ -100,7 +94,6 @@ class ZonesExportTest(BaseZoneExportsTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
 
         self.check_CUD_RBAC_enforcement(
@@ -129,10 +122,7 @@ class ZonesExportTest(BaseZoneExportsTest):
             zone_export['id'])
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZoneExportsClient', 'show_zone_export', expected_allowed, True,
@@ -164,10 +154,7 @@ class ZonesExportTest(BaseZoneExportsTest):
                 zone_export['id'], listed_export_ids))
 
         # Test RBAC with x-auth-sudo-project-id header
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ZoneExportsClient', 'show_zone_export', expected_allowed, True,
@@ -189,7 +176,7 @@ class ZonesExportTest(BaseZoneExportsTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZoneExportsClient', 'delete_zone_export', expected_allowed, True,
@@ -198,7 +185,7 @@ class ZonesExportTest(BaseZoneExportsTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'ZoneExportsClient', 'delete_zone_export', expected_allowed, False,
@@ -229,7 +216,7 @@ class ZonesExportTest(BaseZoneExportsTest):
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin', 'os_admin']
+            expected_allowed = ['os_admin']
         else:
             expected_allowed = ['os_alt']
 
@@ -244,10 +231,7 @@ class ZonesExportTest(BaseZoneExportsTest):
             expected_allowed, [export['id']])
 
         # Test RBAC with x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'ZoneExportsClient', 'list_zone_exports',
@@ -292,10 +276,7 @@ class ZonesExportTest(BaseZoneExportsTest):
                 'listed IDs:{}'.format(id, listed_exports_ids))
 
         # Test RBAC with x-auth-all-projects
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'ZoneExportsClient', 'list_zone_exports', expected_allowed,
@@ -362,7 +343,7 @@ class ZonesExportTest(BaseZoneExportsTest):
 
 
 class ZonesExportTestNegative(BaseZoneExportsTest):
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin"]
 
     @classmethod
     def setup_credentials(cls):

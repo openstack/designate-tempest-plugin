@@ -68,8 +68,7 @@ class BaseDnsTest(rbac_utils.RBACTestsMixin, test.BaseTestCase):
     # can test for allowed and disallowed RBAC policies.
     credentials = ['admin', 'primary', 'alt']
     if CONF.dns_feature_enabled.enforce_new_defaults:
-        credentials.extend(['system_admin', 'system_reader',
-                            'project_member', 'project_reader'])
+        credentials.extend(['project_member', 'project_reader'])
 
     # A tuple of credentials that will be allocated by tempest using the
     # 'credentials' list above. These are used to build RBAC test lists.

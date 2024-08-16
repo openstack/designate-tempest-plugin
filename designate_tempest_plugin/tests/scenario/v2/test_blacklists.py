@@ -31,10 +31,7 @@ class BaseBlacklistsTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(BaseBlacklistsTest, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -53,7 +50,7 @@ class BaseBlacklistsTest(base.BaseDnsV2Test):
 
 class BlacklistE2E(BaseBlacklistsTest):
 
-    credentials = ["admin", 'primary', 'system_admin']
+    credentials = ["admin", 'primary']
 
     @classmethod
     def setup_credentials(cls):
@@ -64,13 +61,8 @@ class BlacklistE2E(BaseBlacklistsTest):
     @classmethod
     def setup_clients(cls):
         super(BlacklistE2E, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_blacklist_client = (
-                cls.os_system_admin.dns_v2.BlacklistsClient())
-            cls.admin_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
-        else:
-            cls.admin_blacklist_client = cls.os_admin.dns_v2.BlacklistsClient()
-            cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_blacklist_client = cls.os_admin.dns_v2.BlacklistsClient()
+        cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('22b1ee72-d8d2-11eb-bcdc-74e5f9e2a801')
     def test_primary_fails_to_create_zone_matches_blacklist_regex(self):

@@ -39,10 +39,7 @@ class BaseZonesTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(BaseZonesTest, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -60,7 +57,7 @@ class BaseZonesTest(base.BaseDnsV2Test):
 
 
 class ZoneTasks(BaseZonesTest):
-    credentials = ["primary", "alt", "admin", "system_admin", "system_reader",
+    credentials = ["primary", "alt", "admin",
                    "project_member", "project_reader"]
 
     @classmethod
@@ -72,10 +69,7 @@ class ZoneTasks(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneTasks, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     @decorators.idempotent_id('287e2cd0-a0e7-11eb-b962-74e5f9e2a801')
@@ -104,8 +98,6 @@ class ZoneTasks(BaseZonesTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'ZonesClient', 'abandon_zone', expected_allowed, False,
@@ -158,7 +150,7 @@ class ZoneTasks(BaseZonesTest):
 
 
 class ZoneTasksNegative(BaseZonesTest):
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -169,10 +161,7 @@ class ZoneTasksNegative(BaseZonesTest):
     @classmethod
     def setup_clients(cls):
         super(ZoneTasksNegative, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.ZonesClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZonesClient()
         cls.alt_client = cls.os_alt.dns_v2.ZonesClient()
 
     def _query_nameserver(self, nameserver, query_timeout,

@@ -30,7 +30,7 @@ CONF = config.CONF
 # delegation scenarios.
 class ClasslessPTRTest(base.BaseDnsV2Test):
 
-    credentials = ['primary', 'admin', 'system_admin', 'alt']
+    credentials = ['primary', 'admin', 'alt']
 
     @classmethod
     def setup_credentials(cls):
@@ -41,10 +41,7 @@ class ClasslessPTRTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(ClasslessPTRTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.zone_client = cls.os_primary.dns_v2.ZonesClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_rec_client = cls.os_alt.dns_v2.RecordsetClient()

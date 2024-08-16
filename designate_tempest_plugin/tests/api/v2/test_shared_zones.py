@@ -30,8 +30,8 @@ CONF = config.CONF
 
 class BaseSharedZoneTest(base.BaseDnsV2Test):
 
-    credentials = ['admin', 'system_admin', 'system_reader', 'primary', 'alt',
-                   'project_reader', 'project_member', ['demo', 'member']]
+    credentials = ['admin', 'primary', 'alt', 'project_reader',
+                   'project_member', ['demo', 'member']]
 
     excluded_keys = ['links']
 
@@ -67,12 +67,8 @@ class BaseSharedZoneTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(BaseSharedZoneTest, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-            cls.adm_shr_client = cls.os_system_admin.dns_v2.SharedZonesClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-            cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
         cls.demo_zone_client = cls.os_demo.dns_v2.ZonesClient()
         cls.share_zone_client = cls.os_primary.dns_v2.SharedZonesClient()
@@ -92,7 +88,6 @@ class SharedZonesTest(BaseSharedZoneTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
         self.check_CUD_RBAC_enforcement(
             'SharedZonesClient', 'create_zone_share', expected_allowed, True,
@@ -124,7 +119,6 @@ class SharedZonesTest(BaseSharedZoneTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
             expected_allowed.append('os_project_reader')
         self.check_CUD_RBAC_enforcement(
@@ -150,7 +144,6 @@ class SharedZonesTest(BaseSharedZoneTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
         self.check_CUD_RBAC_enforcement(
             'SharedZonesClient', 'delete_zone_share', expected_allowed, True,
@@ -176,7 +169,6 @@ class SharedZonesTest(BaseSharedZoneTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
             expected_allowed.append('os_project_reader')
         self.check_CUD_RBAC_enforcement(

@@ -33,17 +33,13 @@ CONF = config.CONF
 
 class RecordsetsTest(base.BaseDnsV2Test):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_clients(cls):
         super(RecordsetsTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @classmethod

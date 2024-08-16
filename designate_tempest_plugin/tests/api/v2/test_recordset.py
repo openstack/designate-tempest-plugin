@@ -34,10 +34,7 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(BaseRecordsetsTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -64,7 +61,7 @@ class BaseRecordsetsTest(base.BaseDnsV2Test):
 
 class RecordsetsTest(BaseRecordsetsTest):
 
-    credentials = ["admin", "system_admin", "system_reader", "primary", "alt",
+    credentials = ["admin", "primary", "alt",
                    "project_member", "project_reader"]
 
     @classmethod
@@ -76,12 +73,8 @@ class RecordsetsTest(BaseRecordsetsTest):
     @classmethod
     def setup_clients(cls):
         super(RecordsetsTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
-            cls.admin_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
-            cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
@@ -95,7 +88,6 @@ class RecordsetsTest(BaseRecordsetsTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
             expected_allowed.append('os_project_member')
 
         self.check_CUD_RBAC_enforcement(
@@ -300,10 +292,7 @@ class RecordsetsTest(BaseRecordsetsTest):
             expected_allowed, [recordset_id], self.zone['id'])
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'RecordsetClient', 'list_recordset', expected_allowed,
@@ -343,10 +332,7 @@ class RecordsetsTest(BaseRecordsetsTest):
             self.zone['id'], recordset_id)
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'RecordsetClient', 'show_recordset', expected_allowed, True,
@@ -372,7 +358,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'RecordsetClient', 'delete_recordset', expected_allowed, True,
@@ -380,8 +366,6 @@ class RecordsetsTest(BaseRecordsetsTest):
 
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'RecordsetClient', 'delete_recordset', expected_allowed, False,
@@ -425,7 +409,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         # Test RBAC
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'RecordsetClient', 'update_recordset', expected_allowed, True,
@@ -434,7 +418,7 @@ class RecordsetsTest(BaseRecordsetsTest):
         # Test RBAC with x-auth-all-projects and x-auth-sudo-project-id header
         expected_allowed = ['os_admin', 'os_primary']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_project_member'])
+            expected_allowed.extend(['os_project_member'])
 
         self.check_CUD_RBAC_enforcement(
             'RecordsetClient', 'update_recordset', expected_allowed, False,
@@ -613,7 +597,7 @@ class RecordsetsTest(BaseRecordsetsTest):
 
 class RecordsetsNegativeTest(BaseRecordsetsTest):
 
-    credentials = ["admin", "system_admin", "primary", "alt"]
+    credentials = ["admin", "primary", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -749,7 +733,7 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):
-    credentials = ["admin", "primary", "system_admin", "alt"]
+    credentials = ["admin", "primary", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -859,7 +843,7 @@ class RootRecordsetsTests(BaseRecordsetsTest):
 
 class RecordsetOwnershipTest(BaseRecordsetsTest):
 
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -870,10 +854,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
     @classmethod
     def setup_clients(cls):
         super(RecordsetOwnershipTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_client = cls.os_alt.dns_v2.RecordsetClient()
         cls.alt_zone_client = cls.os_alt.dns_v2.ZonesClient()
@@ -1072,7 +1053,7 @@ class RecordsetOwnershipTest(BaseRecordsetsTest):
 
 class AdminManagedRecordsetTest(BaseRecordsetsTest):
 
-    credentials = ["primary", "admin", "system_admin"]
+    credentials = ["primary", "admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -1083,10 +1064,7 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
     @classmethod
     def setup_clients(cls):
         super(AdminManagedRecordsetTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.client = cls.os_primary.dns_v2.RecordsetClient()
 
     @decorators.idempotent_id('84164ff4-8e68-11ec-983f-201e8823901f')
@@ -1131,17 +1109,13 @@ class AdminManagedRecordsetTest(BaseRecordsetsTest):
 
 class RecordsetsManagedRecordsNegativeTest(BaseRecordsetsTest):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_clients(cls):
         super(RecordsetsManagedRecordsNegativeTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.RecordsetClient()
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 
     @decorators.idempotent_id('083fa738-bb1b-11ec-b581-201e8823901f')

@@ -36,8 +36,8 @@ class BasePoolTest(base.BaseDnsV2Test):
 
 
 class PoolAdminTest(BasePoolTest):
-    credentials = ["admin", "primary", "system_admin", "system_reader",
-                   "project_member", "project_reader", "alt"]
+    credentials = ["admin", "primary", "project_member",
+                   "project_reader", "alt"]
 
     @classmethod
     def setup_credentials(cls):
@@ -48,10 +48,7 @@ class PoolAdminTest(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(PoolAdminTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.PoolClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.PoolClient()
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('69257f7c-b3d5-4e1b-998e-0677ad12f125')
     def test_create_pool(self):
@@ -75,8 +72,6 @@ class PoolAdminTest(BasePoolTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'PoolClient', 'create_pool', expected_allowed, False,
@@ -102,10 +97,7 @@ class PoolAdminTest(BasePoolTest):
         # TODO(johnsom) Test reader roles once this bug is fixed.
         #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         # TODO(johnsom) The pools API seems inconsistent with the requirement
         #               of the all-projects header.
@@ -131,8 +123,6 @@ class PoolAdminTest(BasePoolTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'PoolClient', 'delete_pool', expected_allowed, False, pool['id'])
@@ -153,10 +143,7 @@ class PoolAdminTest(BasePoolTest):
         # TODO(johnsom) Test reader roles once this bug is fixed.
         #               https://bugs.launchpad.net/tempest/+bug/1964509
         # Test RBAC
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'PoolClient', 'list_pools', expected_allowed, [pool['id']],
@@ -178,8 +165,6 @@ class PoolAdminTest(BasePoolTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'PoolClient', 'update_pool', expected_allowed, True,
@@ -195,7 +180,7 @@ class PoolAdminTest(BasePoolTest):
 
 class TestPoolNotFoundAdmin(BasePoolTest):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -206,10 +191,7 @@ class TestPoolNotFoundAdmin(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(TestPoolNotFoundAdmin, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.PoolClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.PoolClient()
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('56281b2f-dd5a-4376-8c32-aba771062fa5')
     def test_show_pool_404(self):
@@ -241,7 +223,7 @@ class TestPoolNotFoundAdmin(BasePoolTest):
 
 class TestPoolInvalidIdAdmin(BasePoolTest):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -252,10 +234,7 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(TestPoolInvalidIdAdmin, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.PoolClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.PoolClient()
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('081d0188-42a7-4953-af0e-b022960715e2')
     def test_show_pool_invalid_uuid(self):
@@ -288,7 +267,7 @@ class TestPoolInvalidIdAdmin(BasePoolTest):
 
 class TestPoolAdminNegative(BasePoolTest):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -299,10 +278,7 @@ class TestPoolAdminNegative(BasePoolTest):
     @classmethod
     def setup_clients(cls):
         super(TestPoolAdminNegative, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.PoolClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.PoolClient()
+        cls.admin_client = cls.os_admin.dns_v2.PoolClient()
 
     @decorators.idempotent_id('0a8cdc1e-ac02-11eb-ae06-74e5f9e2a801')
     def test_create_pool_invalid_name(self):

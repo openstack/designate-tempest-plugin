@@ -29,8 +29,8 @@ class BaseTldTest(base.BaseDnsV2Test):
 
 
 class TldAdminTest(BaseTldTest):
-    credentials = ["admin", "system_admin", "system_reader",
-                   "primary", "alt", "project_reader", "project_member"]
+    credentials = ["admin", "primary", "alt",
+                   "project_reader", "project_member"]
 
     # Use a TLD suffix unique to this test class.
     local_tld_suffix = '.'.join(["tldadmintest", CONF.dns.tld_suffix])
@@ -44,10 +44,7 @@ class TldAdminTest(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TldAdminTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_client = cls.os_admin.dns_v2.TldClient()
         cls.primary_client = cls.os_primary.dns_v2.TldClient()
 
     @classmethod
@@ -69,8 +66,6 @@ class TldAdminTest(BaseTldTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement('TldClient', 'create_tld',
                                         expected_allowed, False)
@@ -148,10 +143,7 @@ class TldAdminTest(BaseTldTest):
         self.assertExpected(tld, body, self.excluded_keys)
 
         # Test RBAC
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TldClient', 'show_tld', expected_allowed, False, tld['id'])
@@ -172,8 +164,6 @@ class TldAdminTest(BaseTldTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement('TldClient', 'delete_tld',
                                         expected_allowed, False, tld['id'])
@@ -191,10 +181,7 @@ class TldAdminTest(BaseTldTest):
         self.assertGreater(len(body['tlds']), 0)
 
         # Test RBAC
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TldClient', 'list_tlds', expected_allowed, [tld['id']],
@@ -222,8 +209,6 @@ class TldAdminTest(BaseTldTest):
 
         # Test RBAC
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
 
         self.check_CUD_RBAC_enforcement(
             'TldClient', 'update_tld', expected_allowed, False, tld['id'],
@@ -239,7 +224,7 @@ class TldAdminTest(BaseTldTest):
 
 class TestTldNotFoundAdmin(BaseTldTest):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -250,10 +235,7 @@ class TestTldNotFoundAdmin(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TestTldNotFoundAdmin, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @decorators.idempotent_id('b237d5ee-0d76-4294-a3b6-c2f8bf4b0e30')
     def test_show_tld_404(self):
@@ -285,7 +267,7 @@ class TestTldNotFoundAdmin(BaseTldTest):
 
 class TestTldInvalidIdAdmin(BaseTldTest):
 
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
 
     @classmethod
     def setup_credentials(cls):
@@ -296,10 +278,7 @@ class TestTldInvalidIdAdmin(BaseTldTest):
     @classmethod
     def setup_clients(cls):
         super(TestTldInvalidIdAdmin, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_client = cls.os_admin.dns_v2.TldClient()
 
     @decorators.idempotent_id('f9ec0730-57ff-4720-8d06-e11d377c7cfc')
     def test_show_tld_invalid_uuid(self):

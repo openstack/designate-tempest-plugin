@@ -34,7 +34,7 @@ class BaseQuotasTest(base.BaseDnsAdminTest):
 
 class QuotasAdminTest(BaseQuotasTest):
 
-    credentials = ["admin", "primary", "system_admin"]
+    credentials = ["admin", "primary"]
 
     def setUp(self):
         super(QuotasAdminTest, self).setUp()
@@ -53,10 +53,7 @@ class QuotasAdminTest(BaseQuotasTest):
     @classmethod
     def setup_clients(cls):
         super(QuotasAdminTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_admin.QuotasClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_admin.QuotasClient()
+        cls.admin_client = cls.os_admin.dns_admin.QuotasClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
 
     @decorators.idempotent_id('ed42f367-e5ba-40d7-a08d-366ad787d21c')

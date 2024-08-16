@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 class ServiceStatusAdmin(base.BaseDnsV2Test):
 
-    credentials = ["primary", "admin", "system_admin", "system_reader", "alt",
+    credentials = ["primary", "admin", "alt",
                    "project_reader", "project_member"]
 
     mandatory_services = ['central', 'mdns', 'worker', 'producer']
@@ -43,10 +43,7 @@ class ServiceStatusAdmin(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(ServiceStatusAdmin, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.ServiceClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.ServiceClient()
+        cls.admin_client = cls.os_admin.dns_v2.ServiceClient()
 
     @decorators.idempotent_id('bf277a76-8583-11eb-a557-74e5f9e2a801')
     def test_admin_list_service_statuses(self):
@@ -73,10 +70,7 @@ class ServiceStatusAdmin(base.BaseDnsV2Test):
             "services: {}".format(services_statuses_tup))
 
         # Test RBAC
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin', 'os_system_reader']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'ServiceClient', 'list_statuses', expected_allowed, False)

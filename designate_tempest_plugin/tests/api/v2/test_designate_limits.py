@@ -24,7 +24,7 @@ LOG = logging.getLogger(__name__)
 
 
 class DesignateLimit(base.BaseDnsV2Test):
-    credentials = ["admin", "system_admin", "system_reader", "primary", "alt",
+    credentials = ["admin", "primary", "alt",
                    "project_member", "project_reader"]
 
     @classmethod
@@ -36,11 +36,7 @@ class DesignateLimit(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(DesignateLimit, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = (cls.os_system_admin.dns_v2.
-                                DesignateLimitClient())
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.DesignateLimitClient()
+        cls.admin_client = cls.os_admin.dns_v2.DesignateLimitClient()
         cls.primary_client = cls.os_primary.dns_v2.DesignateLimitClient()
         cls.alt_client = cls.os_alt.dns_v2.DesignateLimitClient()
 
@@ -108,8 +104,7 @@ class DesignateLimit(base.BaseDnsV2Test):
     def test_list_designate_limits_RBAC(self):
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_system_reader',
-                                     'os_project_member', 'os_project_reader'])
+            expected_allowed.extend(['os_project_member', 'os_project_reader'])
 
         self.check_list_show_RBAC_enforcement(
             'DesignateLimitClient', 'list_designate_limits',

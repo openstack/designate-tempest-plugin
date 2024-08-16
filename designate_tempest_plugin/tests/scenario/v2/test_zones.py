@@ -35,17 +35,13 @@ LOG = logging.getLogger(__name__)
 
 
 class ZonesTest(base.BaseDnsV2Test):
-    credentials = ["primary", "admin", "system_admin"]
+    credentials = ["primary", "admin"]
 
     @classmethod
     def setup_clients(cls):
         super(ZonesTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-            cls.rec_client = cls.os_system_admin.dns_v2.RecordsetClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-            cls.rec_client = cls.os_admin.dns_v2.RecordsetClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.rec_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.primary_client = cls.os_primary.dns_v2.BlacklistsClient()
 
     @classmethod

@@ -28,18 +28,14 @@ LOG = logging.getLogger(__name__)
 
 
 class SharedZonesTest(base.BaseDnsV2Test):
-    credentials = ['primary', 'admin', 'system_admin', 'alt',
+    credentials = ['primary', 'admin', 'alt',
                    ['demo', 'member']]
 
     @classmethod
     def setup_clients(cls):
         super(SharedZonesTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-            cls.adm_shr_client = cls.os_system_admin.dns_v2.SharedZonesClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-            cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
         cls.share_zone_client = cls.os_primary.dns_v2.SharedZonesClient()
         cls.rec_client = cls.os_primary.dns_v2.RecordsetClient()
         cls.alt_rec_client = cls.os_alt.dns_v2.RecordsetClient()
@@ -366,18 +362,14 @@ class SharedZonesTest(base.BaseDnsV2Test):
 
 
 class SharedZonesTestNegative(base.BaseDnsV2Test):
-    credentials = ['primary', 'admin', 'system_admin', 'alt',
+    credentials = ['primary', 'admin', 'alt',
                    ['demo', 'member']]
 
     @classmethod
     def setup_clients(cls):
         super(SharedZonesTestNegative, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-            cls.adm_shr_client = cls.os_system_admin.dns_v2.SharedZonesClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
-            cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.adm_shr_client = cls.os_admin.dns_v2.SharedZonesClient()
         cls.share_zone_client = cls.os_primary.dns_v2.SharedZonesClient()
         cls.alt_export_client = cls.os_alt.dns_v2.ZoneExportsClient()
         cls.primary_export_client = cls.os_primary.dns_v2.ZoneExportsClient()

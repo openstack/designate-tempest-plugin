@@ -29,7 +29,7 @@ quotas_types = ["api_export_size", "recordset_records",
 
 class QuotasV2Test(base.BaseDnsV2Test):
 
-    credentials = ["primary", "admin", "system_admin", "system_reader", "alt",
+    credentials = ["primary", "admin", "alt",
                    "project_member", "project_reader"]
 
     @classmethod
@@ -51,10 +51,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(QuotasV2Test, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.QuotasClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
+        cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
         cls.alt_client = cls.os_alt.dns_v2.QuotasClient()
 
@@ -93,8 +90,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin', 'os_system_reader',
-                                     'os_project_member', 'os_project_reader'])
+            expected_allowed.extend(['os_project_member', 'os_project_reader'])
 
         self.check_list_show_with_ID_RBAC_enforcement(
             'QuotasClient', 'show_quotas', expected_allowed, False)
@@ -106,8 +102,6 @@ class QuotasV2Test(base.BaseDnsV2Test):
         LOG.info("Deleting (reset) quotas")
 
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin'])
 
         self.check_CUD_RBAC_enforcement(
             'QuotasClient', 'delete_quotas', expected_allowed, False,
@@ -130,8 +124,6 @@ class QuotasV2Test(base.BaseDnsV2Test):
             **quotas, headers=self.all_projects_header)[1]
 
         expected_allowed = ['os_admin']
-        if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.extend(['os_system_admin'])
 
         self.check_CUD_RBAC_enforcement(
             'QuotasClient', 'update_quotas', expected_allowed, False,
@@ -225,7 +217,7 @@ class QuotasV2Test(base.BaseDnsV2Test):
 
 class QuotasV2TestNegative(base.BaseDnsV2Test):
 
-    credentials = ["primary", "admin", "system_admin"]
+    credentials = ["primary", "admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -246,10 +238,7 @@ class QuotasV2TestNegative(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(QuotasV2TestNegative, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.QuotasClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
+        cls.admin_client = cls.os_admin.dns_v2.QuotasClient()
         cls.quotas_client = cls.os_primary.dns_v2.QuotasClient()
 
     @decorators.idempotent_id('ae82a0ba-da60-11eb-bf12-74e5f9e2a801')

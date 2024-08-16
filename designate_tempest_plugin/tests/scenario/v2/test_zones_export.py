@@ -30,7 +30,7 @@ LOG = logging.getLogger(__name__)
 
 
 class ZonesExportTest(BaseZoneExportsTest):
-    credentials = ["primary", "admin", "system_admin"]
+    credentials = ["primary", "admin"]
 
     @classmethod
     def setup_credentials(cls):
@@ -41,10 +41,7 @@ class ZonesExportTest(BaseZoneExportsTest):
     @classmethod
     def setup_clients(cls):
         super(ZonesExportTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_client = cls.os_system_admin.dns_v2.ZoneExportsClient()
-        else:
-            cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
+        cls.admin_client = cls.os_admin.dns_v2.ZoneExportsClient()
         cls.client = cls.os_primary.dns_v2.ZoneExportsClient()
         cls.recordset_client = cls.os_primary.dns_v2.RecordsetClient()
 

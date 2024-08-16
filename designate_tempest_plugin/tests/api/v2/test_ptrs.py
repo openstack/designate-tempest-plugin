@@ -38,10 +38,7 @@ class BasePtrTest(base.BaseDnsV2Test):
     def setup_clients(cls):
         super(BasePtrTest, cls).setup_clients()
 
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.admin_network_client = cls.os_admin.networks_client
         cls.admin_subnet_client = cls.os_admin.subnets_client
 
@@ -82,7 +79,7 @@ class BasePtrTest(base.BaseDnsV2Test):
 
 class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
 
-    credentials = ['primary', 'admin', 'system_admin']
+    credentials = ['primary', 'admin']
 
     @classmethod
     def setup_credentials(cls):
@@ -93,10 +90,7 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
     @classmethod
     def setup_clients(cls):
         super(DesignatePtrRecord, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_ptr_client = cls.os_system_admin.dns_v2.PtrClient()
-        else:
-            cls.admin_ptr_client = cls.os_admin.dns_v2.PtrClient()
+        cls.admin_ptr_client = cls.os_admin.dns_v2.PtrClient()
         cls.primary_ptr_client = cls.os_primary.dns_v2.PtrClient()
         cls.primary_floating_ip_client = cls.os_primary.floating_ips_client
 
@@ -208,7 +202,7 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
 
 class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
 
-    credentials = ['primary', 'admin', 'system_admin']
+    credentials = ['primary', 'admin']
 
     @classmethod
     def setup_credentials(cls):

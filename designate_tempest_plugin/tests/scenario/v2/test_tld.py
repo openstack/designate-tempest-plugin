@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 class TldZoneTest(base.BaseDnsV2Test):
-    credentials = ["admin", "system_admin", "primary"]
+    credentials = ["admin", "primary"]
     tld_suffix = '.'.join(["TldZoneTest", CONF.dns.tld_suffix])
 
     @classmethod
@@ -38,10 +38,7 @@ class TldZoneTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(TldZoneTest, cls).setup_clients()
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.primary_tld_client = cls.os_primary.dns_v2.TldClient()
 
     @classmethod

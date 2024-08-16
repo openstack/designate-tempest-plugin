@@ -31,11 +31,7 @@ class BaseTransferAcceptTest(base.BaseDnsV2Test):
     @classmethod
     def setup_clients(cls):
         super(BaseTransferAcceptTest, cls).setup_clients()
-
-        if CONF.enforce_scope.designate:
-            cls.admin_tld_client = cls.os_system_admin.dns_v2.TldClient()
-        else:
-            cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
+        cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
 
     @classmethod
     def resource_setup(cls):
@@ -53,7 +49,7 @@ class BaseTransferAcceptTest(base.BaseDnsV2Test):
 
 
 class TransferAcceptTest(BaseTransferAcceptTest):
-    credentials = ["primary", "alt", "admin", "system_admin", "system_reader",
+    credentials = ["primary", "alt", "admin",
                    "project_member", "project_reader"]
 
     @classmethod
@@ -76,18 +72,11 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         cls.alt_accept_client = cls.os_alt.dns_v2.TransferAcceptClient()
 
         # Admin clients
-        if CONF.enforce_scope.designate:
-            cls.admin_zone_client = cls.os_system_admin.dns_v2.ZonesClient()
-            cls.admin_request_client = (cls.os_system_admin.dns_v2.
-                                        TransferRequestClient())
-            cls.admin_accept_client = (cls.os_system_admin.dns_v2.
-                                       TransferAcceptClient())
-        else:
-            cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
-            cls.admin_request_client = (cls.os_admin.dns_v2.
-                                        TransferRequestClient())
-            cls.admin_accept_client = (cls.os_admin.dns_v2.
-                                       TransferAcceptClient())
+        cls.admin_zone_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.admin_request_client = (cls.os_admin.dns_v2.
+                                    TransferRequestClient())
+        cls.admin_accept_client = (cls.os_admin.dns_v2.
+                                   TransferAcceptClient())
 
     @decorators.idempotent_id('1c6baf97-a83e-4d2e-a5d8-9d37fb7808f3')
     def test_create_transfer_accept(self):
@@ -120,11 +109,6 @@ class TransferAcceptTest(BaseTransferAcceptTest):
         #       transfer key.
         expected_allowed = ['os_admin', 'os_primary', 'os_alt']
         if CONF.dns_feature_enabled.enforce_new_defaults:
-            expected_allowed.append('os_system_admin')
-            # Note: system_reader is allowed because this API RBAC is based
-            #       on the target project ID. It will return a 401 instead of
-            #       a 403.
-            expected_allowed.append('os_system_reader')
             expected_allowed.append('os_project_member')
             expected_allowed.append('os_project_reader')
 
@@ -188,10 +172,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             True, transfer_accept['id'])
 
         # Test RBAC with x-auth-all-projects
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
@@ -281,20 +262,14 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
         # Test RBAC - Users that are allowed to call list, but should get
         #             zero zones.
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_RBAC_enforcement_count(
             'TransferAcceptClient', 'list_transfer_accept',
             expected_allowed, 0)
 
         # Test that users who should see the zone, can see it.
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_IDs_RBAC_enforcement(
             'TransferAcceptClient', 'list_transfer_accept',
@@ -403,10 +378,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
             self.wait_zone_delete, self.alt_zone_client, zone['id'])
 
         # Test RBAC with x-auth-sudo-project-id header
-        if CONF.enforce_scope.designate:
-            expected_allowed = ['os_system_admin']
-        else:
-            expected_allowed = ['os_admin', 'os_system_admin']
+        expected_allowed = ['os_admin']
 
         self.check_list_show_RBAC_enforcement(
             'TransferAcceptClient', 'show_transfer_accept', expected_allowed,
@@ -417,7 +389,7 @@ class TransferAcceptTest(BaseTransferAcceptTest):
 
 class TransferAcceptTestNegative(BaseTransferAcceptTest):
 
-    credentials = ["primary", "alt", "admin", "system_admin"]
+    credentials = ["primary", "alt", "admin"]
 
     @classmethod
     def setup_credentials(cls):
