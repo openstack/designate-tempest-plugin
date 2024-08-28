@@ -29,6 +29,7 @@
         tsigkey_name: multiple-pools-pool-2
 
 - name: default
+  id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
   description: Default BIND9 Pool
 
   attributes: {}
