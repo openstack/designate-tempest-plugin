@@ -31,6 +31,15 @@ class BasePtrTest(base.BaseDnsV2Test):
     excluded_keys = ['created_at', 'updated_at', 'version', 'links',
                      'status', 'action']
 
+    def _unset_ptr(self, ptr_client, fip_id):
+        self.unset_ptr(ptr_client, fip_id)
+        try:
+            waiters.wait_for_ptr_status(
+                ptr_client, fip_id=fip_id, status=const.INACTIVE)
+        except lib_exc.NotFound:
+            # The DB-backed PTR API returns 404 after deletion completes.
+            pass
+
     @classmethod
     def setup_clients(cls):
         super(BasePtrTest, cls).setup_clients()
@@ -119,18 +128,13 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
         ptr = self.primary_ptr_client.set_ptr_record(
             fip_id, ptr_name=ptr_name, ttl=ttl, description=description,
             headers=headers, tld=tld)
-        self.addCleanup(self.unset_ptr, self.primary_ptr_client, fip_id)
+        self.addCleanup(self._unset_ptr, self.primary_ptr_client, fip_id)
 
         self.assertEqual('CREATE', ptr['action'])
         self.assertEqual('PENDING', ptr['status'])
         waiters.wait_for_ptr_status(
             self.primary_ptr_client, fip_id=fip_id, status=const.ACTIVE)
         return fip_id, ptr
-
-    def _unset_ptr(self, fip_id):
-        self.primary_ptr_client.unset_ptr_record(fip_id)
-        waiters.wait_for_ptr_status(
-            self.primary_ptr_client, fip_id=fip_id, status=const.INACTIVE)
 
     @decorators.idempotent_id('2fb9d6ea-871d-11eb-9f9a-74e5f9e2a801')
     def test_set_floatingip_ptr(self):
@@ -191,8 +195,8 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
 
     @decorators.idempotent_id('499b5a7e-87e1-11eb-b412-74e5f9e2a801')
     def test_unset_floatingip_ptr(self):
-        fip_id, ptr = self._set_ptr()
-        self._unset_ptr(fip_id)
+        fip_id = self._set_ptr()[0]
+        self._unset_ptr(self.primary_ptr_client, fip_id)
 
 
 class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
@@ -241,7 +245,7 @@ class DesignatePtrRecordNegative(BasePtrTest, tempest.test.BaseTestCase):
         ptr = self.primary_ptr_client.set_ptr_record(
             fip_id, ptr_name=ptr_name, ttl=ttl, description=description,
             headers=headers, tld=tld)
-        self.addCleanup(self.unset_ptr, self.primary_ptr_client, fip_id)
+        self.addCleanup(self._unset_ptr, self.primary_ptr_client, fip_id)
         self.assertEqual('CREATE', ptr['action'])
         self.assertEqual('PENDING', ptr['status'])
         waiters.wait_for_ptr_status(
