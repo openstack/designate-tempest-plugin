@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    Support for Python 3.6 and 3.7 has been removed. Now the minimum version
+    supported is 3.8 .
