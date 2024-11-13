@@ -420,7 +420,7 @@ class ZonesExportTestNegative(BaseZoneExportsTest):
             'show_zonefile_bad_accept')
         # Tempest-lib _error_checker will raise UnexpectedResponseCode
         e = self.assertRaises(
-            lib_exc.UnexpectedResponseCode, self.client.show_exported_zonefile,
+            lib_exc.NotAcceptable, self.client.show_exported_zonefile,
             zone_export['id'], headers={'Accept': 'image/jpeg'})
         self.assertEqual(406, e.resp.status,
                          "Failed, actual response code is:{0}"
