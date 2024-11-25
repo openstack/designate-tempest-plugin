@@ -89,9 +89,8 @@ class DesignateLimit(base.BaseDnsV2Test):
                  'are {}: '.format(existing_project_ids))
         all_project_limits = self.admin_client.list_designate_limits(
             headers={'x-auth-all-projects': True})
-        LOG.info(
-            'Retrieved designate limits by Admin user for all projects '
-            'are: '.format(all_project_limits))
+        LOG.info('Retrieved designate limits by Admin user for all projects '
+                 'are: %s', all_project_limits)
         received_project_ids = [
             item['project_id'] for item in all_project_limits]
         for project_id in existing_project_ids:

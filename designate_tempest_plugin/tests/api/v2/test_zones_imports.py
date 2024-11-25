@@ -340,8 +340,7 @@ class ZonesImportTest(BaseZonesImportTest):
         self.assertIn(
             zone_import['id'], listed_zone_import_ids,
             "Failed, expected import ID:{} wasn't found in "
-            "listed import IDs".format(
-                zone_import['id'], listed_zone_import_ids))
+            "listed import IDs".format(zone_import['id']))
 
         # Test RBAC with x-auth-all-projects
         expected_allowed = ['os_admin']
