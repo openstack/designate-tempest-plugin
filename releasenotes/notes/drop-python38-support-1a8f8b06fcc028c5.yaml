@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    Python 3.8 support has been dropped. Last release of
+    designate-tempest-plugin to support python 3.8 is 0.23.0.
+    The minimum version of Python now supported is Python 3.9.
