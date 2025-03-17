@@ -410,3 +410,89 @@ class DesignateMultiPoolTest(DesignateManagePoolTest):
                 )
                 waiters.wait_for_query(
                     other_query_client, rrset['name'], 'A', found=False)
+
+    @decorators.attr(type='slow')
+    @decorators.idempotent_id('499d8516-1c2d-452e-92c2-185591a9a1e9')
+    def test_move_zone_to_another_pool(self):
+
+        LOG.info("Retrieving pools 'in use' and validating test requirements.")
+        nameservers = self._get_nameservers_in_use()
+        if not nameservers:
+            raise self.skipException(
+                'Failed to retrieve nameservers from designate-manage. '
+                'Cannot proceed with multi-pool testing.')
+        if len(nameservers) < 2:
+            skip_msg = (
+                "Detected nameservers: {} At least 2 nameservers are required"
+                " for Multi-Pool testing.").format(len(nameservers))
+            raise self.skipException(skip_msg)
+
+        LOG.info('Grouping nameservers by pool_id')
+        nameservers_by_pool = defaultdict(list)
+        for ns in nameservers:
+            nameservers_by_pool[ns['pool_id']].append(ns)
+        if len(nameservers_by_pool) < 2:
+            raise self.skipException(
+                "At least 2 distinct pools required for zone move testing, "
+                "found {} pool(s).".format(len(nameservers_by_pool)))
+        pool_ids = list(nameservers_by_pool.keys())
+        pool1_id = pool_ids[0]
+        pool2_id = pool_ids[1]
+        ns1 = [
+            '{}:{}'.format(ns['host'], ns['port'])
+            for ns in nameservers_by_pool[pool1_id]]
+        ns2 = [
+            '{}:{}'.format(ns['host'], ns['port'])
+            for ns in nameservers_by_pool[pool2_id]]
+
+        LOG.info('Create a zone using pool1_id')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="first_pool_zone_",
+            suffix=self.tld_name)
+        zone = self.admin_zones_client.create_zone(
+            name=zone_name, attributes={'pool_id': pool1_id},
+            wait_until=const.ACTIVE)[1]
+        self.addCleanup(self.wait_zone_delete,
+                        self.admin_zones_client, zone['id'],
+                        ignore_errors=lib_exc.NotFound)
+        self.assertEqual(
+            pool1_id, zone['pool_id'],
+            'Zone was not created on expected pool_id:{}'.format(pool1_id))
+
+        LOG.info('Create "A" type recordset for a zone')
+        recordset_data = dns_data_utils.rand_recordset_data(
+            record_type='A', zone_name=zone['name'])
+        body = self.rec_client.create_recordset(zone['id'],
+        recordset_data, wait_until=const.ACTIVE)[1]
+        self.addCleanup(
+            self.wait_recordset_delete, self.rec_client,
+            zone['id'], body['id'])
+
+        LOG.info("Ensure 'A' type expected exists on POOL_1 backend")
+        query_client = QueryClient(ns1)
+        waiters.wait_for_query(
+            query_client, recordset_data['name'], 'A')
+
+        LOG.info('Use Move Zone API, to transfer a zone to another pool')
+        self.admin_zones_client.zone_move_pool(zone['id'], pool2_id)
+
+        LOG.info('Verify zone successfully moved to destination pool')
+        waiters.wait_for_zone_status(
+            self.admin_zones_client, zone['id'], const.ACTIVE)
+        moved_zone = self.admin_zones_client.show_zone(zone['id'])[1]
+        self.assertEqual(
+            pool2_id, moved_zone['pool_id'],
+            'Zone was not moved to expected pool_id:{}'.format(pool2_id))
+
+        LOG.info(
+            'Confirming recordset resolves on Pool 2 nameservers'
+            ' (destination) and remains reachable on Pool 1 nameservers'
+            ' (source). Removing the zone from the source pool is a'
+            ' manual admin task and is not done automatically by'
+            ' zone move.')
+        query_client = QueryClient(ns2)
+        waiters.wait_for_query(
+            query_client, recordset_data['name'], 'A')
+        query_client = QueryClient(ns1)
+        waiters.wait_for_query(
+            query_client, recordset_data['name'], 'A')

@@ -221,3 +221,20 @@ class ZonesClient(base.DnsClientV2Base):
 
         self.expected_success(self.DELETE_STATUS_CODES, resp.status)
         return resp, body
+
+    @base.handle_errors
+    def zone_move_pool(self, zone_id, pool_id, headers=None):
+        """This moves a zone from the existing designate pool to
+         specified target pool.
+
+        :param zone_id: Zone ID.
+        :param pool_id: Target Pool ID
+        :param headers (dict): The headers to use for the request.
+        :return: A tuple with the server response and body.
+        """
+        pool = {"pool_id": pool_id}
+        resp, body = self._create_request(
+            'zones/{}/tasks/pool_move'.format(zone_id),
+            pool, headers=headers,
+            expected_statuses=self.DELETE_STATUS_CODES)
+        return resp, body
