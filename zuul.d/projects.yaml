@@ -1,0 +1,36 @@
+- project:
+    templates:
+      - designate-devstack-jobs
+      - check-requirements
+      - publish-openstack-docs-pti
+      - tempest-plugin-jobs
+      - release-notes-jobs-python3
+    check:
+      jobs:
+        - designate-bind9-core
+        - designate-bind9-with-keystone-default-roles
+        - designate-pdns4-core
+        - designate-bind9-stable-2025-1
+        - designate-bind9-stable-2024-2
+        - designate-bind9-stable-2024-1
+        - designate-bind9-multipool
+        - neutron-tempest-plugin-designate-scenario
+        - designate-only-ipv6-pdns4
+        - designate-only-ipv6-bind9
+    queue: designate
+    gate:
+      fail-fast: true
+      jobs:
+        - designate-bind9-core
+        - designate-bind9-with-keystone-default-roles
+        - designate-pdns4-core
+        - designate-bind9-stable-2025-1
+        - designate-bind9-stable-2024-2
+        - designate-bind9-stable-2024-1
+        - designate-bind9-multipool
+        - neutron-tempest-plugin-designate-scenario
+        - designate-only-ipv6-pdns4
+        - designate-only-ipv6-bind9
+    experimental:
+      jobs:
+        - designate-pdns4-postgres-core
