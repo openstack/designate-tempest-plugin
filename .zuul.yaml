@@ -1,14 +1,20 @@
 - job:
-    name: designate-bind9-stable-2024-1
+    name: designate-bind9-stable-2025-1
     parent: designate-bind9
-    nodeset: openstack-single-node-jammy
-    override-checkout: stable/2024.1
+    nodeset: openstack-single-node-noble
+    override-checkout: stable/2025.1
 
 - job:
     name: designate-bind9-stable-2024-2
     parent: designate-bind9
     nodeset: openstack-single-node-jammy
     override-checkout: stable/2024.2
+
+- job:
+    name: designate-bind9-stable-2024-1
+    parent: designate-bind9
+    nodeset: openstack-single-node-jammy
+    override-checkout: stable/2024.1
 
 - job:
     name: designate-bind9-multipool
@@ -37,6 +43,7 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - designate-bind9-stable-2025-1
         - designate-bind9-stable-2024-2
         - designate-bind9-stable-2024-1
         - designate-bind9-multipool
