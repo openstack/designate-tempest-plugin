@@ -11,12 +11,6 @@
     override-checkout: stable/2024.2
 
 - job:
-    name: designate-bind9-stable-2023-2
-    parent: designate-bind9
-    nodeset: openstack-single-node-jammy
-    override-checkout: stable/2023.2
-
-- job:
     name: designate-bind9-multipool
     parent: designate-base
     nodeset: openstack-single-node-jammy
@@ -45,6 +39,5 @@
       jobs:
         - designate-bind9-stable-2024-2
         - designate-bind9-stable-2024-1
-        - designate-bind9-stable-2023-2
         - designate-bind9-multipool
         - neutron-tempest-plugin-designate-scenario
