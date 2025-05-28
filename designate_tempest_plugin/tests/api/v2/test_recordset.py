@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_log import log as logging
+from oslo_utils import versionutils
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
@@ -178,7 +179,82 @@ class RecordsetsTest(BaseRecordsetsTest):
     @decorators.idempotent_id('8e7ecedb-5c35-46f8-ae0e-39e4aaabc97d')
     def test_create_recordset_type_TXT(self):
         self._test_create_recordset_type(
-            "www", "TXT", ["\"Any Old Text Goes Here\""])
+            "sample", "TXT", ["\"Any Old Text Goes Here\""])
+
+    @decorators.idempotent_id('521ae1b0-f115-4d3c-8bcd-e54ef53bb2b9')
+    def test_create_recordset_type_SVCB(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'SVCB record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_type_SVCB test.')
+
+        ipv61 = '2001:db8:3333:4444:5555:6666:7777:8888'
+        ipv6hint = f'{ipv61},2001:db8:3333:4444:cccc:dddd:eeee:ffff'
+        ipv4hint = "1.2.3.4,9.8.7.6"
+        alpn = "h3,h2,http/1.1"
+        port = "888"
+        target = "sample.example.org."
+        doh = '/dns-query{?dns}'
+        self._test_create_recordset_type(
+            None,
+            "SVCB",
+            [f"1 {target} alpn={alpn} ipv4hint={ipv4hint}"
+             f" ipv6hint={ipv6hint} port={port} dohpath={doh}"]
+        )
+
+    @decorators.idempotent_id('ebb3c1e2-fa33-4520-bba5-2888886d84f5')
+    def test_create_recordset_type_HTTPS(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'HTTPS record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_type_HTTPS test.')
+
+        ipv61 = '2001:db8:3333:4444:5555:6666:7777:8888'
+        ipv6hint = f'{ipv61},2001:db8:3333:4444:cccc:dddd:eeee:ffff'
+        ipv4hint = "1.2.3.4,9.8.7.6"
+        alpn = "h3,h2,http/1.1"
+        port = "888"
+        target = "sample.example.org."
+        self._test_create_recordset_type(
+            "sample",
+            "HTTPS",
+            [f"1 {target} alpn={alpn} ipv4hint={ipv4hint}"
+             f" ipv6hint={ipv6hint} port={port}"]
+        )
+
+    @decorators.idempotent_id('64f3a41b-065c-47f8-8a73-2a0cd62ed196')
+    def test_create_recordset_type_HTTPS_no_default_alpn(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'HTTPS record tests require Designate API version 2.2 or '
+                'newer. Skipping '
+                'test_create_recordset_type_HTTPS_no_default_alpntest.')
+
+        self._test_create_recordset_type(
+            "sample", "HTTPS", ['1 sample.example.org. alpn=http/1.1 '
+                                'no-default-alpn port=8000']
+        )
+
+    @decorators.idempotent_id('4d399592-5d37-43ba-99ac-e7665c2c1f8f')
+    def test_create_recordset_type_HTTPS_mandatory(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'HTTPS record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_type_HTTPS_mandatory '
+                'test.')
+
+        ipv6 = "2001:db8:3333:4444:5555:6666:7777:8888"
+        self._test_create_recordset_type(
+            "sample",
+            "HTTPS",
+            [f'1 sample.example.org. ipv4hint=192.168.1.2 ipv6hint={ipv6}'
+             f' alpn=h2 mandatory=alpn'
+             ]
+        )
 
     def _test_create_wildcard_recordset(self, name, type, records):
         if name is not None:
@@ -730,6 +806,85 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         self.assertRaises(
             lib_exc.NotFound, lambda: self.alt_client.create_recordset(
                 self.zone['id'], recordset_data))
+
+    @decorators.idempotent_id('f236a24a-a3c6-4a0c-a54c-ebf8a312b908')
+    def test_create_recordset_invalid_HTTPS_alpn(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'HTTPS record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_invalid_HTTPS_alpn '
+                'test.')
+
+        self._test_create_recordset_invalid(
+            None, 'HTTPS', ["1 sample.example.org. alpn=foo"])
+
+    @decorators.idempotent_id('d680ef3a-4406-47c5-a994-483138c5e975')
+    def test_create_recordset_invalid_HTTPS_port(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'HTTPS record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_invalid_HTTPS_port '
+                'test.')
+
+        self._test_create_recordset_invalid(
+            None, 'HTTPS', ["1 sample.example.org. port=foo"])
+
+    @decorators.idempotent_id('a33fc327-8d37-4582-9d2b-be83f6ee38d3')
+    def test_create_recordset_invalid_HTTPS_ech(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'HTTPS record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_invalid_HTTPS_ech '
+                'test.')
+
+        self._test_create_recordset_invalid(
+            None, 'HTTPS', ["1 sample.example.org. port=8888 ech=foo//"])
+
+    @decorators.idempotent_id('1869737f-1a1b-4712-93da-2d680cd45cd8')
+    def test_create_recordset_invalid_SVCB_mandatory(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'SVCB record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_invalid_SVCB_mandatory '
+                'test.')
+
+        ipv6hint = "2001:db8:3333:4444:5555:6666:7777:8888"
+        self._test_create_recordset_invalid(
+            None, 'SVCB', [
+                f"1 sample.example.org."
+                f" ipv6hint={ipv6hint} mandatory=alpn,ipv4hint"
+            ]
+        )
+
+    @decorators.idempotent_id('5bae6c22-7a37-48a5-b6b3-089d83a8f2ce')
+    def test_create_recordset_invalid_SVCB_ipv4hint(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'SVCB record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_invalid_SVCB_ipv4hint '
+                'test.')
+
+        self._test_create_recordset_invalid(
+            None, 'SVCB',
+            ['1 sample.example.org. ipv4hint=foo,192.168.1.2'])
+
+    @decorators.idempotent_id('72dce8ca-f2fa-4054-b2b7-7bccfe3a02c1')
+    def test_create_recordset_invalid_SVCB_ipv6hint(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'SVCB record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_recordset_invalid_SVCB_ipv6hint'
+                'test.')
+
+        self._test_create_recordset_invalid(
+            None, 'SVCB', ['1 sample.example.org. ipv6hint=foo']
+        )
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):

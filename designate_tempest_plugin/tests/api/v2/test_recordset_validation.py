@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from oslo_log import log as logging
+from oslo_utils import versionutils
 
 from tempest import config
 from tempest.lib import decorators
@@ -222,3 +223,52 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
                 self.recordset_client.create_recordset,
                 self.zone['id'], post_model,
             )
+
+    @decorators.idempotent_id('193be0fb-ac25-44a3-ae12-f7776048c31a')
+    def test_create_SVCB_with(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'SVCB record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_SVCB_with test.')
+
+        ipv4hint = "1.2.3.4,9.8.7.6"
+        alpn = "h3,h2,http/1.1"
+        port = "888"
+        target = f"sample.{self.zone['name']}"
+        doh = '/dns-query{?dns}'
+        svcb_data_records = [f"1 {target} alpn={alpn} ipv4hint={ipv4hint}"
+                             f" port={port} dohpath={doh}"]
+        recordset_data = {
+            'name': "svcb" + "." + self.zone['name'],
+            'type': "SVCB",
+            'records': svcb_data_records,
+        }
+        recordset = self.create_recordset(recordset_data)
+        waiters.wait_for_recordset_status(
+            self.recordset_client, self.zone['id'],
+            recordset['id'], 'ACTIVE')
+
+    @decorators.idempotent_id('758c4367-88a6-4657-908e-4c0785428cf9')
+    def test_create_HTTPS_with(self):
+        if not versionutils.is_compatible('2.2', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'HTTPS record tests require Designate API version 2.2 or '
+                'newer. Skipping test_create_HTTPS_with test.')
+
+        ipv4hint = "1.2.3.4,9.8.7.6"
+        alpn = "h3,h2,http/1.1"
+        port = "4443"
+        target = f"sample.{self.zone['name']}"
+        https_data_records = [f"1 {target} alpn={alpn} ipv4hint={ipv4hint}"
+                              f" port={port}"]
+        recordset_data = {
+            'name': "https" + "." + self.zone['name'],
+            'type': "HTTPS",
+            'records': https_data_records,
+        }
+        recordset = self.create_recordset(recordset_data)
+        waiters.wait_for_recordset_status(
+            self.recordset_client, self.zone['id'],
+            recordset['id'], 'ACTIVE')
