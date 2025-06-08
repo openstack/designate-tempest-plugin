@@ -24,11 +24,9 @@ LOG = logging.getLogger(__name__)
 
 class BaseQuotasTest(base.BaseDnsAdminTest):
 
-    excluded_keys = []
+    excluded_keys = ['api_export_size']
 
     def setUp(self):
-        if CONF.dns_feature_enabled.bug_1573141_fixed:
-            self.excluded_keys = ['api_export_size']
         super(BaseQuotasTest, self).setUp()
 
 

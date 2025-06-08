@@ -1,0 +1,4 @@
+---
+upgrade:
+  - |
+    The ``[dns_feature_enabled] bug_1573141_fixed`` option has been removed.
