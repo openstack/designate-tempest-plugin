@@ -78,7 +78,9 @@ DnsFeatureGroup = [
                 help="Is project IDs verified when setting v2 quotas. "
                 "Must be set to True starting from Rocky release."),
     cfg.BoolOpt('bug_1932026_fixed',
-                default=False,
+                default=True,
+                deprecated_for_removal=True,
+                deprecated_reason='Bug 1932026 was fixed in designate 14.0.0',
                 help="Is https://bugs.launchpad.net/designate/+bug/1932026 "
                      "fixed"),
     cfg.StrOpt('designate_manage_path',

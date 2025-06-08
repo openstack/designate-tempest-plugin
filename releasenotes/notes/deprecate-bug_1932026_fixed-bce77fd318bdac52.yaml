@@ -1,0 +1,5 @@
+---
+deprecations:
+  - |
+    The ``[dns_feature_enabled] bug_1932026_fixed`` option has been deprecated.
+    Its default value has been changed from ``False`` to ``True``.
