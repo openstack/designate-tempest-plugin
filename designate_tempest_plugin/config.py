@@ -77,12 +77,6 @@ DnsFeatureGroup = [
                 default=False,
                 help="Is project IDs verified when setting v2 quotas. "
                 "Must be set to True starting from Rocky release."),
-    cfg.BoolOpt('bug_1573141_fixed',
-                default=True,
-                deprecated_for_removal=True,
-                deprecated_reason='This bug was fixed in 3.0.0',
-                help="Is https://bugs.launchpad.net/designate/+bug/1573141 "
-                "fixed"),
     cfg.BoolOpt('bug_1932026_fixed',
                 default=False,
                 help="Is https://bugs.launchpad.net/designate/+bug/1932026 "
