@@ -10,10 +10,12 @@
         - designate-bind9-core
         - designate-bind9-with-keystone-default-roles
         - designate-pdns4-core
+        - designate-bind9-stable-2025-2
         - designate-bind9-stable-2025-1
         - designate-bind9-stable-2024-2
         - designate-bind9-stable-2024-1
         - designate-bind9-multipool
+        - designate-bind9-multipool-stable-2025-2
         - designate-bind9-multipool-stable-2025-1
         - neutron-tempest-plugin-designate-scenario
         - designate-only-ipv6-pdns4
@@ -25,10 +27,12 @@
         - designate-bind9-core
         - designate-bind9-with-keystone-default-roles
         - designate-pdns4-core
+        - designate-bind9-stable-2025-2
         - designate-bind9-stable-2025-1
         - designate-bind9-stable-2024-2
         - designate-bind9-stable-2024-1
         - designate-bind9-multipool
+        - designate-bind9-multipool-stable-2025-2
         - designate-bind9-multipool-stable-2025-1
         - neutron-tempest-plugin-designate-scenario
         - designate-only-ipv6-pdns4
