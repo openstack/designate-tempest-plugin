@@ -13,7 +13,6 @@
         - designate-bind9-stable-2025-2
         - designate-bind9-stable-2025-1
         - designate-bind9-stable-2024-2
-        - designate-bind9-stable-2024-1
         - designate-bind9-multipool
         - designate-bind9-multipool-stable-2025-2
         - designate-bind9-multipool-stable-2025-1
@@ -30,7 +29,6 @@
         - designate-bind9-stable-2025-2
         - designate-bind9-stable-2025-1
         - designate-bind9-stable-2024-2
-        - designate-bind9-stable-2024-1
         - designate-bind9-multipool
         - designate-bind9-multipool-stable-2025-2
         - designate-bind9-multipool-stable-2025-1

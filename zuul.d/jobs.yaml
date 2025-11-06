@@ -84,12 +84,6 @@
     voting: false
 
 - job:
-    name: designate-bind9-stable-2024-1
-    parent: designate-bind9-core
-    nodeset: openstack-single-node-jammy
-    override-checkout: stable/2024.1
-
-- job:
     name: designate-bind9-stable-2024-2
     parent: designate-bind9-core
     nodeset: openstack-single-node-jammy
