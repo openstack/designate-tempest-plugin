@@ -1,15 +1,10 @@
-========================
-Team and repository tags
-========================
-
-.. image:: https://governance.openstack.org/tc/badges/designate-tempest-plugin.svg
-    :target: https://governance.openstack.org/tc/reference/tags/index.html
-
-.. Change things from this point on
-
 ================================
 Tempest Integration of Designate
 ================================
+
+.. image:: https://governance.openstack.org/tc/badges/designate-tempest-plugin.svg
+
+.. Change things from this point on
 
 This directory contains Tempest tests to cover the designate project, as well
 as a plugin to automatically load these tests into tempest.
