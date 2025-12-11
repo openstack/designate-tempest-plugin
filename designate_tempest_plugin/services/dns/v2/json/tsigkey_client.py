@@ -78,13 +78,15 @@ class TsigkeyClient(base.DnsClientV2Base):
 
     @base.handle_errors
     def update_tsigkey(self, uuid, name=None, algorithm=None,
-                       secret=None, scope=None, params=None):
+                       secret=None, scope=None, resource_id=None,
+                       params=None):
         """Update the tsigkey with the specified parameters.
         :param uuid: The unique identifier of the tsigkey..
         :param name: name of the tsigkey.
         :param algorithm: TSIG algorithm e.g hmac-md5, hmac-sha256 etc.
         :param secret: represents TSIG secret.
         :param scope: represents TSIG scope.
+        :param resource_id: Pool id or Zone id.
         :param params: A Python dict that represents the query paramaters to
                        include in the request URI.
         :return: A tuple with the server response and the updated tsigkey.
@@ -92,8 +94,12 @@ class TsigkeyClient(base.DnsClientV2Base):
         tsig = {
                  "name": name or data_utils.rand_name('test-tsig'),
                  "algorithm": algorithm or utils.rand_tsig_algorithm(),
-                 "secret": secret or data_utils.rand_name("secret"),
-                 "scope": scope or utils.rand_tsig_scope()}
+                 "secret": secret or data_utils.rand_name("secret")}
+
+        if scope is not None:
+            tsig['scope'] = scope
+        if resource_id is not None:
+            tsig['resource_id'] = resource_id
 
         resp, body = self._update_request('tsigkeys', uuid, tsig,
                                           params=params)
