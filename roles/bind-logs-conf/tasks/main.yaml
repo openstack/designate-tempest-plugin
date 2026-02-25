@@ -9,19 +9,13 @@
     file_type: any
   register: bind_configs
 
-- name: Dereference bind configs
-  stat:
-    path: "{{ item.path }}"
+- name: Copy bind configurations
+  copy:
+    src: "{{ item.path }}"
+    dest: "{{ stage_dir }}/etc/bind/{{ item.path | basename }}"
+    remote_src: true
   with_items: "{{ bind_configs.files }}"
-  register: bind_configs_deref
-
-- name: Link configurations
-  file:
-    src: "{{ item.stat.lnk_source | default(item.stat.path) }}"
-    dest: "{{ stage_dir }}/etc/bind/{{ item.stat.path | basename }}"
-    state: hard
-  with_items: "{{ bind_configs_deref.results }}"
-  when: item.stat.isreg or item.stat.islnk
+  when: item.isreg or item.islnk
 
 # NOTE(frickler) Copied from devstack role export-devstack-journal
 - name: Ensure {{ stage_dir }}/logs exists

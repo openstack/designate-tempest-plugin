@@ -1,0 +1,58 @@
+- name: Ensure /etc/bind directory exists
+  file:
+    path: "{{ stage_dir }}/etc/bind"
+    state: directory
+
+- name: Ensure /etc/bind-2 directory exists
+  file:
+    path: "{{ stage_dir }}/etc/bind-2"
+    state: directory
+
+- name: Find bind config files
+  find:
+    path: /etc/bind
+    file_type: any
+  register: bind_configs
+
+- name: Find bind-2 config files
+  find:
+    path: /etc/bind-2
+    file_type: any
+  register: bind_2_configs
+
+- name: Copy bind configurations
+  copy:
+    src: "{{ item.path }}"
+    dest: "{{ stage_dir }}/etc/bind/{{ item.path | basename }}"
+    remote_src: true
+  with_items: "{{ bind_configs.files }}"
+  when: item.isreg or item.islnk
+
+- name: Copy bind-2 configurations
+  copy:
+    src: "{{ item.path }}"
+    dest: "{{ stage_dir }}/etc/bind-2/{{ item.path | basename }}"
+    remote_src: true
+  with_items: "{{ bind_2_configs.files }}"
+  when: item.isreg or item.islnk
+
+# NOTE(oschwart) Copied from devstack role export-devstack-journal
+- name: Ensure {{ stage_dir }}/logs exists
+  become: true
+  file:
+    path: "{{ stage_dir }}/logs"
+    state: directory
+    owner: "{{ ansible_user }}"
+
+- name: Collect bind journal
+  become: true
+  shell:
+    cmd: |
+      journalctl -o short-precise --unit named > {{ stage_dir }}/logs/bind9.txt
+
+- name: Collect bind-2 journal
+  become: true
+  shell:
+    cmd: |
+      journalctl -o short-precise --unit named-2 --unit bind9-2 > {{ stage_dir }}/logs/bind9-2.txt
+  ignore_errors: true
