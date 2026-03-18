@@ -605,7 +605,6 @@ class TestTsigkeyInvalidIdAdmin(BaseTsigkeyTest):
             tsigkey_data['secret'], tsigkey_data['scope'])
 
     @decorators.idempotent_id('5d6b8a84-d745-11eb-beba-74e5f9e2a801')
-    @decorators.skip_because(bug="1933760")
     def test_create_tsigkey_for_zone_empty_secret(self):
         LOG.info('Create a zone resource')
         zone_name = dns_data_utils.rand_zone_name(

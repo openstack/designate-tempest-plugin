@@ -12,12 +12,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 from oslo_log import log as logging
-from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
-import testtools
 
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin.common import constants as const
@@ -26,7 +24,6 @@ from designate_tempest_plugin import data_utils as dns_data_utils
 
 import tempest.api.network.base
 
-CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -193,8 +190,6 @@ class DesignatePtrRecord(BasePtrTest, tempest.test.BaseTestCase):
             'Failed, expected ID was not found in "received_ptr_ids" list.')
 
     @decorators.idempotent_id('499b5a7e-87e1-11eb-b412-74e5f9e2a801')
-    @testtools.skipUnless(config.CONF.dns_feature_enabled.bug_1932026_fixed,
-                          'Skip unless bug 1932026 has been fixed.')
     def test_unset_floatingip_ptr(self):
         fip_id, ptr = self._set_ptr()
         self._unset_ptr(fip_id)

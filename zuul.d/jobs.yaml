@@ -7,6 +7,11 @@
         DESIGNATE_SERVICE_PORT_DNS: 5322
         TEMPEST_PLUGINS: /opt/stack/designate-tempest-plugin
         API_WORKERS: 2
+      devstack_local_conf:
+        post-config:
+          $DESIGNATE_CONF:
+            service:api:
+              allow_empty_secrets_for_tsig: False
       devstack_plugins:
         designate: https://opendev.org/openstack/designate
         designate-tempest-plugin: https://opendev.org/openstack/designate-tempest-plugin.git
