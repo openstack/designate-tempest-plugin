@@ -55,6 +55,11 @@ INVALID_SSHFP_DATASET = {
     "minus_one_algorithm": {"algo": "-1", "finger": None},
     "minus_one_fingerprint": {"algo": None, "finger": "-1"}}
 
+# SHA-256 (matching_type=1): exactly 32 bytes = 64 hex chars
+_TLSA_SHA256 = 'ab' * 32
+# SHA-512 (matching_type=2): exactly 64 bytes = 128 hex chars
+_TLSA_SHA512 = 'ab' * 64
+
 
 class RecordsetValidationTest(base.BaseDnsV2Test):
 
@@ -272,3 +277,129 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
         waiters.wait_for_recordset_status(
             self.recordset_client, self.zone['id'],
             recordset['id'], 'ACTIVE')
+
+    @decorators.idempotent_id('c1b8a6f1-7c2a-4c91-9f5d-1d2c9c1e0001')
+    def test_create_TLSA_with_sha256(self):
+        self._skip_if_tlsa_not_supported()
+
+        recordset_data = {
+            'name': "_443._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 1 " + _TLSA_SHA256],
+        }
+
+        recordset = self.create_recordset(recordset_data)
+        waiters.wait_for_recordset_status(
+            self.recordset_client, self.zone['id'],
+            recordset['id'], 'ACTIVE')
+
+    @decorators.idempotent_id('e3d0a6f3-7c2a-4c91-9f5d-1d2c9c1e0003')
+    def test_create_TLSA_multiline(self):
+        self._skip_if_tlsa_not_supported()
+
+        # Use _444 to avoid name collision with test_create_TLSA_with_sha256
+        half = _TLSA_SHA256[:32]
+        other_half = _TLSA_SHA256[32:]
+        tlsa_record = [f"3 1 1 (\n            {half}\n"
+                       f"            {other_half}\n        )"]
+
+        recordset_data = {
+            'name': "_444._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': tlsa_record,
+        }
+
+        recordset = self.create_recordset(recordset_data)
+        waiters.wait_for_recordset_status(
+            self.recordset_client, self.zone['id'],
+            recordset['id'], 'ACTIVE')
+
+    @decorators.idempotent_id('d4e1b7f2-8c3a-5d02-af6e-2e3dad2f0004')
+    def test_create_TLSA_with_sha512(self):
+        self._skip_if_tlsa_not_supported()
+
+        # Use _445 to avoid name collision
+        recordset_data = {
+            'name': "_445._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 2 " + _TLSA_SHA512],
+        }
+
+        recordset = self.create_recordset(recordset_data)
+        waiters.wait_for_recordset_status(
+            self.recordset_client, self.zone['id'],
+            recordset['id'], 'ACTIVE')
+
+    @decorators.idempotent_id('f5a2c8e3-9d4b-6e13-b07f-3f4ebe3a0005')
+    def test_cannot_create_TLSA_with_wrong_certificate_length(self):
+        self._skip_if_tlsa_not_supported()
+
+        # Use _8443 to avoid name collision
+        recordset_data = {
+            'name': "_8443._tcp." + self.zone['name'],
+            'type': "TLSA",
+            # matching_type=1 but only half the required 64 hex chars
+            'records': ["3 1 1 " + _TLSA_SHA256[:32]],
+        }
+
+        self.assertRaisesDns(
+            exceptions.BadRequest, 'invalid_object', 400,
+            self.recordset_client.create_recordset,
+            self.zone['id'], recordset_data,
+        )
+
+    @decorators.idempotent_id('a6b3d9f4-0e5c-7f24-c18a-4a5fcf4b0006')
+    def test_cannot_create_TLSA_at_bare_domain(self):
+        self._skip_if_tlsa_not_supported()
+
+        recordset_data = {
+            'name': self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 1 " + _TLSA_SHA256],
+        }
+
+        self.assertRaisesDns(
+            exceptions.BadRequest, 'bad_request', 400,
+            self.recordset_client.create_recordset,
+            self.zone['id'], recordset_data,
+        )
+
+    @decorators.idempotent_id('c8d9e0f1-2a3b-4c5d-9e0f-1a2b3c4d5e6f')
+    def test_cannot_update_TLSA_with_wrong_certificate_length(self):
+        self._skip_if_tlsa_not_supported()
+
+        # Use _993 (IMAPS) to avoid collision
+        recordset_data = {
+            'name': "_993._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 1 " + _TLSA_SHA256],
+        }
+
+        recordset = self.create_recordset(recordset_data)
+        waiters.wait_for_recordset_status(
+            self.recordset_client, self.zone['id'],
+            recordset['id'], 'ACTIVE')
+
+        update_data = {'records': ["3 1 1 " + _TLSA_SHA256[:32]]}
+        self.assertRaisesDns(
+            exceptions.BadRequest, 'invalid_object', 400,
+            self.recordset_client.update_recordset,
+            self.zone['id'], recordset['id'], update_data,
+        )
+
+    @decorators.idempotent_id('e0f1a2b3-3c4d-5e6f-b02b-3c4d5e6f7a8b')
+    def test_cannot_create_TLSA_with_port_overflow(self):
+        """Port > 65535 in recordset name must be rejected per RFC 6335"""
+        self._skip_if_tlsa_not_supported()
+
+        recordset_data = {
+            'name': "_65536._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 1 " + _TLSA_SHA256],
+        }
+
+        self.assertRaisesDns(
+            exceptions.BadRequest, 'bad_request', 400,
+            self.recordset_client.create_recordset,
+            self.zone['id'], recordset_data,
+        )

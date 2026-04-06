@@ -675,6 +675,9 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
 
     credentials = ["admin", "primary", "alt"]
 
+    # SHA-256 (matching_type=1): exactly 32 bytes = 64 hex chars
+    _TLSA_SHA256 = 'ab' * 32
+
     @classmethod
     def setup_credentials(cls):
         # Do not create network resources for these test.
@@ -885,6 +888,91 @@ class RecordsetsNegativeTest(BaseRecordsetsTest):
         self._test_create_recordset_invalid(
             None, 'SVCB', ['1 sample.example.org. ipv6hint=foo']
         )
+
+    @decorators.idempotent_id('7e2d2b7f-1234-4c91-9f5d-1d2c9c1e0011')
+    def test_create_TLSA_stores_record_as_submitted(self):
+        self._skip_if_tlsa_not_supported()
+
+        recordset_data = {
+            'name': "_445._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 0 AA BB CC DD"],
+        }
+
+        _, recordset = self.client.create_recordset(
+            self.zone['id'],
+            recordset_data,
+            wait_until='ACTIVE'
+        )
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], recordset['id'])
+
+        self.assertEqual("3 1 0 AA BB CC DD", recordset['records'][0])
+
+    @decorators.idempotent_id('6d1c1a6f-1234-4c91-9f5d-1d2c9c1e0010')
+    def test_create_TLSA_max_values(self):
+        self._skip_if_tlsa_not_supported()
+
+        # matching_type=255 is not in MATCHING_TYPE_LENGTHS so no fixed-length
+        # constraint applies — any even-length hex is accepted
+        recordset_data = {
+            'name': "_446._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["255 255 255 aabbccdd"],
+        }
+        _, recordset = self.client.create_recordset(
+            self.zone['id'],
+            recordset_data,
+            wait_until='ACTIVE'
+        )
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], recordset['id'])
+
+        self.assertEqual(["255 255 255 aabbccdd"], recordset['records'])
+
+    @decorators.idempotent_id('f5a6b7c8-2222-4c91-9f5d-1d2c9c1e0031')
+    def test_delete_TLSA(self):
+        self._skip_if_tlsa_not_supported()
+
+        recordset_data = {
+            'name': "_993._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 1 " + self._TLSA_SHA256],
+        }
+        _, recordset = self.client.create_recordset(
+            self.zone['id'], recordset_data, wait_until='ACTIVE')
+
+        self.client.delete_recordset(self.zone['id'], recordset['id'])
+
+        self.assertRaises(
+            lib_exc.NotFound,
+            lambda: self.client.show_recordset(
+                self.zone['id'], recordset['id']))
+
+    @decorators.idempotent_id('e4f5a6b7-1111-4c91-9f5d-1d2c9c1e0030')
+    def test_update_TLSA(self):
+        self._skip_if_tlsa_not_supported()
+
+        recordset_data = {
+            'name': "_25._tcp." + self.zone['name'],
+            'type': "TLSA",
+            'records': ["3 1 1 " + self._TLSA_SHA256],
+        }
+        _, recordset = self.client.create_recordset(
+            self.zone['id'], recordset_data, wait_until='ACTIVE')
+        self.addCleanup(
+            self.wait_recordset_delete, self.client,
+            self.zone['id'], recordset['id'])
+
+        updated_sha256 = 'cd' * 32
+        update_data = {'records': ["3 1 1 " + updated_sha256]}
+        _, updated = self.client.update_recordset(
+            self.zone['id'], recordset['id'], update_data,
+            wait_until='ACTIVE')
+
+        self.assertEqual(["3 1 1 " + updated_sha256], updated['records'])
 
 
 class RootRecordsetsTests(BaseRecordsetsTest):

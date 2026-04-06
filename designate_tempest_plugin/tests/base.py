@@ -11,6 +11,8 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+from oslo_utils import versionutils
+
 from tempest import test
 from tempest import config
 from tempest.lib.common.utils import test_utils as utils
@@ -197,6 +199,13 @@ class BaseDnsV2Test(BaseDnsTest):
             skip_msg = ("%s skipped as designate v2 API is not available"
                         % cls.__name__)
             raise cls.skipException(skip_msg)
+
+    def _skip_if_tlsa_not_supported(self):
+        if not versionutils.is_compatible('2.4', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'TLSA record tests require Designate API version 2.3 or '
+                'newer.')
 
 
 class BaseDnsAdminTest(BaseDnsTest):
