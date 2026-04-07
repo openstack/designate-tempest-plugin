@@ -14,6 +14,7 @@
 import os
 import random
 
+from itertools import dropwhile
 import testtools
 import yaml
 from oslo_log import log as logging
@@ -77,6 +78,38 @@ class DesignateManageTest(base.BaseDnsV2Test):
             return output
         except subprocess.CalledProcessError as e:
             LOG.error(e.output)
+
+    @classmethod
+    def _get_nameservers_in_use(cls):
+        """Executes the 'designate-manage' tool to retrieve all active pools.
+
+        Returns:
+            A list of dictionaries, each representing a pool, for example:
+            [{'pool_id':'ID', 'pool_name':'NAME', 'host':'HOST', 'port':PORT}]
+        """
+        lines = cls._run_designate_manage_pool_command(
+            "show_config", "--all").split('\n\n')[0].splitlines()
+        filtered_lines = [line for line in dropwhile(
+            lambda ln: ln.strip() != "- also_notifies: []", lines)][0:]
+        yaml_data = "\n".join(filtered_lines)
+        data = yaml.safe_load(yaml_data)
+        nameservers_list = []
+        try:
+            for pool in data:
+                pool_id = pool.get('id')
+                pool_name = pool.get('name')
+                nameservers = pool.get('nameservers', [])
+                for ns in nameservers:
+                    host = ns.get('host')
+                    port = ns.get('port')
+                    if host and port:
+                        nameservers_list.append(
+                            {'pool_id': pool_id, 'pool_name': pool_name,
+                             'host': host, 'port': port})
+            return nameservers_list
+        except Exception as e:
+            LOG.warning('Failed to extract nameservers with:{}'.format(str(e)))
+            return None
 
 
 def _get_pools_path(name: str) -> str:
