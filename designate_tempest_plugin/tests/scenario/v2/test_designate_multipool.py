@@ -74,11 +74,12 @@ class DesignateManageTest(base.BaseDnsV2Test):
             commands_list.extend(args[0])
         try:
             output = subprocess.check_output(commands_list,
-                    stderr=subprocess.STDOUT,
+                    stderr=subprocess.PIPE,
                     text=True)
             return output
         except subprocess.CalledProcessError as e:
             LOG.error(e.output)
+            LOG.error(e.stderr)
 
     @classmethod
     def _get_nameservers_in_use(cls):
