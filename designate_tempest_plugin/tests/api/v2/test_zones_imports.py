@@ -12,12 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import testtools
+
 from oslo_log import log as logging
+from oslo_utils import versionutils
 from tempest import config
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 
 from designate_tempest_plugin.common import constants as const
+from designate_tempest_plugin.common import pool_config
 from designate_tempest_plugin.common import waiters
 from designate_tempest_plugin.tests import base
 from designate_tempest_plugin import data_utils as dns_data_utils
@@ -349,6 +353,71 @@ class ZonesImportTest(BaseZonesImportTest):
             'ZoneImportsClient', 'list_zone_imports', expected_allowed,
             [zone_import['id']], headers=self.all_projects_header)
 
+    @decorators.idempotent_id('a1b2c3d4-1234-5678-9abc-def012345678')
+    def test_create_zone_import_json(self):
+        if not versionutils.is_compatible('2.3', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'JSON zone import tests require Designate API version '
+                '2.3 or newer.')
+        LOG.info('Create a zone import using application/json content type')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="import_json", suffix=self.tld_name)
+        zonefile = dns_data_utils.rand_zonefile_data(name=zone_name)
+
+        # attributes={} triggers JSON mode without adding any attributes
+        zone_import = self.client.create_zone_import(
+            zonefile_data=zonefile, attributes={})[1]
+        self.addCleanup(self.clean_up_resources, zone_import['id'])
+        waiters.wait_for_zone_import_status(
+            self.client, zone_import['id'], const.COMPLETE)
+
+        zone_import = self.client.show_zone_import(zone_import['id'])[1]
+        self.assertEqual(const.COMPLETE, zone_import['status'])
+
+    @decorators.idempotent_id('b2c3d4e5-2345-6789-abcd-ef0123456789')
+    @testtools.skipIf(
+        CONF.dns_feature_enabled.test_multipool_with_delete_opt,
+        'Multipools feature is being tested with --delete option.')
+    def test_create_zone_import_with_pool_attribute(self):
+        if not versionutils.is_compatible('2.3', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'JSON zone import tests require Designate API version '
+                '2.3 or newer.')
+        LOG.info('Test zone import with pool_id attribute targets'
+                 ' correct pool')
+        target_pool_id = pool_config.get_non_default_pool_id()
+        if not target_pool_id:
+            raise self.skipException(
+                'A non-default pool is required to test pool routing '
+                'via attributes')
+
+        zone_name = dns_data_utils.rand_zone_name(
+            name="import_pool_attribute", suffix=self.tld_name)
+        zonefile = dns_data_utils.rand_zonefile_data(name=zone_name)
+
+        # zone_create_forced_pool policy requires admin privileges
+        zone_import = self.admin_client.create_zone_import(
+            zonefile_data=zonefile,
+            attributes={'pool_id': target_pool_id})[1]
+        waiters.wait_for_zone_import_status(
+            self.admin_client, zone_import['id'], const.COMPLETE)
+
+        zone_import = self.admin_client.show_zone_import(
+            zone_import['id'])[1]
+
+        admin_zones_client = self.os_admin.dns_v2.ZonesClient()
+        self.addCleanup(self.wait_zone_delete,
+                        admin_zones_client, zone_import['zone_id'])
+        self.addCleanup(self.admin_client.delete_zone_import,
+                        zone_import['id'])
+
+        LOG.info('Verify the zone was assigned to the correct pool')
+        self.assertEqual(const.COMPLETE, zone_import['status'])
+        zone = admin_zones_client.show_zone(zone_import['zone_id'])[1]
+        self.assertEqual(target_pool_id, zone['pool_id'])
+
 
 class ZonesImportTestNegative(BaseZonesImportTest):
     credentials = ["primary", "admin"]
@@ -427,3 +496,51 @@ class ZonesImportTestNegative(BaseZonesImportTest):
                 lib_exc.InvalidContentType, 'unsupported_content_type', 415):
             self.client.create_zone_import(
                 headers={'Content-Type': 'Zahlabut'})
+
+    @decorators.idempotent_id('d4e5f6a7-4567-89ab-cdef-012345678901')
+    def test_create_zone_import_invalid_json_body(self):
+        if not versionutils.is_compatible('2.3', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'JSON zone import tests require Designate API version '
+                '2.3 or newer.')
+        LOG.info('Try to create a zone import with invalid JSON body')
+        self.assertRaises(
+            (lib_exc.BadRequest, lib_exc.InvalidContentType),
+            self.client.create_zone_import,
+            zonefile_data='not valid json{{{',
+            headers={'Content-Type': 'application/json'})
+
+    @decorators.idempotent_id('e5f6a7b8-5678-9abc-def0-123456789abc')
+    def test_create_zone_import_json_missing_zonefile(self):
+        if not versionutils.is_compatible('2.3', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'JSON zone import tests require Designate API version '
+                '2.3 or newer.')
+        LOG.info('Try to create a zone import with JSON body missing '
+                 'the required zonefile field')
+        self.assertRaises(
+            lib_exc.BadRequest,
+            self.client.create_zone_import,
+            zonefile_data='{"attributes": {"pool_id": "fake-id"}}',
+            headers={'Content-Type': 'application/json'})
+
+    @decorators.idempotent_id('f6a7b8c9-6789-abcd-ef01-23456789abcd')
+    def test_create_zone_import_json_invalid_pool_id(self):
+        if not versionutils.is_compatible('2.3', self.api_version,
+                                          same_major=False):
+            raise self.skipException(
+                'JSON zone import tests require Designate API version '
+                '2.3 or newer.')
+        LOG.info('Try to create a zone import with a non-existent pool_id')
+        zone_name = dns_data_utils.rand_zone_name(
+            name="import_invalid_pool", suffix=self.tld_name)
+        zonefile = dns_data_utils.rand_zonefile_data(name=zone_name)
+        self.assertRaises(
+            lib_exc.NotFound,
+            self.client.create_zone_import,
+            zonefile_data=zonefile,
+            attributes={
+                'pool_id': '00000000-0000-0000-0000-000000000000'
+            })
