@@ -12,6 +12,8 @@
           $DESIGNATE_CONF:
             service:api:
               allow_empty_secrets_for_tsig: False
+            service:central:
+              scheduler_filters: "pool_id_attribute, in_doubt_default_pool"
       devstack_plugins:
         designate: https://opendev.org/openstack/designate
         designate-tempest-plugin: https://opendev.org/openstack/designate-tempest-plugin.git
@@ -120,10 +122,6 @@
       devstack_localrc:
         DESIGNATE_BACKEND_DRIVER: multipool-bind9
       devstack_local_conf:
-        post-config:
-          "$DESIGNATE_CONF":
-            service:central:
-              scheduler_filters: "pool_id_attribute, in_doubt_default_pool"
         test-config:
           "$TEMPEST_CONFIG":
             dns_feature_enabled:
