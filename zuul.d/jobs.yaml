@@ -110,6 +110,7 @@
 
 - job:
     name: designate-bind9-multipool
+    post-run: playbooks/designate-bind9-multipool/post.yaml
     parent: designate-core
     nodeset: openstack-single-node-noble
     vars:
