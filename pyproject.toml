@@ -1,0 +1,42 @@
+[build-system]
+requires = ["pbr>=6.1.1"]
+build-backend = "pbr.build"
+
+[project]
+name = "designate-tempest-plugin"
+description = "OpenStack DNS As A Service (Designate) Functional Tests"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+authors = [
+    {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
+]
+classifiers = [
+    "Environment :: OpenStack",
+    "Environment :: No Input/Output (Daemon)",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: Name Service (DNS)",
+]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+"Bug Tracker" = "https://bugs.launchpad.net/designate/"
+"Documentation" = "https://docs.openstack.org/designate-tempest-plugin/latest/"
+"Source Code" = "https://opendev.org/openstack/designate-tempest-plugin"
+
+[project.entry-points."tempest.test_plugins"]
+designate = "designate_tempest_plugin.plugin:DesignateTempestPlugin"
+
+[tool.setuptools]
+packages = ["designate_tempest_plugin"]
