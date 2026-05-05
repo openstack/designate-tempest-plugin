@@ -87,7 +87,8 @@ class DesignateManageTest(base.BaseDnsV2Test):
 
         Returns:
             A list of dictionaries, each representing a pool, for example:
-            [{'pool_id':'ID', 'pool_name':'NAME', 'host':'HOST', 'port':PORT}]
+            [{'pool_id':'ID', 'pool_name':'NAME', 'host':'HOST', 'port':PORT,
+              'tsigkey_id': 'ID or None'}]
         """
         lines = cls._run_designate_manage_pool_command(
             "show_config", "--all").split('\n\n')[0].splitlines()
@@ -107,7 +108,8 @@ class DesignateManageTest(base.BaseDnsV2Test):
                     if host and port:
                         nameservers_list.append(
                             {'pool_id': pool_id, 'pool_name': pool_name,
-                             'host': host, 'port': port})
+                             'host': host, 'port': port,
+                             'tsigkey_id': ns.get('tsigkey_id')})
             return nameservers_list
         except Exception as e:
             LOG.warning('Failed to extract nameservers with:{}'.format(str(e)))
@@ -301,6 +303,7 @@ class DesignateMultiPoolTest(DesignateManagePoolTest):
         cls.admin_tld_client = cls.os_admin.dns_v2.TldClient()
         cls.rec_client = cls.os_admin.dns_v2.RecordsetClient()
         cls.admin_zones_client = cls.os_admin.dns_v2.ZonesClient()
+        cls.tsigkey_client = cls.os_admin.dns_v2.TsigkeyClient()
 
     @classmethod
     def resource_setup(cls):
@@ -385,11 +388,21 @@ class DesignateMultiPoolTest(DesignateManagePoolTest):
             nameserver_list = [
                 f'{ns["host"]}:{ns["port"]}' for ns in pool_nameservers
             ]
+            tsigkey_id = pool_nameservers[0].get('tsigkey_id')
+            tsig_key_name = tsig_key_secret = tsig_key_algorithm = None
+            if tsigkey_id:
+                _, tsigkey = self.tsigkey_client.show_tsigkey(tsigkey_id)
+                tsig_key_name = tsigkey['name']
+                tsig_key_secret = tsigkey['secret']
+                tsig_key_algorithm = tsigkey['algorithm']
             query_client = QueryClient(
                 nameservers=nameserver_list,
                 query_timeout=CONF.dns.query_timeout,
                 build_interval=CONF.dns.build_interval,
-                build_timeout=CONF.dns.build_timeout
+                build_timeout=CONF.dns.build_timeout,
+                tsig_key_name=tsig_key_name,
+                tsig_key_secret=tsig_key_secret,
+                tsig_key_algorithm=tsig_key_algorithm
             )
             waiters.wait_for_query(
                 query_client, rrset['name'], 'A', found=True)
@@ -403,11 +416,22 @@ class DesignateMultiPoolTest(DesignateManagePoolTest):
                     f'{ns["host"]}:{ns["port"]}'
                     for ns in other_nameservers
                 ]
+                other_tsigkey_id = other_nameservers[0].get('tsigkey_id')
+                other_tsig_name = other_tsig_secret = other_tsig_algo = None
+                if other_tsigkey_id:
+                    _, other_tsigkey = self.tsigkey_client.show_tsigkey(
+                        other_tsigkey_id)
+                    other_tsig_name = other_tsigkey['name']
+                    other_tsig_secret = other_tsigkey['secret']
+                    other_tsig_algo = other_tsigkey['algorithm']
                 other_query_client = QueryClient(
                     nameservers=other_ns_list,
                     query_timeout=CONF.dns.query_timeout,
                     build_interval=CONF.dns.build_interval,
-                    build_timeout=CONF.dns.build_timeout
+                    build_timeout=CONF.dns.build_timeout,
+                    tsig_key_name=other_tsig_name,
+                    tsig_key_secret=other_tsig_secret,
+                    tsig_key_algorithm=other_tsig_algo
                 )
                 waiters.wait_for_query(
                     other_query_client, rrset['name'], 'A', found=False)

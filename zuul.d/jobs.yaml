@@ -129,6 +129,13 @@
       tempest_test_regex: ^designate_tempest_plugin.tests.scenario.v2.test_designate_multipool.DesignateMultiPoolTest
 
 - job:
+    name: designate-bind9-split-horizon
+    parent: designate-bind9-multipool
+    vars:
+      devstack_localrc:
+        DESIGNATE_BACKEND_DRIVER: split-horizon-bind9
+
+- job:
     name: designate-bind9-multipool-stable-2025-1
     parent: designate-bind9-multipool
     nodeset: openstack-single-node-noble
