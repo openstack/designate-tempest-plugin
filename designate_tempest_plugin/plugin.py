@@ -52,13 +52,13 @@ class DesignateTempestPlugin(plugins.TempestPlugin):
         conf (ConfigOpts): The conf object that can be used to register
         additional options on.
         """
-        config.register_opt_group(conf, project_config.service_available_group,
+        config.register_opt_group(conf, config.service_available_group,
                                   project_config.ServiceAvailableGroup)
         config.register_opt_group(conf, project_config.dns_group,
                                   project_config.DnsGroup)
         config.register_opt_group(conf, project_config.dns_feature_group,
                                   project_config.DnsFeatureGroup)
-        config.register_opt_group(conf, project_config.enforce_scope_group,
+        config.register_opt_group(conf, config.enforce_scope_group,
                                   project_config.EnforceScopeGroup)
 
     def get_opt_lists(self):
@@ -70,12 +70,14 @@ class DesignateTempestPlugin(plugins.TempestPlugin):
         Return type: list
         """
         return [
-            (project_config.service_available_group.name,
+            (config.service_available_group.name,
              project_config.ServiceAvailableGroup),
             (project_config.dns_group.name,
              project_config.DnsGroup),
             (project_config.dns_feature_group.name,
              project_config.DnsFeatureGroup),
+            (config.enforce_scope_group.name,
+             project_config.EnforceScopeGroup),
         ]
 
     def get_service_clients(self):
