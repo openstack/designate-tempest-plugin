@@ -37,6 +37,8 @@
       - openstack/python-designateclient
     timeout: 4200
     irrelevant-files: &base_irrelevant_files
+      - ^\.gitignore$
+      - ^\.gitreview$
       - ^.*\.rst$
       - ^api-ref/.*$
       - ^doc/.*$
