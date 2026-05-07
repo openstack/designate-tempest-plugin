@@ -41,6 +41,8 @@
       - ^api-ref/.*$
       - ^doc/.*$
       - ^releasenotes/.*$
+      - ^designate/hacking/.*$
+      - ^designate_tempest_plugin/hacking/.*$
 
 - job:
     name: designate-bind9-core
