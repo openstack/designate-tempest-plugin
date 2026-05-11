@@ -6,7 +6,7 @@ build-backend = "pbr.build"
 name = "designate-tempest-plugin"
 description = "OpenStack DNS As A Service (Designate) Functional Tests"
 readme = {file = "README.rst", content-type = "text/x-rst"}
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [
     {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
@@ -16,7 +16,6 @@ classifiers = [
     "Environment :: No Input/Output (Daemon)",
     "Intended Audience :: Information Technology",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -38,5 +37,5 @@ dynamic = ["version", "dependencies"]
 [project.entry-points."tempest.test_plugins"]
 designate = "designate_tempest_plugin.plugin:DesignateTempestPlugin"
 
-[tool.setuptools]
-packages = ["designate_tempest_plugin"]
+[tool.setuptools.packages.find]
+include = ["designate_tempest_plugin*"]
