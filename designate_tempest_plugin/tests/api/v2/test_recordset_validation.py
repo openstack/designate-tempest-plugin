@@ -173,12 +173,13 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
     def test_create_TXT_with(self):
         for key, data in VALID_TXT_DATASET.items():
             LOG.info('Tested VALID_TXT_DATASET: {}'.format(key))
-        post_model = dns_data_utils.rand_txt_recordset(
-            self.zone['name'], data['data'])
-        recordset = self.create_recordset(post_model)
+            post_model = dns_data_utils.rand_txt_recordset(
+                self.zone['name'], data['data'])
+            recordset = self.create_recordset(post_model)
 
-        waiters.wait_for_recordset_status(
-            self.recordset_client, self.zone['id'], recordset['id'], 'ACTIVE')
+            waiters.wait_for_recordset_status(
+                self.recordset_client, self.zone['id'],
+                recordset['id'], 'ACTIVE')
 
     @decorators.idempotent_id('775b3db5-ec60-4dd7-85d2-f05a9c544978')
     def test_create_SPF_with(self):
