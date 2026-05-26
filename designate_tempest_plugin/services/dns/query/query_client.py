@@ -13,7 +13,9 @@
 # under the License.
 import dns
 import dns.exception
+import dns.name
 import dns.query
+import dns.tsigkeyring
 from tempest import config
 from oslo_utils import netutils
 
@@ -24,13 +26,19 @@ class QueryClient(object):
     """A client which queries multiple nameservers"""
 
     def __init__(self, nameservers=None, query_timeout=None,
-                 build_interval=None, build_timeout=None):
+                 build_interval=None, build_timeout=None,
+                 tsig_key_name=None, tsig_key_secret=None,
+                 tsig_key_algorithm=None):
         self.nameservers = nameservers or CONF.dns.nameservers
         self.query_timeout = query_timeout or CONF.dns.query_timeout
         self.build_interval = build_interval or CONF.dns.build_interval
         self.build_timeout = build_timeout or CONF.dns.build_timeout
-        self.clients = [SingleQueryClient(ns, query_timeout=query_timeout)
-                        for ns in nameservers]
+        self.clients = [SingleQueryClient(
+                            ns, query_timeout=self.query_timeout,
+                            tsig_key_name=tsig_key_name,
+                            tsig_key_secret=tsig_key_secret,
+                            tsig_key_algorithm=tsig_key_algorithm)
+                        for ns in self.nameservers]
 
     def query(self, zone_name, rdatatype):
         if not self.nameservers:
@@ -42,26 +50,38 @@ class QueryClient(object):
 class SingleQueryClient(object):
     """A client which queries a single nameserver"""
 
-    def __init__(self, nameserver, query_timeout):
+    def __init__(self, nameserver, query_timeout,
+                 tsig_key_name=None, tsig_key_secret=None,
+                 tsig_key_algorithm=None):
         self.nameserver = Nameserver.from_str(nameserver)
         self.query_timeout = query_timeout
+        self.tsig_key_name = tsig_key_name
+        if tsig_key_name and tsig_key_secret:
+            self.keyring = dns.tsigkeyring.from_text(
+                {tsig_key_name: tsig_key_secret})
+            self.tsig_algorithm = dns.name.from_text(
+                tsig_key_algorithm or 'hmac-sha256')
+        else:
+            self.keyring = None
+            self.tsig_algorithm = None
 
     def query(self, name, rdatatype):
         return self._dig(name, rdatatype, self.nameserver.ip,
                          self.nameserver.port, timeout=self.query_timeout)
 
-    @classmethod
-    def _prepare_query(cls, zone_name, rdatatype):
-        # support plain strings: "SOA", "A"
+    def _prepare_query(self, zone_name, rdatatype):
         if isinstance(rdatatype, str):
             rdatatype = dns.rdatatype.from_text(rdatatype)
         dns_message = dns.message.make_query(zone_name, rdatatype)
         dns_message.set_opcode(dns.opcode.QUERY)
+        if self.keyring:
+            dns_message.use_tsig(
+                keyring=self.keyring, keyname=self.tsig_key_name,
+                algorithm=self.tsig_algorithm)
         return dns_message
 
-    @classmethod
-    def _dig(cls, name, rdatatype, ip, port, timeout):
-        query = cls._prepare_query(name, rdatatype)
+    def _dig(self, name, rdatatype, ip, port, timeout):
+        query = self._prepare_query(name, rdatatype)
         return dns.query.udp(query, ip.strip('[]'), port=port, timeout=timeout)
 
 
