@@ -20,22 +20,39 @@ from designate_tempest_plugin.services.dns.v2.json import base
 class ZoneImportsClient(base.DnsClientV2Base):
 
     @base.handle_errors
-    def create_zone_import(self, zonefile_data=None,
+    def create_zone_import(self, zonefile_data=None, attributes=None,
                            wait_until=None, headers=None):
         """Create a zone import.
-        :param zonefile_data: A tuple that represents zone data.
-        :param wait_until: If not None, a waiter for appropriate status
-                will be activated.
-        :param headers (dict): The headers to use for the request.
-        :return: Serialized imported zone as a dictionary.
-        """
-        if not headers:
-            headers = {'Content-Type': 'text/dns'}
-        zone_data = zonefile_data or dns_data_utils.rand_zonefile_data()
-        resp, body = self._create_request(
-            'zones/tasks/imports', zone_data, headers=headers)
 
-        # Create Zone should Return a HTTP 202
+        When attributes are provided the request uses application/json
+        content type (the zonefile content and attributes are sent as a
+        JSON body).  Otherwise the raw zonefile text is posted with
+        content type text/dns.
+
+        :param zonefile_data: Zone file content as a string.
+        :param attributes: Optional dict of zone attributes
+            (e.g. ``{'pool_id': '<uuid>'}``).  Triggers JSON mode.
+        :param wait_until: If not None, wait for this import status.
+        :param headers: Optional headers dict for the request.
+        :return: (response, body) tuple.
+        """
+        zonefile = zonefile_data or dns_data_utils.rand_zonefile_data()
+        if attributes is not None:
+            if not headers:
+                headers = {'Content-Type': 'application/json'}
+            request_body = {
+                'zonefile': zonefile,
+                'attributes': attributes,
+            }
+        else:
+            if not headers:
+                headers = {'Content-Type': 'text/dns'}
+            request_body = zonefile
+
+        resp, body = self._create_request(
+            'zones/tasks/imports', request_body, headers=headers)
+
+        # Create Zone Import should return HTTP 202
         self.expected_success(202, resp.status)
 
         if wait_until:
