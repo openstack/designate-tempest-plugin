@@ -3,9 +3,10 @@
     parent: devstack-tempest
     nodeset: openstack-single-node-noble
     vars: &base_vars
+      tempest_plugins:
+        - designate-tempest-plugin
       devstack_localrc:
         DESIGNATE_SERVICE_PORT_DNS: 5322
-        TEMPEST_PLUGINS: /opt/stack/designate-tempest-plugin
         API_WORKERS: 2
       devstack_local_conf:
         post-config:
