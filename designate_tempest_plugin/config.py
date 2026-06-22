@@ -13,9 +13,7 @@
 # under the License.
 from oslo_config import cfg
 
-service_available_group = cfg.OptGroup(name="service_available",
-                                       title="Available OpenStack Services")
-
+# Extending the service_available group defined in tempest
 ServiceAvailableGroup = [
     cfg.BoolOpt("designate",
                 default=True,
@@ -95,10 +93,7 @@ DnsFeatureGroup = [
                      "other tests."),
 ]
 
-# Extending this enforce_scope group defined in tempest
-enforce_scope_group = cfg.OptGroup(name="enforce_scope",
-                                   title="OpenStack Services with "
-                                         "enforce scope")
+# Extending the enforce_scope group defined in tempest
 EnforceScopeGroup = [
     cfg.BoolOpt('designate',
                 default=False,
