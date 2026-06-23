@@ -42,12 +42,22 @@ class ZoneFile(object):
         lines = [x.strip() for x in text.split('\n') if x.strip()]
 
         assert lines[0].startswith('$ORIGIN')
-        assert lines[1].startswith('$TTL')
+
+        # Handle zone files with and without $TTL directive
+        if lines[1].startswith('$TTL'):
+            # New format with $TTL directive
+            ttl = int(lines[1].split(' ')[1])
+            record_start = 2
+        else:
+            # Old format without $TTL directive
+            ttl = None
+            record_start = 1
 
         return ZoneFile(
             origin=lines[0].split(' ')[1],
-            ttl=int(lines[1].split(' ')[1]),
-            records=[ZoneFileRecord.from_text(x) for x in lines[2:]],
+            ttl=ttl,
+            records=[ZoneFileRecord.from_text(x)
+                     for x in lines[record_start:]],
         )
 
 
@@ -78,10 +88,20 @@ class ZoneFileRecord(object):
         """Create a ZoneFileRecord from a line of text of a zone file, like:
 
             mydomain.com. IN NS ns1.example.com.
+            mydomain.com. 3600 IN NS ns1.example.com.
         """
-        # assumes records don't have a TTL between the name and the class.
-        # assumes no parentheses in the record, all on a single line.
-        parts = [x for x in text.split(' ', 4) if x.strip()]
-        name, rclass, rtype, data = parts
+        parts = text.split(None, 4)
+
+        # Check if second field is numeric (inline TTL)
+        if len(parts) >= 5 and parts[1].isdigit():
+            name, _ttl, rclass, rtype, data = parts
+        elif len(parts) >= 4:
+            name = parts[0]
+            rclass = parts[1]
+            rtype = parts[2]
+            data = parts[3] if len(parts) == 4 else ' '.join(parts[3:])
+        else:
+            raise ValueError(f"Unexpected record format: {text}")
+
         assert rclass == 'IN'
         return cls(name=name, type=rtype, data=data)
