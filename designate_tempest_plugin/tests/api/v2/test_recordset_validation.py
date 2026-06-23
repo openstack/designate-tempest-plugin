@@ -104,7 +104,9 @@ class RecordsetValidationTest(base.BaseDnsV2Test):
     def create_recordset(self, data):
         resp, body = self.recordset_client.create_recordset(
             self.zone['id'], data)
-
+        self.addCleanup(self.wait_recordset_delete,
+                        self.recordset_client,
+                        self.zone['id'], body['id'])
         return body
 
     @decorators.idempotent_id('c5ef87e2-cb79-4758-b968-18eef2c251df')
