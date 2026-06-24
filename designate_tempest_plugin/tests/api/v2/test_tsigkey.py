@@ -368,7 +368,7 @@ class TsigkeyAdminTest(BaseTsigkeyTest):
                 'x-auth-sudo-project-id':
                     self.os_admin.credentials.project_id})
         pool_tsigkey = self.admin_client.create_tsigkey(
-            resource_id=pool['id'], algorithm=algorithm)[1]
+            resource_id=pool['id'], algorithm=algorithm, scope='POOL')[1]
         self.addCleanup(self.admin_client.delete_tsigkey, pool_tsigkey['id'])
 
         LOG.info('List all "algorithm={}" tsigkeys '.format(algorithm))
