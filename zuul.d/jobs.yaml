@@ -114,6 +114,12 @@
     override-checkout: stable/2026.1
 
 - job:
+    name: designate-bind9-stable-2026-2
+    parent: designate-bind9-core
+    nodeset: openstack-single-node-noble
+    override-checkout: stable/2026.2
+
+- job:
     name: designate-bind9-multipool
     post-run: playbooks/designate-bind9-multipool/post.yaml
     parent: designate-core
@@ -152,6 +158,12 @@
     parent: designate-bind9-multipool
     nodeset: openstack-single-node-noble
     override-checkout: stable/2026.1
+
+- job:
+    name: designate-bind9-multipool-stable-2026-2
+    parent: designate-bind9-multipool
+    nodeset: openstack-single-node-noble
+    override-checkout: stable/2026.2
 
 # IPv6
 - job:
