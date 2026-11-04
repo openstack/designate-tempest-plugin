@@ -96,12 +96,6 @@
     voting: false
 
 - job:
-    name: designate-bind9-stable-2025-1
-    parent: designate-bind9-core
-    nodeset: openstack-single-node-noble
-    override-checkout: stable/2025.1
-
-- job:
     name: designate-bind9-stable-2025-2
     parent: designate-bind9-core
     nodeset: openstack-single-node-noble
@@ -140,12 +134,6 @@
     vars:
       devstack_localrc:
         DESIGNATE_BACKEND_DRIVER: split-horizon-bind9
-
-- job:
-    name: designate-bind9-multipool-stable-2025-1
-    parent: designate-bind9-multipool
-    nodeset: openstack-single-node-noble
-    override-checkout: stable/2025.1
 
 - job:
     name: designate-bind9-multipool-stable-2025-2
